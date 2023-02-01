@@ -5,8 +5,9 @@ use solana_program:: {
     msg,
     pubkey::Pubkey,
     program_pack::{Pack, IsInitialized},
-    sysvar::{rent::Rent,Sysvar},
-    program::{invoke, invoke_signed}
+    sysvar::{rent::Rent, Sysvar, clock::Clock},
+    program::{invoke, invoke_signed},
+    clock::Slot ,
 };
 
 use spl_token::state::Account as TokenAccount;
@@ -38,6 +39,7 @@ impl Processor {
     program_id: &Pubkey,
 
   ) -> ProgramResult {
+
     let account_info_iter = &mut accounts.iter();
     let initializer = next_account_info(account_info_iter)?;
 
@@ -57,7 +59,7 @@ impl Processor {
     let rent = &Rent::from_account_info(next_account_info(account_info_iter)?)?;
   
     if !rent.is_exempt(escrow_account.lamports(), escrow_account.data_len()) {
-    return Err(EscrowError::NotRentExempt.into());
+      return Err(EscrowError::NotRentExempt.into());
     }
 
     let mut escrow_info = Escrow::unpack_unchecked(&escrow_account.try_borrow_data()?)?;
@@ -66,11 +68,17 @@ impl Processor {
         return Err(ProgramError::AccountAlreadyInitialized);
     }
 
+    let clock:Slot = Clock::get()?.slot ;
+    let unlock_time:Slot = clock + 100 ;
+    let time_out:Slot = unlock_time + 1000;
+
     escrow_info.is_initialized = true ;
     escrow_info.initializer_pubkey = *initializer.key ;
     escrow_info.temp_token_account_pubkey = *temp_token_account.key;
     escrow_info.initializer_token_to_receive_account_pubkey = *token_to_receive_account.key ;
     escrow_info.expected_amount = amount ;
+    escrow_info.unlock_time = unlock_time ;
+    escrow_info.time_out = time_out ;
 
 
     Escrow::pack(escrow_info, &mut escrow_account.try_borrow_mut_data()?)?;
@@ -142,6 +150,16 @@ impl Processor {
 
     if escrow_info.initializer_token_to_receive_account_pubkey != *initializers_token_to_receive_account.key {
         return Err(ProgramError::InvalidAccountData);
+    }
+
+    let clock = Clock::get()?;
+
+    if escrow_info.unlock_time > clock.slot {
+         return Err(EscrowError::EscrowNotUnlocked.into());
+    }
+
+    if escrow_info.time_out < clock.slot {
+         return Err(EscrowError::EscrowTimedOut.into());
     }
 
     let token_program = next_account_info(account_info_iter)?;
