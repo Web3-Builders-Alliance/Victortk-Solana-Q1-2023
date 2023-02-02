@@ -6,7 +6,7 @@ pub enum EscrowError {
   ///Invalid instruction
  #[error("Invalid Instruction")]
  InvalidInstruction,
-
+ 
  //Not rent Exempt 
  #[error("Not rent Exempt")]
  NotRentExempt,

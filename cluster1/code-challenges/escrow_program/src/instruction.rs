@@ -46,8 +46,15 @@ impl EscrowInstruction {
 
   /// Unpacks a byte buffer into a [EscrowInstruction](enum.EscrowInstruction.html).
   pub fn unpack(input: &[u8]) -> Result<Self, ProgramError> {
+        
+        //We know how the data we expect is structured and thats how we know
+        //the right way to deserialize it 
+       //Split first takes the first byte out of the slice and
+       // returns the rest of the slice and the first byte in a tuple
+
       let (tag, rest) = input.split_first().ok_or(InvalidInstruction)?;
 
+      // here we use a match to make a descision on how to deserialize the 
       Ok(match tag {
         0 => Self::InitEscrow{ 
           amount: Self::unpack_amount(rest)?

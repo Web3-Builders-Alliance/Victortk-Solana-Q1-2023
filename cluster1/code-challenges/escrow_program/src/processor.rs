@@ -2,12 +2,15 @@ use solana_program:: {
     account_info::{next_account_info, AccountInfo},
     entrypoint::ProgramResult,
     program_error::ProgramError,
-    msg,
-    pubkey::Pubkey,
-    program_pack::{Pack, IsInitialized},
-    sysvar::{rent::Rent, Sysvar, clock::Clock},
-    program::{invoke, invoke_signed},
-    clock::Slot ,
+    msg, // a macro used for logging to the blockchain for debugging 
+    pubkey::Pubkey, //A turple struct type which is used to represent a publick key
+    program_pack::{Pack, IsInitialized}, // Trait types used to make deserializing and serializing work 
+
+    sysvar::{rent::Rent, Sysvar, clock::Clock}, //types used to access system parameters 
+
+    program::{invoke, invoke_signed}, // these are functions you can use to make CPI's invoke extends signer privillages, invoke_signed is used to sign for a program 
+
+    clock::Slot , //This is a type used to represent a number of ticks on the blockchain internally it is ust a u64  
 };
 
 use spl_token::state::Account as TokenAccount;
@@ -17,6 +20,9 @@ pub struct Processor;
 
 impl Processor {
   pub fn process(program_id: &Pubkey, accounts: &[AccountInfo], instruction_data: &[u8])-> ProgramResult {
+
+      //The instruction data is serialized up to this point 
+      //the instruction data is custom to a program 
       let instruction = EscrowInstruction::unpack(instruction_data)?;
 
       match instruction {
