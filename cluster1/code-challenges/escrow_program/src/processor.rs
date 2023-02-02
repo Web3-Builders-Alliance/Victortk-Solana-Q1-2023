@@ -24,6 +24,8 @@ impl Processor {
       //The instruction data is serialized up to this point 
       //the instruction data is custom to a program 
       let instruction = EscrowInstruction::unpack(instruction_data)?;
+          
+      // The EscrowInstruction enum is used in the match statement to determine the instruction to call.
 
       match instruction {
         EscrowInstruction::InitEscrow {amount} => {
@@ -44,28 +46,49 @@ impl Processor {
 
   ) -> ProgramResult {
 
+    //we create an iterator, over the AccountInfo array slice 
     let account_info_iter = &mut accounts.iter();
+
+    //we already know before hand the order of the accounts 
+    // We however need to verify that it is the right account 
+    // next_account_info is used to produce the next value from the iterator
     let initializer = next_account_info(account_info_iter)?;
+
+    // We need to make sure that the initializer signed the transaction 
+    // since we want to take lamports from him 
 
     if !initializer.is_signer {
       return Err(ProgramError::MissingRequiredSignature);
     }
 
+    //The initializer account for the token he wants to send 
     let temp_token_account = next_account_info(account_info_iter)?;
 
+    //Initializer account for the tokens he wants to receive
     let token_to_receive_account = next_account_info(account_info_iter)?;
 
+    //check to see if the a account belongs to token program 
     if *token_to_receive_account.owner != spl_token::id() {
       return Err(ProgramError::IncorrectProgramId);
     }
 
+    //the escrow account 
     let escrow_account = next_account_info(account_info_iter)?;
-    let rent = &Rent::from_account_info(next_account_info(account_info_iter)?)?;
+    
+    //We do not need to pass is the rent account  
+
+    // let rent = &Rent::from_account_info(next_account_info(account_info_iter)?)?;
+
+    let rent = Rent::get()?;
   
+    //we use the rent is_exempt function to check if the account has enough rent 
     if !rent.is_exempt(escrow_account.lamports(), escrow_account.data_len()) {
       return Err(EscrowError::NotRentExempt.into());
     }
 
+    //Here we want to deseriailze the data in the account 
+    // first we get a reference to the data bytes in the account 
+    //We then deserialize the data slice into an Escrow type 
     let mut escrow_info = Escrow::unpack_unchecked(&escrow_account.try_borrow_data()?)?;
 
     if escrow_info.is_initialized() {

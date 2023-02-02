@@ -7,8 +7,10 @@ use solana_program::{
 };
 use arrayref::{array_mut_ref, array_ref, array_refs, mut_array_refs};
 
-impl Sealed for Escrow {}
 
+// types that implement Pack need to implement Sealed, IsInitialized and have a size;
+
+// the escrow type which is used to represent the Escrow data 
 pub struct Escrow {
   pub is_initialized: bool,
   pub initializer_pubkey: Pubkey,
@@ -19,6 +21,7 @@ pub struct Escrow {
   pub time_out: Slot,
 }
 
+impl Sealed for Escrow {}
 impl IsInitialized for Escrow {
   fn is_initialized(&self) -> bool {
     self.is_initialized
@@ -26,9 +29,9 @@ impl IsInitialized for Escrow {
 }
 
 impl Pack for Escrow {
-    const LEN: usize = 105 + 8 + 8;
-    fn unpack_from_slice(src: &[u8]) -> Result<Self, ProgramError> {
-      
+    const LEN: usize = 1 + 32 +32 + 32 + 8  + 8 + 8;
+
+    fn unpack_from_slice(src: &[u8]) -> Result<Self, ProgramError> {      
       let src = array_ref![src, 0, Escrow::LEN];
       let (
         is_initialized,

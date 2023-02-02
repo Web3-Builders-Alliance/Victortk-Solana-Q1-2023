@@ -55,10 +55,13 @@ impl EscrowInstruction {
       let (tag, rest) = input.split_first().ok_or(InvalidInstruction)?;
 
       // here we use a match to make a descision on how to deserialize the 
+      //rest of the byte array
       Ok(match tag {
+        //if the tag is zero we run code to innitialize
         0 => Self::InitEscrow{ 
           amount: Self::unpack_amount(rest)?
         },
+        //if the tag is 1 we run the code to exchange 
         1 => Self::Exchange {
            amount: Self::unpack_amount(rest)?
         },
@@ -67,7 +70,10 @@ impl EscrowInstruction {
   }
 
   fn unpack_amount(input: &[u8]) -> Result<u64, ProgramError> {
-
+     //this fuction takes a byte array 
+     //uses the first 8 bytes to create a u64 value
+     //Returns the amount 
+     
      let amount = input 
          .get(..8)
          .and_then(|slice| slice.try_into().ok())
