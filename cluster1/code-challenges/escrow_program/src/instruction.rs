@@ -1,8 +1,81 @@
 // inside instruction.rs 
 use std::convert::TryInto ;
-use solana_program::program_error::ProgramError ;
+use solana_program::{program_error::ProgramError, pubkey::Pubkey , instruction::{Instruction, AccountMeta}, sysvar::rent::Rent} ;
 use crate::error::EscrowError::InvalidInstruction ;
+use std::mem::size_of ;
 
+// 0. `[signer]` The account of the person initializing the escrow
+  /// 1. `[writable]` Temporary token account that should be created prior to this instruction and owned by the initializer 
+  /// 2. `[]` The initializer's token account for the token they will recieve should the trade go through
+  /// 3. `[writable]` The escrow account, it will hold all necessary info about the trade 
+  /// 4. `[]` The rent sysvar 
+  /// 5. `[]` The token program
+
+pub fn init_escrow(
+  program_id: &Pubkey,
+  initiator: &Pubkey,
+  temp_token_account: &Pubkey,
+  init_token_to_receive_account: &Pubkey,
+  escrow_account: &Pubkey,
+  token_program: &Pubkey,
+  amount: u64,
+)-> Result<Instruction, ProgramError> {
+
+  let init_data = EscrowInstruction::InitEscrow{
+    amount,
+  };
+  let accounts = vec![
+    AccountMeta::new(*initiator, true),
+    AccountMeta::new(*temp_token_account, false),
+    AccountMeta::new(*init_token_to_receive_account,false),
+    AccountMeta::new(*escrow_account,false),
+    AccountMeta::new_readonly(*token_program, false),
+  ];
+
+  Ok(Instruction {
+    program_id: *program_id,
+    accounts,
+    data: init_data.pack()
+  })
+}
+
+pub fn exchange (
+  program_id: &Pubkey,
+  taker: &Pubkey,
+  taker_token_account: &Pubkey ,
+  taker_token_account2 : &Pubkey ,
+  temp_token_account: &Pubkey,
+  initializer_token_account: &Pubkey,
+  initializer_main_account: &Pubkey,
+  escrow_account: &Pubkey,
+  token_program: &Pubkey,
+  amount: u64
+) -> Result<Instruction, ProgramError> {
+
+  let data = EscrowInstruction::Exchange {
+    amount, 
+  }.pack() ;
+
+  //#### How to decide if account is read_only or nah?
+  let accounts = vec![
+    AccountMeta::new(*taker, true),
+    AccountMeta::new(*taker_token_account, false),
+    AccountMeta::new(*taker_token_account2, false),
+    AccountMeta::new(*temp_token_account, false),
+    AccountMeta::new(*initializer_token_account, false),
+    AccountMeta::new(*initializer_main_account, false),
+    AccountMeta::new(*escrow_account, false),
+    AccountMeta::new_readonly(*token_program, false) ,
+  ];
+
+  Ok(
+    Instruction {
+      program_id: *program_id,
+      accounts,
+      data
+    }
+  )
+} 
 pub enum EscrowInstruction {
 
   /// Starts the trade by creating and populating an escrow account and transferring ownership of the given temp token account to the PDA
@@ -39,7 +112,24 @@ pub enum EscrowInstruction {
   Exchange {
     /// the amount the taker expects to be paid in the other token, as a u64 because that's the max possible supply of a token
     amount: u64,
-  }
+  },
+
+  // signer 
+  ///Cancel Escrow 
+  /// 0. `[signer] The initializer that is cancelling their escrow 
+  /// 1. `[writable]` The 
+  /// 2. `[writable]` The initializer's token avount that will receive tokens 
+  /// 3. `[writable]` The escrow account holding the escro info 
+  /// 4. `[]` The token program
+  /// 5. `[]` The PDA account
+  Cancel {},
+  
+  //Reset Time lock and time_out 
+  ////0. `[signer]` The initializer that is reseting the timelock 
+  /// 1. `[writable]` The escrow account holding the escrow info 
+  ResetTimeCount {}
+
+  //
 }
 
 impl EscrowInstruction {
@@ -81,4 +171,27 @@ impl EscrowInstruction {
          .ok_or(InvalidInstruction)?;
          Ok(amount)
   }
+
+  pub fn pack(&self) -> Vec<u8> {
+    let mut buf = Vec::with_capacity(size_of::<Self>());
+    match &*self {
+      Self::InitEscrow {amount} => {
+        buf.push(0);
+        buf.extend_from_slice(&amount.to_le_bytes());
+      },
+      Self::Exchange {amount} => {
+        buf.push(1);
+        buf.extend_from_slice(&amount.to_le_bytes());
+      },
+      Self::ResetTimeCount {} => {
+        buf.push(2);
+      },
+      Self::Cancel {} => {
+        buf.push(3);
+      }
+    }
+    buf
+  }
+
+
 }

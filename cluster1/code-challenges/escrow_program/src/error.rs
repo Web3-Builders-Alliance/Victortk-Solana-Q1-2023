@@ -18,6 +18,10 @@ pub enum EscrowError {
  //Escrow Not Unlocked Yet
  #[error("Escrow Not Unlocked Yet")]
  EscrowNotUnlocked,
+ 
+ //Amount Overflow 
+ #[error("Amount Overflow")]
+ AmountOverflow,
 
  //Escrow Timed Out
  #[error("Escrow Timed Out")]

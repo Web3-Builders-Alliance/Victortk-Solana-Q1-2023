@@ -35,7 +35,17 @@ impl Processor {
         EscrowInstruction::Exchange { amount } => {
           msg!("Instruction: Exchange");
           Self::process_exchange(accounts, amount, program_id)
-        }
+        },
+
+        EscrowInstruction::Cancel{} => {
+          msg!("Instruction: Cancel");
+          Self::process_cancel(accounts, program_id)
+        },
+
+        EscrowInstruction::ResetTimeCount{}=> { 
+            msg!("Instruction: Cancel");
+            Self::process_reset(accounts, program_id)
+          }
       }
   }
 
@@ -255,4 +265,122 @@ impl Processor {
 
   Ok(())
   }
+
+
+  fn process_cancel(
+    accounts: &[AccountInfo], 
+    program_id: &Pubkey,
+  ) -> ProgramResult{
+
+    let account_info_iter = &mut accounts.iter();
+    let initializer = next_account_info(account_info_iter)?;
+
+    if !initializer.is_signer {
+      return Err(ProgramError::MissingRequiredSignature);
+    }
+    
+    let pda_token_account = next_account_info(account_info_iter)?;
+    let initializer_main_account = next_account_info(account_info_iter)?;
+    let initializer_sent_token_account = next_account_info(account_info_iter)?;
+    let escrow_account = next_account_info(account_info_iter)?;
+
+    if escrow_account.owner != program_id || escrow_account.is_writable == false {
+      return Err(ProgramError::IllegalOwner);
+    }
+
+    let escrow_info = Escrow::unpack(&escrow_account.try_borrow_data()?)?;
+
+    if escrow_info.initializer_pubkey != *initializer.key {
+      return Err(ProgramError::InvalidAccountData);
+    }
+
+    let token_program = next_account_info(account_info_iter)?;
+    let pda_account_info = next_account_info(account_info_iter)?;
+    let pda_token_account_info = TokenAccount::unpack(&pda_token_account.try_borrow_data()?)?;
+
+    let (pda , nonce) = Pubkey::find_program_address(&[b"escrow"], program_id );
+
+    //transfer tokens back to initializer
+    let transfer_to_initializer_ix = spl_token::instruction::transfer(
+      token_program.key,
+      pda_token_account.key,
+      initializer_sent_token_account.key,
+      &pda,
+      &[&pda],
+      pda_token_account_info.amount
+    )?;
+
+    msg!("Calling the token program to transfer tokens back to the initializer....");
+    invoke_signed(
+      &transfer_to_initializer_ix,
+      &[
+        pda_token_account.clone(),
+        initializer_sent_token_account.clone(),
+        pda_account_info.clone(),
+        token_program.clone(),
+      ],
+      &[&[&b"escrow"[..], &[nonce]]],
+    )?;
+
+    msg!("Closing escrow account...");
+    **initializer_main_account.try_borrow_mut_lamports()? = initializer_main_account
+    .lamports()
+    .checked_add(escrow_account.lamports())
+    .ok_or(EscrowError::AmountOverflow)?;
+
+    let slice: &[u8] = &[] ;
+    **escrow_account.try_borrow_mut_lamports()? = 0 ;
+
+    //I am getting mismatched types error from rust analyzer here 
+    // TO-DO
+    **escrow_account.try_borrow_mut_data()? = &mut [];
+
+  Ok(())
+  }
+
+  //To-Do
+  //write the reset time lock fuction 
+  //must be called by the initiator and 
+  //load the escrow state
+  //get the clock solt 
+  //set the stored time out to current slot+100
+  //set unlock_time current_slot + 1000
+  fn process_reset(
+    accounts: &[AccountInfo], 
+    program_id: &Pubkey,
+  ) -> ProgramResult{
+
+    let account_info_iter = &mut accounts.iter();
+    let initializer = next_account_info(account_info_iter)?;
+
+    if !initializer.is_signer {
+      return Err(ProgramError::MissingRequiredSignature);
+    }
+
+    let escrow_account = next_account_info(account_info_iter)?;
+    
+    if escrow_account.owner != program_id || escrow_account.is_writable == false {
+      return Err(ProgramError::IllegalOwner);
+    }
+
+    let escrow_info = Escrow::unpack(&escrow_account.try_borrow_data()?)?;
+
+    if escrow_info.initializer_pubkey != *initializer.key {
+      return Err(ProgramError::InvalidAccountData);
+    }
+
+    let clock: Slot = Clock::get()?.slot;
+    let unlock_time:Slot = clock + 100 ;
+    let time_out:Slot = unlock_time + 1000;
+
+    escrow_info.unlock_time = unlock_time ;
+    escrow_info.time_out = time_out ;
+
+    //Should I serialize? 
+    //Maybe I ammutating the other fields as well if i do this 
+    //TO-DO
+    Escrow::pack(escrow_info, &mut escrow_account.try_borrow_mut_data()?)?;
+    Ok(())
+  }
+
 }
