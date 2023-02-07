@@ -13,8 +13,6 @@ use solana_program:: {
 use spl_token::state::Account as TokenAccount;
 
 use crate::{error::EscrowError, instruction::EscrowInstruction, state::Escrow};
-
-
 pub struct Processor;
 
 impl Processor {
@@ -153,7 +151,7 @@ impl Processor {
     }
 
     let clock = Clock::get()?;
-
+        
     if escrow_info.unlock_time > clock.slot {
          return Err(EscrowError::EscrowNotUnlocked.into());
     }

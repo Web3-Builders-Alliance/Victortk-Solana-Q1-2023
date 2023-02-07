@@ -117,7 +117,7 @@ pub enum EscrowInstruction {
   // signer 
   ///Cancel Escrow 
   /// 0. `[signer] The initializer that is cancelling their escrow 
-  /// 1. `[writable]` The 
+  /// 1. `[writable]` The program's token acount
   /// 2. `[writable]` The initializer's token avount that will receive tokens 
   /// 3. `[writable]` The escrow account holding the escro info 
   /// 4. `[]` The token program

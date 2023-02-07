@@ -267,12 +267,18 @@ impl Processor {
   }
 
 
+  //####this function is used for cancelling an escrow by the initializer
+  //##### It should return ownership of temp token account to the initializer
+  //#####to close the escrow account and give back the rent to the initializer
+  //#####
   fn process_cancel(
-    accounts: &[AccountInfo], 
-    program_id: &Pubkey,
+    accounts: &[AccountInfo], //####slice of struct AccountInfo's
+    program_id: &Pubkey,//#### struct of Pubkey
   ) -> ProgramResult{
 
+    //#####Whats a mutable Iterator anyways  
     let account_info_iter = &mut accounts.iter();
+    //#### next_account_info is a function that returns the net AccountInfo //###safetly 
     let initializer = next_account_info(account_info_iter)?;
 
     if !initializer.is_signer {
@@ -322,6 +328,7 @@ impl Processor {
       &[&[&b"escrow"[..], &[nonce]]],
     )?;
 
+    //#### to add lamports shouldn't we use system program?
     msg!("Closing escrow account...");
     **initializer_main_account.try_borrow_mut_lamports()? = initializer_main_account
     .lamports()
@@ -379,7 +386,7 @@ impl Processor {
     //Should I serialize? 
     //Maybe I ammutating the other fields as well if i do this 
     //TO-DO
-    Escrow::pack(escrow_info, &mut escrow_account.try_borrow_mut_data()?)?;
+    // Escrow::pack(escrow_info, &mut escrow_account.try_borrow_mut_data()?)?;
     Ok(())
   }
 
