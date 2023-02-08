@@ -21,17 +21,21 @@ pub mod solana_escrow_anchor {
         escrow_account.initializer_token_to_receive_account_pubkey = *ctx.accounts.token_to_receive_account.to_account_info().key;
         escrow_account.expected_amount = amount;
         // unlock_time & time_out
-         let clock = Clock::get()?;
-         let slot  = clock.slot ;
-         let time_out = slot + 100 ;
-         let unlock_time = time_out + 1000 ;
+        let clock = Clock::get()?;
+        let slot  = clock.slot ;
+        let unlock_time = slot + 100 ;
+        let time_out = unlock_time + 1000 ;
 
-          escrow_account.time_out = time_out  ;
-          escrow_account.unlock_time = unlock_time ;
+        escrow_account.time_out = time_out  ;
+        escrow_account.unlock_time = unlock_time ;
+        
 
         // Create PDA, which will own the temp token account
-        let (pda, _bump_seed) = Pubkey::find_program_address(&[ESCROW_PDA_SEED], ctx.program_id);
+        let (pda, bump_seed) = Pubkey::find_program_address(&[ESCROW_PDA_SEED], ctx.program_id);
+        escrow_account.bump = bump_seed ;
+
         token::set_authority(ctx.accounts.into(), AuthorityType::AccountOwner, Some(pda))?;
+
 
         Ok(())
     }
@@ -45,8 +49,16 @@ pub mod solana_escrow_anchor {
         }
 
         // Get PDA
-        let (_pda, bump_seed) = Pubkey::find_program_address(&[ESCROW_PDA_SEED], ctx.program_id);
-        let seeds = &[&ESCROW_PDA_SEED[..], &[bump_seed]];
+        //  let (_pda, bump_seed) = Pubkey::find_program_address(&[ESCROW_PDA_SEED], ctx.program_id);
+
+        //Save some computing here?
+        // let pubkey = Pubkey::create_program_address(&[ESCROW_PDA_SEED], ctx.program_id).unwrap() ;
+
+        // if escrow_account.bump != bump_seed{
+        //     return Err(ProgramError::InvalidAccountData.into()) ;
+        // } 
+
+        let seeds = &[&ESCROW_PDA_SEED[..], &[escrow_account.bump ]];
 
         //Check if timeout has not yet been reached 
         // andd if unlock time has been reached 
@@ -83,12 +95,14 @@ pub mod solana_escrow_anchor {
 
 
     //What accounts do we need here 
-    pub fn cancel (ctx: Context<Exchange>) -> Result<()> {
-       let escrow_account = &ctx.accounts.escrow_account;
-       let (_pda, bump_seed) = Pubkey::find_program_address(&[ESCROW_PDA_SEED], ctx.program_id);
-        let seeds = &[&ESCROW_PDA_SEED[..], &[bump_seed]];
-
+    pub fn cancel (ctx: Context<Cancel>) -> Result<()> {
+       token::set_authority(ctx.accounts.into_set_authority_context(), AuthorityType::AccountOwner, Some(ctx.accounts.initializers_main_account.key()))?;
        Ok(())
+    }
+
+    pub fn reset_timeout(ctx: Context<Initialize>) -> Result<()> {
+
+        Ok(())
     }
 }
 
@@ -111,6 +125,7 @@ pub struct Initialize<'info> {
     pub token_program: AccountInfo<'info>,
     #[account(address = system_program::ID)]
     pub system_program: AccountInfo<'info>, // needed for init escrow_init
+    
 }
 
 #[derive(Accounts)]
@@ -138,6 +153,40 @@ pub struct Exchange<'info> {
     pub pda_account: AccountInfo<'info>,
 }
 
+#[derive(Accounts)]
+pub struct Cancel<'info>{
+    #[account(mut)]
+    pub initializers_main_account: AccountInfo<'info>,
+    #[account(mut, seeds = [b"escrow", program_id.as_ref()], bump = escrow_account.bump)]
+    pub pda_account: AccountInfo<'info>,
+    #[account(mut)]
+    pub pdas_temp_token_account: Account<'info, TokenAccount>,
+    #[account(mut, close = initializers_main_account,
+        constraint = escrow_account.temp_token_account_pubkey == *pdas_temp_token_account.to_account_info().key @ ProgramError::InvalidAccountData,
+        constraint = escrow_account.initializer_pubkey == *initializers_main_account.to_account_info().key @ ProgramError::InvalidAccountData,
+    )]
+    pub escrow_account: Box<Account<'info, Escrow>>,
+    #[account(address = spl_token::id())]
+    pub token_program: AccountInfo<'info>,
+    
+}
+
+impl <'info> Cancel <'info> {
+
+    fn into_set_authority_context(&self) -> CpiContext<'_, '_, '_, 'info, SetAuthority<'info>> {
+
+    //    let pda = Pubkey::create_program_address(&[ESCROW_PDA_SEED], ctx.program_id).unwrap() ;
+
+       let cpi_accounts = SetAuthority{
+            current_authority: self.pda_account.clone() ,
+            account_or_mint: self.pdas_temp_token_account.to_account_info().clone(),
+        };
+
+        let cpi_program = self.token_program.to_account_info();
+        CpiContext::new(cpi_program, cpi_accounts) 
+
+    }
+}
 #[account]
 pub struct Escrow {
     pub is_initialized: bool,
@@ -147,16 +196,20 @@ pub struct Escrow {
     pub expected_amount: u64,
     pub unlock_time: u64,
     pub time_out: u64 ,
+    pub bump: u8 ,
+  
 }
 
 const DISCRIMINATOR_LENGTH: usize = 8;
 const BOOL_LENGTH: usize = 1;
+const BUMP_LENGTH: usize = 1 ;
 const PUBLIC_KEY_LENGTH: usize = 32;
 const U64_LENGTH: usize = 8;
 
 impl Escrow {
     const LEN: usize = DISCRIMINATOR_LENGTH +
         BOOL_LENGTH +
+        BUMP_LENGTH +
         PUBLIC_KEY_LENGTH * 3 +
         U64_LENGTH  * 3;
 }
@@ -185,19 +238,6 @@ pub enum ErrorCode {
 }
 
 impl<'info> Exchange<'info> {
-
-    fn into_refund_initializer_context(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
-
-       let cpi_accounts = Transfer {
-            from: self.pdas_temp_token_account.to_account_info().clone(),
-            to: self.initializers_token_to_receive_account.to_account_info().clone(),
-            authority: self.initializers_main_account.to_account_info().clone(),
-        };
-
-        let cpi_program = self.token_program.to_account_info();
-        CpiContext::new(cpi_program, cpi_accounts) 
-
-    }
     fn into_transfer_to_initializer_context(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
 
         let cpi_accounts = Transfer {
