@@ -101,7 +101,16 @@ pub mod solana_escrow_anchor {
     }
 
     pub fn reset_timeout(ctx: Context<Initialize>) -> Result<()> {
+         let escrow_account = &mut ctx.accounts.escrow_account;
 
+        let clock = Clock::get()?;
+        let slot  = clock.slot ;
+        let unlock_time = slot + 100 ;
+        let time_out = unlock_time + 1000 ;
+
+        escrow_account.time_out = time_out  ;
+        escrow_account.unlock_time = unlock_time ;
+        
         Ok(())
     }
 }
