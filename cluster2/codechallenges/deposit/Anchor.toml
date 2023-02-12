@@ -2,17 +2,17 @@
 seeds = false
 skip-lint = false
 [programs.localnet]
-program1 = "EWdULBcquHPqvj4yH9sgrspCvKmUmEehpKUKfCy2c1sZ"
+deposit = "8qCGCh9UYRicNDoZzzjkjLvidj1asvnuvYUJu5KJbCL9"
 
 [registry]
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "Localnet"
+cluster = "localnet"
 wallet = "/home/professorcodegeek/.config/solana/id.json"
 
 [scripts]
 test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
 
 [test]
-startup_wait = 100000
+startup_wait = 1000000

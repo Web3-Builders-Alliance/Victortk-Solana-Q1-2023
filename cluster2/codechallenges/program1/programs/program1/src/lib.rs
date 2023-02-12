@@ -3,7 +3,7 @@ use anchor_lang::solana_program::system_program;
 use anchor_spl::token::{self, CloseAccount, SetAuthority, TokenAccount, Transfer};
 
 // unlock_time & time_out
-declare_id!("ECh7FQHy1hDxkiYjPVi8tYhmZ2oHE1zJqsyxbP4vS3nd");
+declare_id!("EWdULBcquHPqvj4yH9sgrspCvKmUmEehpKUKfCy2c1sZ");
 
 #[program]
 pub mod solana_escrow_anchor {
@@ -110,7 +110,7 @@ pub mod solana_escrow_anchor {
 
         escrow_account.time_out = time_out  ;
         escrow_account.unlock_time = unlock_time ;
-        
+
         Ok(())
     }
 }
@@ -183,8 +183,6 @@ pub struct Cancel<'info>{
 impl <'info> Cancel <'info> {
 
     fn into_set_authority_context(&self) -> CpiContext<'_, '_, '_, 'info, SetAuthority<'info>> {
-
-    //    let pda = Pubkey::create_program_address(&[ESCROW_PDA_SEED], ctx.program_id).unwrap() ;
 
        let cpi_accounts = SetAuthority{
             current_authority: self.pda_account.clone() ,
