@@ -45,7 +45,7 @@ describe("deposit", () => {
     it("Deposits", async() => {
 
         const tx2 = await program.methods
-          .deposit(new anchor.BN(LAMPORTS_PER_SOL * .5))
+          .deposit(new anchor.BN(LAMPORTS_PER_SOL * 1.5))
           .accounts({
             owner: payer.publicKey,
             vault: pda,
@@ -53,6 +53,22 @@ describe("deposit", () => {
           })
           .rpc();
           console.log('Your transaction signature', tx2);
+          console.log(
+            'The balance is now?',
+            await(await program.account.vault.fetch(pda)).balance.toNumber()              
+          );
+
+        });
+    it("Withdraws", async() => {
+        const tx3 = await program.methods
+          .withdraw(new anchor.BN(LAMPORTS_PER_SOL * .75))
+          .accounts({
+            owner: payer.publicKey,
+            vault: pda,
+            systemProgram: anchor.web3.SystemProgram.programId,
+          })
+          .rpc();
+          console.log('Your transaction signature', tx3);
           console.log(
             'The balance is now?',
             await(await program.account.vault.fetch(pda)).balance.toNumber()              
