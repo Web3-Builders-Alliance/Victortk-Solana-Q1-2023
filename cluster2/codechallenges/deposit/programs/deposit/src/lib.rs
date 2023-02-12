@@ -48,9 +48,7 @@ pub mod deposit {
         let vault_balance = **ctx.accounts.vault.to_account_info().try_borrow_mut_lamports()? ;
         **ctx.accounts.vault.to_account_info().try_borrow_mut_lamports()? -= vault_balance ;
         **ctx.accounts.authority.to_account_info().try_borrow_mut_lamports()? += vault_balance;
-
         Ok(())
-
     }
 }
 
