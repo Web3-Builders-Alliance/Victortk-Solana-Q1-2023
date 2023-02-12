@@ -7,18 +7,15 @@ pub mod deposit {
     use super::*;
 
     pub fn initialize(ctx: Context<Initialize>,amount: u64 ) -> Result<()> {
-
         let account = &mut ctx.accounts.vault ;
-        account.owner = *ctx.accounts.owner.to_account_info().key ;
-        account.balance = amount ;
-        account.is_initialized = true ;
+        account.authority = *ctx.accounts.authority.to_account_info().key ;
         account.bump = *ctx.bumps.get("vault").unwrap() ;  
         msg!("{:?}",ctx.bumps) ;   
         system_program::transfer(
             CpiContext::new(
                 ctx.accounts.system_program.to_account_info(),
                 system_program::Transfer {
-                    from: ctx.accounts.owner.to_account_info(),
+                    from: ctx.accounts.authority.to_account_info(),
                     to: ctx.accounts.vault.to_account_info(), 
                 },
             ),
@@ -28,66 +25,46 @@ pub mod deposit {
     }
  
     pub fn deposit (ctx:Context<Deposit>, amount: u64) -> Result<()> {         
-              
-        let account = &mut ctx.accounts.vault ;
-
-        if account.is_initialized != true {
-            return err!(VaultError::NotInitialized)
-        }
-        account.balance += amount ;
         system_program::transfer(
             CpiContext::new(
                 ctx.accounts.system_program.to_account_info(),
                 system_program::Transfer {
-                    from: ctx.accounts.owner.to_account_info(),
+                    from: ctx.accounts.authority.to_account_info(),
                     to: ctx.accounts.vault.to_account_info(), 
                 },
             ),
             amount,
-        )?;
-        
+        )?;        
         Ok(())
     }
 
      pub fn withdraw (ctx:Context<Withdraw>, amount: u64) -> Result<()> {
-        let account = &mut ctx.accounts.vault ;
-
-        if account.is_initialized != true {
-            return err!(VaultError::NotInitialized)
-        }
-        account.balance -= amount ;
-
         **ctx.accounts.vault.to_account_info().try_borrow_mut_lamports()? -= amount ;
-        **ctx.accounts.owner.to_account_info().try_borrow_mut_lamports()? += amount ;
-
-        // system_program::transfer(
-        //     CpiContext::new_with_signer(
-        //         ctx.accounts.system_program.to_account_info(),
-        //         system_program::Transfer {
-        //             from: ctx.accounts.vault.to_account_info(), 
-        //             to: ctx.accounts.owner.to_account_info(),
-        //         },
-        //         &[&[b"vault", &[*ctx.bumps.get("vault").unwrap()]]]
-        //     ),
-        //     amount,
-        // )?;
+        **ctx.accounts.authority.to_account_info().try_borrow_mut_lamports()? += amount ;
        Ok(()) 
+    }
+
+    pub fn close (ctx: Context<Close>)-> Result<()> {
+        let vault_balance = **ctx.accounts.vault.to_account_info().try_borrow_mut_lamports()? ;
+        **ctx.accounts.vault.to_account_info().try_borrow_mut_lamports()? -= vault_balance ;
+        **ctx.accounts.authority.to_account_info().try_borrow_mut_lamports()? += vault_balance;
+
+        Ok(())
+
     }
 }
 
 #[account]
 pub struct Vault{
-    pub owner: Pubkey,
-    pub balance: u64 ,
-    pub is_initialized: bool , 
+    pub authority: Pubkey,
     pub bump: u8   
 }
 #[derive(Accounts)]
 pub struct Initialize<'info> {
     #[account(mut)]
-    pub owner: Signer<'info>,
+    pub authority: Signer<'info>,
     #[account(init, 
-        payer=owner,
+        payer=authority,
         space=8+8+32+1+1,         
         seeds=[b"vault"], 
         bump,    
@@ -99,7 +76,7 @@ pub struct Initialize<'info> {
 #[derive(Accounts)]
 pub struct Deposit<'info> {
     #[account(mut)]
-    pub owner: Signer<'info>,
+    pub authority: Signer<'info>,
     #[account(mut, seeds=[b"vault"], bump=vault.bump)]
     pub vault: Account<'info, Vault>,
     pub system_program: Program<'info,System>
@@ -108,8 +85,17 @@ pub struct Deposit<'info> {
 #[derive(Accounts)]
 pub struct Withdraw<'info> {
     #[account(mut)]
-    pub owner: Signer<'info>,
-    #[account(mut, seeds=[b"vault"], bump=vault.bump, constraint = vault.owner == *owner.key)]
+    pub authority: Signer<'info>,
+    #[account(mut, seeds=[b"vault"], bump=vault.bump, constraint = vault.authority == *authority.key)]
+    pub vault: Account<'info, Vault>,
+    pub system_program: Program<'info,System>
+}
+
+#[derive(Accounts)]
+pub struct Close<'info> {
+    #[account(mut)]
+    pub authority: Signer<'info>,
+    #[account(mut,close=authority, seeds=[b"vault"], bump=vault.bump, constraint = vault.authority == *authority.key)]
     pub vault: Account<'info, Vault>,
     pub system_program: Program<'info,System>
 }
