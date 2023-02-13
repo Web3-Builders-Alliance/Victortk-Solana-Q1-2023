@@ -16,10 +16,10 @@ describe("deposit", () => {
   //we want a user key provider 
   const payer = anchorProvider.wallet ;
   // we want to create a pda that we can send sol to 
-  const [pda ]= anchor.web3.PublicKey.findProgramAddressSync(
-    [Buffer.from(seed)],
-    program.programId    
-    )
+  const [pda] = anchor.web3.PublicKey.findProgramAddressSync(
+		[Buffer.from(seed),payer.publicKey.toBuffer()],
+		program.programId
+	);
     console.log(pda.toString())
   // we need an amount to send  
   let amount = new anchor.BN(LAMPORTS_PER_SOL) ;
@@ -34,7 +34,11 @@ describe("deposit", () => {
 				systemProgram: anchor.web3.SystemProgram.programId,
 			})
 			.rpc();
+
     console.log("Your transaction signature", tx);
+     let balance =  await anchorProvider.connection.getBalance(pda) ;
+     console.log("initialized with balance :", balance)                
+
     });
     it("Deposits", async() => {
 
@@ -47,6 +51,8 @@ describe("deposit", () => {
           })
           .rpc();
           console.log('Your transaction signature', tx2);
+          let balance = await anchorProvider.connection.getBalance(pda);
+					console.log('Deposit some,new balance :', balance);  
        
 
         });
@@ -60,6 +66,8 @@ describe("deposit", () => {
           })
           .rpc();
           console.log('Your transaction signature', tx3);
+          let balance = await anchorProvider.connection.getBalance(pda);
+					console.log('withdraw some, new balance :', balance);  
           
 
         });
@@ -74,6 +82,8 @@ describe("deposit", () => {
           })
           .rpc();
           console.log('Your transaction signature', tx4)
+          let balance = await anchorProvider.connection.getBalance(pda);
+					console.log('closed balance :', balance);  
 
         });
   
