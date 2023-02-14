@@ -26,9 +26,11 @@ use in the declaire_id! macro
 ```rust
 #[program]
 ```
-this attribute is used 
+this attribute is used to define the module where all our process functions
+will be put. It is where you should put your program logic. 
 
 
+```rust 
 pub mod anchor_program_example {
     use super::*;
 
@@ -37,7 +39,11 @@ pub mod anchor_program_example {
         Ok(())
     }
 }
+```
 
+### Account Instruction struct 
+
+```rust
 #[derive(Accounts)]
 pub struct CheckingAccounts<'info> {
     payer: Signer<'info>,
@@ -47,5 +53,10 @@ pub struct CheckingAccounts<'info> {
     #[account(mut)]
     /// CHECK: This account's data is empty
     account_to_change: AccountInfo<'info>,
-    system_program: Program<'info, System>,
+    system_program: Program<'info, System>, //### deserialize the system program 
 }
+```
+
+this is where instructions are validated 
+the `#[account(_)]` is used to tell the program what constraints the
+account should meet
