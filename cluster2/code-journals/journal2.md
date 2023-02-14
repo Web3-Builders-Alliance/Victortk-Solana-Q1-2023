@@ -1,3 +1,5 @@
+
+
 use anchor_lang::prelude::*;
 use lever::cpi::accounts::SetPowerStatus;
 use lever::program::Lever;
@@ -16,7 +18,7 @@ mod hand {
         //
         lever::cpi::switch_power(
             CpiContext::new(
-                              
+
                 ctx.accounts.lever_program.to_account_info(), 
 
                 // Using the accounts context struct from the lever program

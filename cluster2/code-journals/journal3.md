@@ -1,4 +1,4 @@
-#### Journal 3
+# Code Journal 3
 
 //#### anotations inside code
 
@@ -48,17 +48,35 @@ to the power variable will mutate the original data.
 ```rust 
 #[derive(Accounts)]
 pub struct InitializeLever<'info> {
+    //### here we use some constraints to make sure we get the right account
     #[account(init, payer = user, space = 8 + 8)]
     pub power: Account<'info, PowerStatus>,
     #[account(mut)]
     pub user: Signer<'info>,
     pub system_program: Program<'info, System>,
 }
+```
+` #[account(init, payer = user, space = 8 + 8)]`
 
-#[derive(Accounts)]
+*init - is used to initialize an account 
+*payer=user- is used to make sure the account called "user" is marked as signer/ is paying
+*space = 8 +8 -> is used to make sure the account being passed is the right size  
+
+### Types of accounts
+
+*Account<T>
+*Signer<>
+*Program<>
+
+```rust 
+#[derive(Accounts)] //### this is used to tell anchor that below we have an instruction struct 
 pub struct SetPowerStatus<'info> {
-    #[account(mut)]
-    pub power: Account<'info, PowerStatus>,
+    #[account(mut)] //### we used the mut constraint here because we want the passed account to be mutable 
+    //### since we are changing the data on it 
+    pub power: Account<'info, PowerStatus>, //### Account is generic, the type of 
+    //### account here is PowerStatus 
+    //### anchor needs to know what PowerStatus looks like soo we 
+    //### made the type below
 }
 ```
 
