@@ -1,13 +1,34 @@
-#code journal 1
+# Code journal 1
 
-```rust use anchor_lang::prelude::*;```
+### prelude
+```rust 
+use anchor_lang::prelude::*;
+```
 
+We can get some of the commonly functionality when using anchor
+ * Macros like declare_id!
+ * Types like structs Pubkey, Clock ,Account, UncheckedAccount ,
+ * Enums like ProgramError
 
-
+### declare_id!
+```rust
 declare_id!("ECWPhR3rJbaPfyNFgphnjxSEexbTArc7vxD8fnW6tgKw");
+```
 
+macros in rust expand into other code at compile time, 
+declaire_id is like entrypoint
+declaire_id is where the program id theat will be used for validation should be 
+when you init an anchor project there is a default id
+you have to build the project and then use anchor keys list to get the key to
+use in the declaire_id! macro
 
+### program
+```rust
 #[program]
+```
+this attribute is used 
+
+
 pub mod anchor_program_example {
     use super::*;
 
