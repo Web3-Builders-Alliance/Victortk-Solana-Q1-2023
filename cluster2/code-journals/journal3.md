@@ -51,12 +51,12 @@ pub struct InitializeLever<'info> {
     //### here we use some constraints to make sure we get the right account
     #[account(init, payer = user, space = 8 + 8)]
     pub power: Account<'info, PowerStatus>,
-    #[account(mut)]
-    pub user: Signer<'info>,
+    #[account(mut)] //## mut means account is mutable 
+    pub user: Signer<'info>, //### Signer is used to tell anchor that we only need this account for signing 
     pub system_program: Program<'info, System>,
 }
 ```
-` #[account(init, payer = user, space = 8 + 8)]`
+`#[account(init, payer = user, space = 8 + 8)]`
 
 * init - is used to initialize an account
 * payer=user- is used to make sure the account called "user" is marked as signer/ is paying
