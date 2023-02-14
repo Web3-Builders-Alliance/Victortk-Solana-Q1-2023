@@ -14,10 +14,19 @@ pub mod solana_escrow_anchor {
 
     pub fn initialize(ctx: Context<Initialize>, amount: u64) -> Result<()> {
         // Store data in escrow account
+
+        //geting a mutable reference to the escrow account 
         let escrow_account = &mut ctx.accounts.escrow_account;
+
+        //here we use the is initialized field so that we do not initialize the escrow twice 
+
         escrow_account.is_initialized = true;
+
+        //set the initializer key same as escrow initializer
         escrow_account.initializer_pubkey = *ctx.accounts.initializer.to_account_info().key;
+
         escrow_account.temp_token_account_pubkey = *ctx.accounts.temp_token_account.to_account_info().key;
+        
         escrow_account.initializer_token_to_receive_account_pubkey = *ctx.accounts.token_to_receive_account.to_account_info().key;
         escrow_account.expected_amount = amount;
         // unlock_time & time_out

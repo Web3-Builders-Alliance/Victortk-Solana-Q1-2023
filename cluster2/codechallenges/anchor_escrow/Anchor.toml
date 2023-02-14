@@ -8,7 +8,7 @@ program1 = "EWdULBcquHPqvj4yH9sgrspCvKmUmEehpKUKfCy2c1sZ"
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "Localnet"
+cluster = "localnet"
 wallet = "/home/professorcodegeek/.config/solana/id.json"
 
 [scripts]
