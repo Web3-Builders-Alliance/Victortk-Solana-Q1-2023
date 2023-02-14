@@ -1,6 +1,10 @@
 //### anotations 
+use anchor_lang::prelude::*;//### i wonder what comes with the prelude
+use anchor_spl::{
+    associated_token::AssociatedToken,
+    token::{self, CloseAccount, SetAuthority, TokenAccount, Transfer,Mint, Token}
+};
 
-use anchor_lang::prelude::*;//### i wonder what comes with the prelude 
 declare_id!("8qCGCh9UYRicNDoZzzjkjLvidj1asvnuvYUJu5KJbCL9");
 //#### i read once that declaire_id is like entrypoint
 //#### also that the pubkey is used for validation, for example with PDA's??
@@ -66,6 +70,39 @@ pub mod deposit { //### declare deposit module
        Ok(()) 
     }
 
+
+    pub fn deposit_tokens (ctx: Context<DepositToken>, amount: u64) -> Result<()> {
+     //### Transfer is a struct type that is used to group the require accounts
+     //### for the transfer function context 
+     let accounts =  Transfer {
+        from: ctx.accounts.deposit_associated_token_acc.to_account_info(),
+        to: ctx.accounts.pda_associated_token_acc.to_account_info() ,
+        authority: ctx.accounts.pda_authority.to_account_info(),
+     };
+     //#### a context requires 2 things a program_id and accounts 
+     let context = CpiContext::new(
+         ctx.accounts.token_program.to_account_info(), accounts
+     ) ;
+     
+    //### the transfer instruction is being called via CPI and it takes in a 
+    //### a context and an amount 
+     token::transfer(context, amount)
+    }
+
+    pub fn withdraw_tokens(ctx: Context<WithdrawToken>, amount: u64) -> Result<()>{
+            token::transfer (
+                CpiContext::new(
+                    ctx.accounts.token_program.to_account_info(),
+                    Transfer {
+                        from: ctx.accounts.pda_associated_token_acc.to_account_info(),
+                        to: ctx.accounts.withdraw_authority.to_account_info(),
+                        authority: ctx.accounts.pda_authority.to_account_info()
+                    },                    
+                ),
+                amount
+            )
+    }
+
     pub fn close (ctx: Context<Close>)-> Result<()> {
         let vault_balance = **ctx.accounts.vault.to_account_info().try_borrow_mut_lamports()? ;
         **ctx.accounts.vault.to_account_info().try_borrow_mut_lamports()? -= vault_balance ;
@@ -102,6 +139,48 @@ pub struct Deposit<'info> {
     pub system_program: Program<'info,System>
 }
 
+
+//### marks this as an Instruction struct 
+#[derive(Accounts)]
+pub struct DepositToken<'info> { //#### DepositToken capitalize everyfirst word rust struct naming convention 
+    //#### 'info is a lifetime parameter which is equal to the lifetime of the longest of all the Account types that use it??
+
+ #[account(mut)] //### should the token mint be mutable?
+ pub token_mint: Account<'info, Mint> ,
+ #[account(mut)] //### we need this account to sign for the transaction and to sign the token transfer function 
+ pub deposit_authority: Signer<'info> ,
+ #[account( 
+    init_if_needed, //###we need a way to determine if we already have a associated token account
+    associated_token::mint = token_mint,//### here we tell anchor that if it ends up creating an associated token account to use token_mint account as the token "type", if already initialized to confirm that the token mint of the passed account matches that of token_mint
+    payer = deposit_authority,//### if init payer will be deposit_authority
+    associated_token::authority = pda_authority, //###if anchor initializes the account we tell it to make pda_authority the authority of the account 
+ )]
+ //###TokenAccount is a struct type that represents the structure of a token account, here we tell anchor to deserialize it into that type  
+ pub pda_associated_token_acc: Account<'info, TokenAccount>,
+ ///We are not using this inside the program and its a pda
+ #[account(
+    //###We need seeds that make this account unique per user,
+    //###and unique per token mint/ which is token type  
+    seeds=[b"tokenvault",deposit_authority.to_account_info().key.as_ref(),token_mint.to_account_info().key.as_ref()],bump)]
+    //### we use seeds and bump to make sure that the right address is passed
+ pub pda_authority: UncheckedAccount<'info>,
+ //### for the depositors' ATA its supposed to already be initialize
+ //### under no circumstance is it allowed to no be
+ #[account(
+     //### we need to make sure the account has the correct mint type 
+    associated_token::mint = token_mint,
+    //### we need to make sure the authority is deposit authority because t is supposed to sign for the transaction
+    associated_token::authority = deposit_authority,
+ )]
+ pub deposit_associated_token_acc: Account<'info, TokenAccount>,
+ //### the associated token program ATP is required when creating a new token account of a certain mint kind???
+ pub associated_token_program: Program<'info, AssociatedToken>,
+ //###the token program is required since its the owner of all token accounts, for creation and transfering the tokens 
+ pub token_program: Program<'info,Token>,
+ //### creating accounts always requires system_program???
+ pub system_program: Program<'info,System> 
+}
+
 #[derive(Accounts)]
 pub struct Withdraw<'info> {
     #[account(mut)]
@@ -109,6 +188,26 @@ pub struct Withdraw<'info> {
     #[account(mut, seeds=[b"vault", authority.to_account_info().key.as_ref()], bump=vault.bump, constraint = vault.authority == *authority.key)]
     pub vault: Account<'info, Vault>,
     pub system_program: Program<'info,System>
+}
+
+#[derive(Accounts)]
+pub struct WithdrawToken<'info> {    
+ #[account(mut)] 
+ pub token_mint: Account<'info, Mint> ,
+ #[account(mut)] 
+ pub withdraw_authority: Signer<'info> ,
+ #[account(  associated_token::mint = token_mint,associated_token::authority = pda_authority,
+ )] 
+ pub pda_associated_token_acc: Account<'info, TokenAccount>,
+ #[account(    
+    seeds=[b"tokenvault",withdraw_authority.to_account_info().key.as_ref(),token_mint.to_account_info().key.as_ref()],bump)]   
+ pub pda_authority: UncheckedAccount<'info>,
+ #[account(     
+    associated_token::mint = token_mint,   
+    associated_token::authority = withdraw_authority,
+ )]
+ pub withdrawer_associated_token_acc: Account<'info, TokenAccount>,  
+ pub token_program: Program<'info,Token>,
 }
 
 #[derive(Accounts)]
