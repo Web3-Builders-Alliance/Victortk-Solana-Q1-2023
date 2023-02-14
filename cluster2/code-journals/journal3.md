@@ -58,9 +58,9 @@ pub struct InitializeLever<'info> {
 ```
 ` #[account(init, payer = user, space = 8 + 8)]`
 
-*init - is used to initialize an account 
-*payer=user- is used to make sure the account called "user" is marked as signer/ is paying
-*space = 8 +8 -> is used to make sure the account being passed is the right size  
+* init - is used to initialize an account
+* payer=user- is used to make sure the account called "user" is marked as signer/ is paying
+* space = 8 +8 -> is used to make sure the account being passed is the right size  
 
 ### Types of accounts
 
