@@ -1,8 +1,12 @@
 import * as anchor from "@project-serum/anchor";
 import { Program } from "@project-serum/anchor";
-import { LAMPORTS_PER_SOL } from "@solana/web3.js";
+import * as web3 from "@solana/web3.js";
+import {ASSOCIATED_PROGRAM_ID,TOKEN_PROGRAM_ID} from '@project-serum/anchor/dist/cjs/utils/token';
 import { Deposit } from "../target/types/deposit";
 import { expect } from 'chai';
+import * as token from "@solana/spl-token" ;
+import { BN } from "bn.js";
+
 
 describe("deposit", () => {
   // Configure the client to use the local cluster.
@@ -22,12 +26,12 @@ describe("deposit", () => {
 	);
     console.log(pda.toString())
   // we need an amount to send  
-  let amount = new anchor.BN(LAMPORTS_PER_SOL) ;
+  let amount = new anchor.BN(web3.LAMPORTS_PER_SOL) ;
 
   it("Is Initialized!", async () => {
     // Add your test here.
     const tx = await program.methods
-			.initialize(new anchor.BN(LAMPORTS_PER_SOL))
+			.initialize(new anchor.BN(web3.LAMPORTS_PER_SOL))
 			.accounts({
 				authority: payer.publicKey,
 				vault:pda,
@@ -43,7 +47,7 @@ describe("deposit", () => {
     it("Deposits", async() => {
 
         const tx2 = await program.methods
-          .deposit(new anchor.BN(LAMPORTS_PER_SOL * 1.5))
+          .deposit(new anchor.BN(web3.LAMPORTS_PER_SOL * 1.5))
           .accounts({
             authority: payer.publicKey,
             vault: pda,
@@ -58,7 +62,7 @@ describe("deposit", () => {
         });
     it("Withdraws", async() => {
         const tx3 = await program.methods
-          .withdraw(new anchor.BN(LAMPORTS_PER_SOL * .75))
+          .withdraw(new anchor.BN(web3.LAMPORTS_PER_SOL * .75))
           .accounts({
             authority: payer.publicKey,
             vault: pda,
@@ -85,6 +89,83 @@ describe("deposit", () => {
           let balance = await anchorProvider.connection.getBalance(pda);
 					console.log('closed balance :', balance);  
 
-        });
+        });      
+     
+
+     it("deposits token", async() => {
+
+       //create a mint 
+      const tokenMint = await token.createMint(
+      anchorProvider.connection,
+      (anchorProvider.wallet as anchor.Wallet).payer,
+      anchorProvider.publicKey,
+      anchorProvider.publicKey,
+      6      
+      );
+
+      let tkMint = await token.getMint(anchorProvider.connection, tokenMint);
+       console.log("mint: ", tkMint);
+      // const  user_token_account = web3.Keypair.generate();
+
+      const [pdaAuthority] = anchor.web3.PublicKey.findProgramAddressSync(
+       [Buffer.from("tokenvault"),
+       anchorProvider.publicKey.toBuffer(),
+       tokenMint.toBuffer()],
+       program.programId
+     )
+     const pdaAssociatedTokenAcc =
+				await token.getOrCreateAssociatedTokenAccount(
+					anchorProvider.connection,
+					(anchorProvider.wallet as anchor.Wallet).payer,
+					tokenMint,
+					pdaAuthority,
+					true
+				);
+
+     const depositAssociatedTokenAcc =
+				await token.getOrCreateAssociatedTokenAccount(
+					anchorProvider.connection,
+					(anchorProvider.wallet as anchor.Wallet).payer,
+					tokenMint,
+					anchorProvider.publicKey
+				);
+
+   /*     
+     const depositAssociatedTokenAcc =
+				await token.getAssociatedTokenAddress(
+					tokenMint,
+					anchorProvider.publicKey
+          );
+   */		
+
+
+
+      await token.mintTo(
+				anchorProvider.connection,
+				(anchorProvider.wallet as anchor.Wallet).payer,
+				tokenMint,
+				depositAssociatedTokenAcc.address,
+				anchorProvider.publicKey,
+				30000000
+			);
+
+      const tx = await program.methods.depositTokens(new anchor.BN(2e6)).accounts({
+				tokenMint,
+				depositAuthority:anchorProvider.publicKey,
+				pdaAssociatedTokenAcc: pdaAssociatedTokenAcc.address,
+				pdaAuthority,
+				depositAssociatedTokenAcc: depositAssociatedTokenAcc.address,
+				associatedTokenProgram: ASSOCIATED_PROGRAM_ID,
+				tokenProgram: TOKEN_PROGRAM_ID,
+        systemProgram: anchor.web3.SystemProgram.programId,
+			}).rpc();
+
+      console.log("Your Transaction is :", tx);
+
+     let acc  = await  token.getAccount(anchorProvider.connection, pdaAssociatedTokenAcc.address);     
+
+     console.log("the pda balance is now:", acc.amount.toString());
+     
+  })
   
 });

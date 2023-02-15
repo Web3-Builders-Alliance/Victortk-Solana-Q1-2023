@@ -18,5 +18,5 @@ default = []
 [dependencies]
 anchor-lang = {version = "0.26.0", features = ["init-if-needed"]}
 spl-token =  "3.5.0"
-anchor-spl = "0.26.0"
+anchor-spl = {version= "0.26.0", features=["metadata", "token"]}
 
