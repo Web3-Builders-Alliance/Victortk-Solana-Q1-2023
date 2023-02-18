@@ -1,8 +1,12 @@
 //### anotations 
 use anchor_lang::prelude::*;//### i wonder what comes with the prelude
-use anchor_spl::{
+//### it includes includes types from the solana_program, sysvars like clock
+//### It includes all the anchor types like Account, macros like declare_id
+//### it also includes attribute like account and all the anchor goodies enums ...
+use anchor_spl::{ //anchor spl expor
     associated_token::AssociatedToken,
-    token::{self, TokenAccount, Transfer,Mint, Token}
+    token::{self, TokenAccount, Transfer,Mint, Token},
+    metadata
 };
 
 declare_id!("8qCGCh9UYRicNDoZzzjkjLvidj1asvnuvYUJu5KJbCL9");
@@ -238,6 +242,17 @@ pub struct WithdrawToken<'info> {
 }
 
 #[derive(Accounts)]
+pub struct LimitOrder<'info>{
+
+
+}
+
+#[account()]
+pub struct Limit<'info> {
+    
+}
+
+#[derive(Accounts)]
 pub struct Close<'info> {
     #[account(mut)]
     pub authority: Signer<'info>,
@@ -253,6 +268,8 @@ pub enum VaultError {
     #[msg("Vault not initialized")]
     NotInitialized
 }
+
+
 
 
 

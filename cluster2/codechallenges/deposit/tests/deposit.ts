@@ -6,6 +6,7 @@ import { Deposit } from "../target/types/deposit";
 import { expect } from 'chai';
 import * as token from "@solana/spl-token" ;
 import { BN } from "bn.js";
+import {Metaplex} from "@metaplex-foundation/js";
 
 
 describe("deposit", () => {
@@ -14,6 +15,7 @@ describe("deposit", () => {
   anchor.setProvider(anchorProvider);
 
   const program = anchor.workspace.Deposit as Program<Deposit>;
+  const metaplex = Metaplex.make(anchorProvider.connection) ;
 
   const seed = 'vault';
    
@@ -167,5 +169,56 @@ describe("deposit", () => {
      console.log("the pda balance is now:", acc.amount.toString());
      
   })
+
+  it("Deposits Nft", async () => {
+		//create a nft mint
+		const nftMint = await token.createMint(
+			anchorProvider.connection,
+			(anchorProvider.wallet as anchor.Wallet).payer,
+			anchorProvider.publicKey,
+			anchorProvider.publicKey,
+			0
+		);
+
+     const [pdaAuthority] = anchor.web3.PublicKey.findProgramAddressSync(
+				[
+					Buffer.from('tokenvault'),
+					anchorProvider.publicKey.toBuffer(),
+					nftMint.toBuffer(),
+				],
+				program.programId
+			);
+			const pdaAssociatedNftAcc =
+				await token.getOrCreateAssociatedTokenAccount(
+					anchorProvider.connection,
+					(anchorProvider.wallet as anchor.Wallet).payer,
+					nftMint,
+					pdaAuthority,
+					true
+				);
+
+			const depositAssociatedNftAcc =
+				await token.getOrCreateAssociatedTokenAccount(
+					anchorProvider.connection,
+					(anchorProvider.wallet as anchor.Wallet).payer,
+					nftMint,
+					anchorProvider.publicKey
+				);
+
+
+        metaplex.nfts().create({
+          name:"CoolSks",
+          symbol: "Sks",
+          uri:"arweav.uri",
+          creators:[{}]
+        })
+
+       
+
+	})
+
+
+
+
   
 });
