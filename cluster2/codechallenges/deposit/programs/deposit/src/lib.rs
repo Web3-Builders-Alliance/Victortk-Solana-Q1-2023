@@ -241,16 +241,16 @@ pub struct WithdrawToken<'info> {
  pub token_program: Program<'info,Token>,
 }
 
-#[derive(Accounts)]
-pub struct LimitOrder<'info>{
+// #[derive(Accounts)]
+// pub struct LimitOrder<'info>{
 
 
-}
+// }
 
-#[account()]
-pub struct Limit<'info> {
+// #[account()]
+// pub struct Limit<'info> {
     
-}
+// }
 
 #[derive(Accounts)]
 pub struct Close<'info> {

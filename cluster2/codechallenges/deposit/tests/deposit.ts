@@ -6,16 +6,18 @@ import { Deposit } from "../target/types/deposit";
 import { expect } from 'chai';
 import * as token from "@solana/spl-token" ;
 import { BN } from "bn.js";
-import {Metaplex} from "@metaplex-foundation/js";
+import {keypairIdentity, Metaplex,bundlrStorage} from "@metaplex-foundation/js";
 
 
 describe("deposit", () => {
   // Configure the client to use the local cluster.
   const anchorProvider = anchor.AnchorProvider.env() ;
   anchor.setProvider(anchorProvider);
-
+  const wallet = anchorProvider.wallet as anchor.Wallet;
   const program = anchor.workspace.Deposit as Program<Deposit>;
-  const metaplex = Metaplex.make(anchorProvider.connection) ;
+  const metaplex = Metaplex.make(anchorProvider.connection)
+		.use(keypairIdentity(wallet.payer))
+		.use(bundlrStorage({ address: 'https://devnet.bundlr.network' })); 
 
   const seed = 'vault';
    
@@ -99,7 +101,7 @@ describe("deposit", () => {
        //create a mint 
       const tokenMint = await token.createMint(
       anchorProvider.connection,
-      (anchorProvider.wallet as anchor.Wallet).payer,
+      wallet.payer,
       anchorProvider.publicKey,
       anchorProvider.publicKey,
       6      
@@ -171,49 +173,64 @@ describe("deposit", () => {
   })
 
   it("Deposits Nft", async () => {
-		//create a nft mint
-		const nftMint = await token.createMint(
-			anchorProvider.connection,
-			(anchorProvider.wallet as anchor.Wallet).payer,
-			anchorProvider.publicKey,
-			anchorProvider.publicKey,
-			0
-		);
-
-     const [pdaAuthority] = anchor.web3.PublicKey.findProgramAddressSync(
-				[
-					Buffer.from('tokenvault'),
-					anchorProvider.publicKey.toBuffer(),
-					nftMint.toBuffer(),
-				],
-				program.programId
-			);
-			const pdaAssociatedNftAcc =
-				await token.getOrCreateAssociatedTokenAccount(
-					anchorProvider.connection,
+		      
+      const { uri } = await metaplex.nfts().uploadMetadata({
+        name: 'VictorNFT000',
+				description: 'My description',
+				image: '',
+			});
+      
+      
+      let nft = await  metaplex.nfts().create({
+        name:"VictorNftMint",
+        symbol: "Sks",
+        sellerFeeBasisPoints: 100,
+        uri
+      })
+      
+      console.log("Master Edition Address", nft.masterEditionAddress);
+      console.log("Nft Address", nft.tokenAddress);
+      console.log("Nft metadata Address", nft.metadataAddress);
+      console.log("Nft Address", nft.nft);
+      
+      const [pdaAuthority] = anchor.web3.PublicKey.findProgramAddressSync(
+         [
+           Buffer.from('tokenvault'),
+           anchorProvider.publicKey.toBuffer(),
+           nft.mintAddress.toBuffer(),
+         ],
+         program.programId
+       );
+        	const pdaAssociatedNftAcc =
+		 		await token.getOrCreateAssociatedTokenAccount(
+		 			anchorProvider.connection,
 					(anchorProvider.wallet as anchor.Wallet).payer,
-					nftMint,
-					pdaAuthority,
-					true
-				);
+		 			nft.mintAddress,
+	 			  pdaAuthority,
+		 			true
+		 		 );
 
-			const depositAssociatedNftAcc =
-				await token.getOrCreateAssociatedTokenAccount(
-					anchorProvider.connection,
-					(anchorProvider.wallet as anchor.Wallet).payer,
-					nftMint,
-					anchorProvider.publicKey
-				);
+        const tx = await program.methods
+					.depositTokens(new anchor.BN(1))
+					.accounts({
+						tokenMint: nft.mintAddress ,
+						depositAuthority: anchorProvider.publicKey,
+						pdaAssociatedTokenAcc: pdaAssociatedNftAcc.address,
+						pdaAuthority,
+						depositAssociatedTokenAcc: nft.nft.address,
+						associatedTokenProgram: ASSOCIATED_PROGRAM_ID,
+						tokenProgram: TOKEN_PROGRAM_ID,
+						systemProgram: anchor.web3.SystemProgram.programId,
+					})
+					.rpc();
 
+				console.log('Your Transaction is :', tx);
 
-        metaplex.nfts().create({
-          name:"CoolSks",
-          symbol: "Sks",
-          uri:"arweav.uri",
-          creators:[{}]
-        })
+        let nftAcc  = await metaplex.nfts().findAllByOwner({
+					owner: pdaAuthority,
+				});
 
-       
+				console.log('The PDA Vault Nft name is : ', nftAcc[0].name);       
 
 	})
 

@@ -1,14 +1,14 @@
 [features]
 seeds = false
 skip-lint = false
-[programs.localnet]
+[programs.devnet]
 deposit = "8qCGCh9UYRicNDoZzzjkjLvidj1asvnuvYUJu5KJbCL9"
 
 [registry]
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "localnet"
+cluster = "devnet"
 wallet = "/home/professorcodegeek/.config/solana/id.json"
 
 [scripts]
