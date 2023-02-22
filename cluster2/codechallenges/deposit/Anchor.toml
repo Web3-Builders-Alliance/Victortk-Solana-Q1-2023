@@ -4,6 +4,12 @@ skip-lint = false
 [programs.devnet]
 deposit = "8qCGCh9UYRicNDoZzzjkjLvidj1asvnuvYUJu5KJbCL9"
 
+[[test.validator.clone]]
+address = "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"
+
+[[test.validator.clone]]
+address ="EoTcMgcDRTJVZDMZWBoU6rhYHZfkNTVEAfz3uUJRcYGj"
+
 [registry]
 url = "https://api.apr.dev"
 

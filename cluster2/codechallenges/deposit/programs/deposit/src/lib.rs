@@ -6,7 +6,8 @@ use anchor_lang::prelude::*;//### i wonder what comes with the prelude
 use anchor_spl::{ //anchor spl expor
     associated_token::AssociatedToken,
     token::{self, TokenAccount, Transfer,Mint, Token},
-    metadata
+    metadata,
+    dex,
 };
 
 declare_id!("8qCGCh9UYRicNDoZzzjkjLvidj1asvnuvYUJu5KJbCL9");
@@ -52,6 +53,18 @@ pub mod deposit { //### declare deposit module
             amount, //####transfer takes a context and an amount  
         )?;
         Ok(())
+    }
+
+    pub fn create_market(ctx:Context<CreateMarket>,bid: u64, ask: u64)->Result<()>{
+      dex::initialize_market(
+        CpiContext::new(
+            dex::ID, 
+        dex::InitializeMarket{
+            
+        }
+        )
+        
+      Ok(())
     }
  
     pub fn deposit (ctx:Context<Deposit>, amount: u64) -> Result<()> {         
@@ -114,6 +127,57 @@ pub mod deposit { //### declare deposit module
         **ctx.accounts.authority.to_account_info().try_borrow_mut_lamports()? += vault_balance;
         Ok(())
     }
+}
+
+
+#[account]
+pub struct Market {
+    pub maker: Pubkey ,
+    pub ask_price: u64,
+    pub bid_price: u64, 
+    pub bump: u8 ,
+}
+
+ ////Accounts that we need 
+ ////1 --> Signer 
+ ///2 ---> Vault to hold the market marker tokens 
+ /// 3 ---> Token Mint A 
+ /// 4 ---> Token Mint B
+ /// 5 ---> PDA to own vault 
+ /// 6 ----> signer token A associated account 
+ /// 7 ----> signer token B associated account 
+ /// 
+ /// 
+ /// pub struct InitializeMarket<'info> {
+   // pub market: AccountInfo<'info>,
+    // pub coin_mint: AccountInfo<'info>,
+    // pub pc_mint: AccountInfo<'info>,
+    // pub coin_vault: AccountInfo<'info>,
+    // pub pc_vault: AccountInfo<'info>,
+    // pub bids: AccountInfo<'info>,
+    // pub asks: AccountInfo<'info>,
+    // pub req_q: AccountInfo<'info>,
+    // pub event_q: AccountInfo<'info>,
+    // pub rent: AccountInfo<'info>,
+// }
+
+
+#[derive(Accounts)]
+pub struct CreateMarket<'info> {
+    #[account(mut)]
+    pub signer: Signer<'info>,
+    /// CHECK: serum market
+    pub market: UncheckedAccount<'info>,
+    pub coin_mint: AccountInfo<'info>,
+    pub pc_mint: AccountInfo<'info>,
+    pub coin_vault: AccountInfo<'info>,
+    pub pc_vault: AccountInfo<'info>,
+    pub bids: AccountInfo<'info>,
+    pub asks: AccountInfo<'info>,
+    pub req_q: AccountInfo<'info>,
+    pub event_q: AccountInfo<'info>,
+    pub token_program: Program<'info,Token>,
+    pub system_program: Program<'info,System>,
 }
 
 #[account]
