@@ -7,8 +7,10 @@ use anchor_spl::{ //anchor spl expor
     associated_token::AssociatedToken,
     token::{self, TokenAccount, Transfer,Mint, Token},
     metadata,
-    dex,
+    dex::{self,Dex},
 };
+
+// use solana_program::sysvar::rent;
 
 declare_id!("8qCGCh9UYRicNDoZzzjkjLvidj1asvnuvYUJu5KJbCL9");
 //#### i read once that declaire_id is like entrypoint
@@ -55,16 +57,32 @@ pub mod deposit { //### declare deposit module
         Ok(())
     }
 
-    pub fn create_market(ctx:Context<CreateMarket>,bid: u64, ask: u64)->Result<()>{
+    pub fn create_market( ctx: Context<CreateMarket>, coin_lot_size: u64,
+        pc_lot_size: u64,
+        vault_signer_nonce: u64,
+        pc_dust_threshold: u64,
+    )->Result<()>{   
       dex::initialize_market(
-        CpiContext::new(
-            dex::ID, 
-        dex::InitializeMarket{
-            
+        CpiContext::new( ctx.accounts.dex.to_account_info().clone()  , 
+        dex::InitializeMarket{      
+            market:ctx.accounts.market.to_account_info().clone(),  
+            coin_mint:ctx.accounts.coin_mint.to_account_info().clone(),
+            pc_mint:ctx.accounts.pc_mint.to_account_info().clone(),
+            coin_vault:ctx.accounts.coin_vault.to_account_info().clone(),
+            pc_vault:ctx.accounts.pc_vault.to_account_info().clone(),
+            bids:ctx.accounts.bids.to_account_info().clone(),
+            asks:ctx.accounts.asks.to_account_info().clone(),
+            req_q: ctx.accounts.req_q.to_account_info().clone(),
+            event_q:ctx.accounts.event_q.to_account_info().clone(),
+            rent: ctx.accounts.rent.to_account_info(),
         }
-        )
-        
-      Ok(())
+        ),
+        coin_lot_size,
+        pc_lot_size,
+        vault_signer_nonce,
+        pc_dust_threshold,     
+        )       
+    
     }
  
     pub fn deposit (ctx:Context<Deposit>, amount: u64) -> Result<()> {         
@@ -177,7 +195,11 @@ pub struct CreateMarket<'info> {
     pub req_q: AccountInfo<'info>,
     pub event_q: AccountInfo<'info>,
     pub token_program: Program<'info,Token>,
+    pub dex: Program<'info,Dex>,
     pub system_program: Program<'info,System>,
+    /// CHECK:rent account 
+    pub rent: UncheckedAccount<'info>,
+
 }
 
 #[account]

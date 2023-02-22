@@ -19,4 +19,5 @@ default = []
 anchor-lang = {version = "0.26.0", features = ["init-if-needed"]}
 spl-token =  "3.5.0"
 anchor-spl = {version= "0.26.0", features=["metadata", "token", "dex"]}
+solana-program = "1.14.16"
 
