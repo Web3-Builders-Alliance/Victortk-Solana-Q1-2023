@@ -7,8 +7,12 @@ use anchor_spl::{ //anchor spl expor
     associated_token::AssociatedToken,
     token::{self, TokenAccount, Transfer,Mint, Token},
     metadata,
-    dex::{self,Dex},
+    dex::{self,Dex,serum_dex::{
+        instruction::SelfTradeBehavior,
+        matching::{Side, OrderType}
+    }},
 };
+use std::num::NonZeroU64;
 
 // use solana_program::sysvar::rent;
 
@@ -82,6 +86,46 @@ pub mod deposit { //### declare deposit module
         vault_signer_nonce,
         pc_dust_threshold,     
         )       
+    
+    }
+
+    pub fn create_order (
+    ctx: Context<NewOrder>,
+    side: Side,
+    limit_price: NonZeroU64,
+    max_coin_qty: NonZeroU64,
+    max_native_pc_qty_including_fees: NonZeroU64,
+    self_trade_behavior: SelfTradeBehavior,
+    order_type: OrderType,
+    client_order_id: u64,
+    limit: u16, ) -> Result<()>{
+
+     dex::new_order_v3(
+        CpiContext::new(
+            ctx.accounts.dex.to_account_info().clone(),
+            dex::NewOrderV3{
+            market:ctx.accounts.market.to_account_info().clone(),
+            open_orders: ctx.accounts.open_orders.to_account_info().clone(),
+            request_queue: ctx.accounts.request_queue.to_account_info().clone() ,    
+            event_queue: ctx.accounts.event_queue.to_account_info().clone() , 
+            market_bids:ctx.accounts.market_asks.to_account_info().clone() , 
+            market_asks: ctx.accounts.market_asks.to_account_info().clone() ,
+            order_payer_token_account:ctx.accounts.order_payer.to_account_info().clone() , 
+            open_orders_authority:ctx.accounts.open_orders.to_account_info().clone() , 
+            coin_vault:ctx.accounts.coin_vault.to_account_info().clone() , 
+            pc_vault:ctx.accounts.pc_vault.to_account_info().clone() , 
+            token_program:ctx.accounts.token_program.to_account_info().clone() , 
+            rent:ctx.accounts.rent.to_account_info().clone() , 
+            } 
+        ), 
+        side,
+        limit_price,
+        max_coin_qty,
+        max_native_pc_qty_including_fees,
+        self_trade_behavior,
+        order_type,
+        client_order_id,
+        limit)
     
     }
  
@@ -186,8 +230,10 @@ pub struct CreateMarket<'info> {
     pub signer: Signer<'info>,
     /// CHECK: serum market
     pub market: UncheckedAccount<'info>,
-    pub coin_mint: AccountInfo<'info>,
-    pub pc_mint: AccountInfo<'info>,
+    #[account(mut)]
+    pub coin_mint: Account<'info, Mint>,
+    #[account(mut)]
+    pub pc_mint: Account<'info, Mint>,
     pub coin_vault: AccountInfo<'info>,
     pub pc_vault: AccountInfo<'info>,
     pub bids: AccountInfo<'info>,
@@ -201,6 +247,29 @@ pub struct CreateMarket<'info> {
     pub rent: UncheckedAccount<'info>,
 
 }
+
+#[derive(Accounts)]
+pub struct NewOrder<'info> {
+    pub market: AccountInfo<'info>,
+    pub open_orders: AccountInfo<'info>,
+    pub request_queue: AccountInfo<'info>,
+    pub event_queue: AccountInfo<'info>,
+    pub market_bids: AccountInfo<'info>,
+    pub market_asks: AccountInfo<'info>,
+    // Token account where funds are transferred from for the order. If
+    // posting a bid market A/B, then this is the SPL token account for B.
+    pub order_payer_token_account: AccountInfo<'info>,
+    pub open_orders_authority: AccountInfo<'info>,
+    // Also known as the "base" currency. For a given A/B market,
+    // this is the vault for the A mint.
+    pub coin_vault: AccountInfo<'info>,
+    // Also known as the "quote" currency. For a given A/B market,
+    // this is the vault for the B mint.
+    pub pc_vault: AccountInfo<'info>,
+    pub token_program: AccountInfo<'info>,
+    pub rent: AccountInfo<'info>,
+}
+
 
 #[account]
 pub struct Vault{

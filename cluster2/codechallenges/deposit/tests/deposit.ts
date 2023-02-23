@@ -234,6 +234,14 @@ describe("deposit", () => {
 
 	})
 
+  it("it Initializes Market",async ()=>{
+
+
+    
+
+     
+  })
+
 
 
 
