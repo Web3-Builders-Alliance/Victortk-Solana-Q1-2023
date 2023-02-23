@@ -128,6 +128,26 @@ pub mod deposit { //### declare deposit module
         limit)
     
     }
+
+    pub fn cancel_order(ctx:Context<CancelOrder>,side: Side,
+    order_id: u128,) -> Result<()> {        
+        dex::cancel_order_v2(
+            CpiContext::new(
+            ctx.accounts.dex.to_account_info().clone(),
+            dex::CancelOrderV2{
+                 market:ctx.accounts.market.to_account_info().clone() ,
+                 market_bids: ctx.accounts.market_bids.to_account_info().clone() ,
+                 market_asks: ctx.accounts.market_asks.to_account_info().clone() ,
+                 open_orders: ctx.accounts.open_orders.to_account_info().clone() ,
+                 open_orders_authority: ctx.accounts.open_orders_authority.to_account_info().clone() ,
+                 event_queue: ctx.accounts.event_queue.to_account_info().clone() ,
+            }
+            ),
+            side,
+            order_id
+        )
+       
+    }
  
     pub fn deposit (ctx:Context<Deposit>, amount: u64) -> Result<()> {         
         system_program::transfer(
@@ -268,6 +288,19 @@ pub struct NewOrder<'info> {
     pub pc_vault: AccountInfo<'info>,
     pub token_program: AccountInfo<'info>,
     pub rent: AccountInfo<'info>,
+    pub dex: Program<'info,Dex>,
+}
+
+
+#[derive(Accounts)]
+pub struct CancelOrder<'info> {
+    pub market: AccountInfo<'info>,
+    pub market_bids: AccountInfo<'info>,
+    pub market_asks: AccountInfo<'info>,
+    pub open_orders: AccountInfo<'info>,
+    pub open_orders_authority: AccountInfo<'info>,
+    pub event_queue: AccountInfo<'info>,
+    pub dex: Program<'info,Dex>,
 }
 
 
