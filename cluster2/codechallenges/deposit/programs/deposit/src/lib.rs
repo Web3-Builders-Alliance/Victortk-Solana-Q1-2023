@@ -5,12 +5,18 @@ use anchor_lang::prelude::*;//### i wonder what comes with the prelude
 //### it also includes attribute like account and all the anchor goodies enums ...
 use anchor_spl::{ //anchor spl expor
     associated_token::AssociatedToken,
-    token::{self, TokenAccount, Transfer,Mint, Token},
+    token::{self, TokenAccount, Transfer,Mint, Token,},
     dex::{self,Dex,serum_dex::{instruction::SelfTradeBehavior, matching::{Side,OrderType}}},
 };
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 use borsh::{BorshDeserialize,BorshSerialize};
 use std::num::NonZeroU64;
+
+
+
+// impl BorshDeserialize for SelfTradeBehavior {
+
+// }
 
 
 
@@ -93,14 +99,17 @@ pub mod deposit { //### declare deposit module
 
     pub fn create_order (
     ctx: Context<NewOrder>,
-    side: Side,
+    side: CurrentSide,
     limit_price: NonZeroU64,
     max_coin_qty: NonZeroU64,
     max_native_pc_qty_including_fees: NonZeroU64,
-    self_trade_behavior: SelfTradeBehavior,
-    order_type: OrderType,
+    self_trade_behavior: CurrentSelfTradeBehavior,
+    order_type: CurrentOrderType,
     client_order_id: u64,
     limit: u16, ) -> Result<()>{
+
+        let side: Side = side.into()  ;        
+
         dex::new_order_v3(
         CpiContext::new(
             ctx.accounts.dex.to_account_info().clone(),
@@ -123,8 +132,8 @@ pub mod deposit { //### declare deposit module
         limit_price,
         max_coin_qty,
         max_native_pc_qty_including_fees,
-        self_trade_behavior,
-        order_type,
+        self_trade_behavior.into(),
+        order_type.into(),
         client_order_id,
         limit)
     
@@ -212,13 +221,6 @@ pub mod deposit { //### declare deposit module
 }
 
 
-#[account]
-pub struct Market {
-    pub maker: Pubkey ,
-    pub ask_price: u64,
-    pub bid_price: u64, 
-    pub bump: u8 ,
-}
 
 ////Accounts that we need 
 ////1 --> Signer 
@@ -242,8 +244,7 @@ pub struct Market {
     // pub event_q: AccountInfo<'info>,
     // pub rent: AccountInfo<'info>,
     // }
-    
-    
+      
     #[derive(Accounts)]
     pub struct CreateMarket<'info> {
     #[account(mut)]
@@ -263,7 +264,7 @@ pub struct Market {
     pub token_program: Program<'info,Token>,
     pub dex: Program<'info,Dex>,
     pub system_program: Program<'info,System>,
-    /// CHECK:rent account 
+    /// CHECK: rent account 
     pub rent: UncheckedAccount<'info>,
     
 }
@@ -333,35 +334,68 @@ pub struct Deposit<'info> {
 }
 
 
-// #[derive(
-//     Eq, PartialEq, Copy, Clone, TryFromPrimitive, IntoPrimitive, Debug, BorshDeserialize,BorshSerialize
-// )]
-// #[repr(u8)]
-// pub enum Side {
-//     Bid = 0,
-//     Ask = 1,
-// }
+#[derive(
+    Eq, PartialEq, Copy, Clone, TryFromPrimitive, IntoPrimitive, Debug, BorshDeserialize,BorshSerialize
+)]
+#[repr(u8)]
+pub enum CurrentSide {
+    Bid = 0,
+    Ask = 1,
+}
 
-// #[derive(
-//     Eq, PartialEq, Copy, Clone, TryFromPrimitive, IntoPrimitive, Debug, BorshDeserialize,BorshSerialize
-// )]
+impl From<CurrentSide> for Side {
+    fn from(side: CurrentSide) -> Side {
+          match side {
+            CurrentSide::Bid => Side::Bid,
+            CurrentSide::Ask => Side::Ask            
+          }
+    }
+}
 
-// #[repr(u8)]
-// pub enum OrderType {
-//     Limit = 0,
-//     ImmediateOrCancel = 1,
-//     PostOnly = 2,
-// }
 
-// #[derive(
-//     PartialEq, Eq, Copy, Clone, Debug, TryFromPrimitive, IntoPrimitive, BorshDeserialize,BorshSerialize
-// )]
-// #[repr(u8)]
-// pub enum SelfTradeBehavior {
-//     DecrementTake = 0,
-//     CancelProvide = 1,
-//     AbortTransaction = 2,
-// }
+#[derive(
+    Eq, PartialEq, Copy, Clone, TryFromPrimitive, IntoPrimitive, Debug, BorshDeserialize,BorshSerialize
+)]
+
+#[repr(u8)]
+pub enum CurrentOrderType {
+    Limit = 0,
+    ImmediateOrCancel = 1,
+    PostOnly = 2,
+}
+
+impl From<CurrentOrderType> for OrderType {
+    fn from(order_type: CurrentOrderType) -> OrderType {
+        match order_type {
+            CurrentOrderType::Limit => OrderType::Limit,
+            CurrentOrderType::ImmediateOrCancel => OrderType::ImmediateOrCancel,
+            CurrentOrderType::PostOnly => OrderType::PostOnly
+        }
+
+    }
+}
+
+#[derive(
+    PartialEq, Eq, Copy, Clone, Debug, TryFromPrimitive, IntoPrimitive, BorshDeserialize,BorshSerialize
+)]
+#[repr(u8)]
+pub enum CurrentSelfTradeBehavior {
+    DecrementTake = 0,
+    CancelProvide = 1,
+    AbortTransaction = 2,
+}
+impl From <CurrentSelfTradeBehavior> for SelfTradeBehavior {
+    fn from(self_trade_behaviour: CurrentSelfTradeBehavior) -> SelfTradeBehavior {
+        match self_trade_behaviour {
+            CurrentSelfTradeBehavior::DecrementTake => SelfTradeBehavior::DecrementTake ,
+            CurrentSelfTradeBehavior::CancelProvide => SelfTradeBehavior::CancelProvide,
+            CurrentSelfTradeBehavior::AbortTransaction => SelfTradeBehavior::AbortTransaction,
+        }
+    }
+}
+
+
+
 
 
 //### marks this as an Instruction struct 

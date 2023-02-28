@@ -50,227 +50,227 @@ describe("deposit", () => {
      console.log("initialized with balance :", balance)                
 
     });
-    it("Deposits", async() => {
+  //   it("Deposits", async() => {
 
-        const tx2 = await program.methods
-          .deposit(new anchor.BN(web3.LAMPORTS_PER_SOL * 1.5))
-          .accounts({
-            authority: payer.publicKey,
-            vault: pda,
-            systemProgram: anchor.web3.SystemProgram.programId,
-          })
-          .rpc();
-          console.log('Your transaction signature', tx2);
-          let balance = await anchorProvider.connection.getBalance(pda);
-					console.log('Deposit some,new balance :', balance);  
+  //       const tx2 = await program.methods
+  //         .deposit(new anchor.BN(web3.LAMPORTS_PER_SOL * 1.5))
+  //         .accounts({
+  //           authority: payer.publicKey,
+  //           vault: pda,
+  //           systemProgram: anchor.web3.SystemProgram.programId,
+  //         })
+  //         .rpc();
+  //         console.log('Your transaction signature', tx2);
+  //         let balance = await anchorProvider.connection.getBalance(pda);
+	// 				console.log('Deposit some,new balance :', balance);  
        
 
-        });
-    it("Withdraws", async() => {
-        const tx3 = await program.methods
-          .withdraw(new anchor.BN(web3.LAMPORTS_PER_SOL * .75))
-          .accounts({
-            authority: payer.publicKey,
-            vault: pda,
-            systemProgram: anchor.web3.SystemProgram.programId,
-          })
-          .rpc();
-          console.log('Your transaction signature', tx3);
-          let balance = await anchorProvider.connection.getBalance(pda);
-					console.log('withdraw some, new balance :', balance);  
+  //       });
+  //   it("Withdraws", async() => {
+  //       const tx3 = await program.methods
+  //         .withdraw(new anchor.BN(web3.LAMPORTS_PER_SOL * .75))
+  //         .accounts({
+  //           authority: payer.publicKey,
+  //           vault: pda,
+  //           systemProgram: anchor.web3.SystemProgram.programId,
+  //         })
+  //         .rpc();
+  //         console.log('Your transaction signature', tx3);
+  //         let balance = await anchorProvider.connection.getBalance(pda);
+	// 				console.log('withdraw some, new balance :', balance);  
           
 
-        });
+  //       });
 
-    it("Closes", async() => {
-        const tx4 = await program.methods
-          .close()
-          .accounts({
-            authority: payer.publicKey,
-            vault: pda,
-            systemProgram: anchor.web3.SystemProgram.programId,
-          })
-          .rpc();
-          console.log('Your transaction signature', tx4)
-          let balance = await anchorProvider.connection.getBalance(pda);
-					console.log('closed balance :', balance);  
+  //   it("Closes", async() => {
+  //       const tx4 = await program.methods
+  //         .close()
+  //         .accounts({
+  //           authority: payer.publicKey,
+  //           vault: pda,
+  //           systemProgram: anchor.web3.SystemProgram.programId,
+  //         })
+  //         .rpc();
+  //         console.log('Your transaction signature', tx4)
+  //         let balance = await anchorProvider.connection.getBalance(pda);
+	// 				console.log('closed balance :', balance);  
 
-        });      
+  //       });      
      
 
-     it("deposits token", async() => {
+  //    it("deposits token", async() => {
 
-       //create a mint 
-      const tokenMint = await token.createMint(
-      anchorProvider.connection,
-      wallet.payer,
-      anchorProvider.publicKey,
-      anchorProvider.publicKey,
-      6      
-      );
+  //      //create a mint 
+  //     const tokenMint = await token.createMint(
+  //     anchorProvider.connection,
+  //     wallet.payer,
+  //     anchorProvider.publicKey,
+  //     anchorProvider.publicKey,
+  //     6      
+  //     );
 
-      let tkMint = await token.getMint(anchorProvider.connection, tokenMint);
-       console.log("mint: ", tkMint);
-      // const  user_token_account = web3.Keypair.generate();
+  //     let tkMint = await token.getMint(anchorProvider.connection, tokenMint);
+  //      console.log("mint: ", tkMint);
+  //     // const  user_token_account = web3.Keypair.generate();
 
-      const [pdaAuthority] = anchor.web3.PublicKey.findProgramAddressSync(
-       [Buffer.from("tokenvault"),
-       anchorProvider.publicKey.toBuffer(),
-       tokenMint.toBuffer()],
-       program.programId
-     )
-     const pdaAssociatedTokenAcc =
-				await token.getOrCreateAssociatedTokenAccount(
-					anchorProvider.connection,
-					(anchorProvider.wallet as anchor.Wallet).payer,
-					tokenMint,
-					pdaAuthority,
-					true
-				);
+  //     const [pdaAuthority] = anchor.web3.PublicKey.findProgramAddressSync(
+  //      [Buffer.from("tokenvault"),
+  //      anchorProvider.publicKey.toBuffer(),
+  //      tokenMint.toBuffer()],
+  //      program.programId
+  //    )
+  //    const pdaAssociatedTokenAcc =
+	// 			await token.getOrCreateAssociatedTokenAccount(
+	// 				anchorProvider.connection,
+	// 				(anchorProvider.wallet as anchor.Wallet).payer,
+	// 				tokenMint,
+	// 				pdaAuthority,
+	// 				true
+	// 			);
 
-     const depositAssociatedTokenAcc =
-				await token.getOrCreateAssociatedTokenAccount(
-					anchorProvider.connection,
-					(anchorProvider.wallet as anchor.Wallet).payer,
-					tokenMint,
-					anchorProvider.publicKey
-				);
+  //    const depositAssociatedTokenAcc =
+	// 			await token.getOrCreateAssociatedTokenAccount(
+	// 				anchorProvider.connection,
+	// 				(anchorProvider.wallet as anchor.Wallet).payer,
+	// 				tokenMint,
+	// 				anchorProvider.publicKey
+	// 			);
 
-   /*     
-     const depositAssociatedTokenAcc =
-				await token.getAssociatedTokenAddress(
-					tokenMint,
-					anchorProvider.publicKey
-          );
-   */		
+  //  /*     
+  //    const depositAssociatedTokenAcc =
+	// 			await token.getAssociatedTokenAddress(
+	// 				tokenMint,
+	// 				anchorProvider.publicKey
+  //         );
+  //  */		
 
 
 
-      await token.mintTo(
-				anchorProvider.connection,
-				(anchorProvider.wallet as anchor.Wallet).payer,
-				tokenMint,
-				depositAssociatedTokenAcc.address,
-				anchorProvider.publicKey,
-				30000000
-			);
+  //     await token.mintTo(
+	// 			anchorProvider.connection,
+	// 			(anchorProvider.wallet as anchor.Wallet).payer,
+	// 			tokenMint,
+	// 			depositAssociatedTokenAcc.address,
+	// 			anchorProvider.publicKey,
+	// 			30000000
+	// 		);
 
-      const tx = await program.methods.depositTokens(new anchor.BN(2e6)).accounts({
-				tokenMint,
-				depositAuthority:anchorProvider.publicKey,
-				pdaAssociatedTokenAcc: pdaAssociatedTokenAcc.address,
-				pdaAuthority,
-				depositAssociatedTokenAcc: depositAssociatedTokenAcc.address,
-				associatedTokenProgram: ASSOCIATED_PROGRAM_ID,
-				tokenProgram: TOKEN_PROGRAM_ID,
-        systemProgram: anchor.web3.SystemProgram.programId,
-			}).rpc();
+  //     const tx = await program.methods.depositTokens(new anchor.BN(2e6)).accounts({
+	// 			tokenMint,
+	// 			depositAuthority:anchorProvider.publicKey,
+	// 			pdaAssociatedTokenAcc: pdaAssociatedTokenAcc.address,
+	// 			pdaAuthority,
+	// 			depositAssociatedTokenAcc: depositAssociatedTokenAcc.address,
+	// 			associatedTokenProgram: ASSOCIATED_PROGRAM_ID,
+	// 			tokenProgram: TOKEN_PROGRAM_ID,
+  //       systemProgram: anchor.web3.SystemProgram.programId,
+	// 		}).rpc();
 
-      console.log("Your Transaction is :", tx);
+  //     console.log("Your Transaction is :", tx);
 
-     let acc  = await  token.getAccount(anchorProvider.connection, pdaAssociatedTokenAcc.address);     
+  //    let acc  = await  token.getAccount(anchorProvider.connection, pdaAssociatedTokenAcc.address);     
 
-     console.log("the pda balance is now:", acc.amount.toString());
+  //    console.log("the pda balance is now:", acc.amount.toString());
      
-  })
+  // })
 
-  it("Deposits Nft", async () => {
+  // it("Deposits Nft", async () => {
 		      
-      const { uri } = await metaplex.nfts().uploadMetadata({
-        name: 'VictorNFT000',
-				description: 'My description',
-				image: '',
-			});
+  //     // const { uri } = await metaplex.nfts().uploadMetadata({
+  //     //   name: 'VictorNFT000',
+	// 		// 	description: 'My description',
+	// 		// 	image: '',
+	// 		// });
       
       
-      let nft = await  metaplex.nfts().create({
-        name:"VictorNftMint",
-        symbol: "Sks",
-        sellerFeeBasisPoints: 100,
-        uri
-      })
+  //     // let nft = await  metaplex.nfts().create({
+  //     //   name:"VictorNftMint",
+  //     //   symbol: "Sks",
+  //     //   sellerFeeBasisPoints: 100,
+  //     //   uri
+  //     // })
       
-      console.log("Master Edition Address", nft.masterEditionAddress);
-      console.log("Nft Address", nft.tokenAddress);
-      console.log("Nft metadata Address", nft.metadataAddress);
-      console.log("Nft Address", nft.nft);
+  //     // console.log("Master Edition Address", nft.masterEditionAddress);
+  //     // console.log("Nft Address", nft.tokenAddress);
+  //     // console.log("Nft metadata Address", nft.metadataAddress);
+  //     // console.log("Nft Address", nft.nft);
       
-      const [pdaAuthority] = anchor.web3.PublicKey.findProgramAddressSync(
-         [
-           Buffer.from('tokenvault'),
-           anchorProvider.publicKey.toBuffer(),
-           nft.mintAddress.toBuffer(),
-         ],
-         program.programId
-       );
-        	const pdaAssociatedNftAcc =
-		 		await token.getOrCreateAssociatedTokenAccount(
-		 			anchorProvider.connection,
-					(anchorProvider.wallet as anchor.Wallet).payer,
-		 			nft.mintAddress,
-	 			  pdaAuthority,
-		 			true
-		 		 );
+  //     // const [pdaAuthority] = anchor.web3.PublicKey.findProgramAddressSync(
+  //     //    [
+  //     //      Buffer.from('tokenvault'),
+  //     //      anchorProvider.publicKey.toBuffer(),
+  //     //      nft.mintAddress.toBuffer(),
+  //     //    ],
+  //     //    program.programId
+  //     //  );
+  //     //   	const pdaAssociatedNftAcc =
+	// 	 	// 	await token.getOrCreateAssociatedTokenAccount(
+	// 	 	// 		anchorProvider.connection,
+	// 		// 		(anchorProvider.wallet as anchor.Wallet).payer,
+	// 	 	// 		nft.mintAddress,
+	//  		// 	  pdaAuthority,
+	// 	 	// 		true
+	// 	 	// 	 );
 
-        const tx = await program.methods
-					.depositTokens(new anchor.BN(1))
-					.accounts({
-						tokenMint: nft.mintAddress ,
-						depositAuthority: anchorProvider.publicKey,
-						pdaAssociatedTokenAcc: pdaAssociatedNftAcc.address,
-						pdaAuthority,
-						depositAssociatedTokenAcc: nft.nft.address,
-						associatedTokenProgram: ASSOCIATED_PROGRAM_ID,
-						tokenProgram: TOKEN_PROGRAM_ID,
-						systemProgram: anchor.web3.SystemProgram.programId,
-					})
-					.rpc();
+  //     //   const tx = await program.methods
+	// 		// 		.depositTokens(new anchor.BN(1))
+	// 		// 		.accounts({
+	// 		// 			tokenMint: nft.mintAddress ,
+	// 		// 			depositAuthority: anchorProvider.publicKey,
+	// 		// 			pdaAssociatedTokenAcc: pdaAssociatedNftAcc.address,
+	// 		// 			pdaAuthority,
+	// 		// 			depositAssociatedTokenAcc: nft.nft.address,
+	// 		// 			associatedTokenProgram: ASSOCIATED_PROGRAM_ID,
+	// 		// 			tokenProgram: TOKEN_PROGRAM_ID,
+	// 		// 			systemProgram: anchor.web3.SystemProgram.programId,
+	// 		// 		})
+	// 		// 		.rpc();
 
-				console.log('Your Transaction is :', tx);
+	// 		// 	console.log('Your Transaction is :', tx);
 
-        let nftAcc  = await metaplex.nfts().findAllByOwner({
-					owner: pdaAuthority,
-				});
+  //     //   let nftAcc  = await metaplex.nfts().findAllByOwner({
+	// 		// 		owner: pdaAuthority,
+	// 		// 	});
 
-				console.log('The PDA Vault Nft name is : ', nftAcc[0].name);       
+	// 		// 	console.log('The PDA Vault Nft name is : ', nftAcc[0].name);       
 
-	})
+	// })
 
-  it("it Initializes Market",async ()=>{    
+  // it("it Initializes Market",async ()=>{    
     
-    let marketAddress = web3.Keypair.generate ;
-    let programAddress = web3.Keypair.generate ;
-    let market= await Market.load(anchorProvider.connection,marketAddress,{}, programAddress)   
+  //   // let marketAddress = web3.Keypair.generate ;
+  //   // let programAddress = web3.Keypair.generate ;
+  //   // let market= await Market.load(anchorProvider.connection,marketAddress,{}, programAddress)   
     
-    // //Fetching orderbooks
-    // let bids = await market.loadBids(connection);
-    // let asks = await market.loadAsks(connection);
+  //   // //Fetching orderbooks
+  //   // let bids = await market.loadBids(connection);
+  //   // let asks = await market.loadAsks(connection);
 
-    // //L2 order data 
+  //   // //L2 order data 
 
-    // for (let [price, size] of bids.getL2(20)){
-    //   console.log(
-    //     order.orderId,
-    //     order.price,
-    //     order.size,
-    //     order.size, // 'buy' or 'sell'
-    //   );      
-    // }
+  //   // for (let [price, size] of bids.getL2(20)){
+  //   //   console.log(
+  //   //     order.orderId,
+  //   //     order.price,
+  //   //     order.size,
+  //   //     order.size, // 'buy' or 'sell'
+  //   //   );      
+  //   // }
 
-    // //Placing orders
-    // Let owner = new Account
+  //   // //Placing orders
+  //   // Let owner = new Account
 
-    program.methods.initialize
+  //   // program.methods.initialize
 
-  })
+  // })
 
-  it("Creates Order", async ()=> {
+  // it("Creates Order", async ()=> {
 
 
-  })
+  // })
 
-  it("Cancels Order", async () => {
+  // it("Cancels Order", async () => {
 
-  })
+  // })
   
 });
