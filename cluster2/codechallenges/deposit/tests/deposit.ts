@@ -7,6 +7,8 @@ import { expect } from 'chai';
 import * as token from "@solana/spl-token" ;
 import { BN } from "bn.js";
 import {keypairIdentity, Metaplex,bundlrStorage} from "@metaplex-foundation/js";
+import {Market} from '@project-serum/serum';
+
 
 
 describe("deposit", () => {
@@ -234,16 +236,41 @@ describe("deposit", () => {
 
 	})
 
-  it("it Initializes Market",async ()=>{
-
-
+  it("it Initializes Market",async ()=>{    
     
+    let marketAddress = web3.Keypair.generate ;
+    let programAddress = web3.Keypair.generate ;
+    let market= await Market.load(anchorProvider.connection,marketAddress,{}, programAddress)   
+    
+    // //Fetching orderbooks
+    // let bids = await market.loadBids(connection);
+    // let asks = await market.loadAsks(connection);
 
-     
+    // //L2 order data 
+
+    // for (let [price, size] of bids.getL2(20)){
+    //   console.log(
+    //     order.orderId,
+    //     order.price,
+    //     order.size,
+    //     order.size, // 'buy' or 'sell'
+    //   );      
+    // }
+
+    // //Placing orders
+    // Let owner = new Account
+
+    program.methods.initialize
+
   })
 
+  it("Creates Order", async ()=> {
 
 
+  })
 
+  it("Cancels Order", async () => {
+
+  })
   
 });

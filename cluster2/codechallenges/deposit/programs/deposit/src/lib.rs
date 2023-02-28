@@ -6,13 +6,14 @@ use anchor_lang::prelude::*;//### i wonder what comes with the prelude
 use anchor_spl::{ //anchor spl expor
     associated_token::AssociatedToken,
     token::{self, TokenAccount, Transfer,Mint, Token},
-    metadata,
-    dex::{self,Dex,serum_dex::{
-        instruction::SelfTradeBehavior,
-        matching::{Side, OrderType}
-    }},
+    dex::{self,Dex,serum_dex::{instruction::SelfTradeBehavior, matching::{Side,OrderType}}},
 };
+use num_enum::{IntoPrimitive, TryFromPrimitive};
+use borsh::{BorshDeserialize,BorshSerialize};
 use std::num::NonZeroU64;
+
+
+
 
 // use solana_program::sysvar::rent;
 
@@ -40,9 +41,9 @@ pub mod deposit { //### declare deposit module
         //### instead of the seeds, hours were spent debuging that 
         account.bump = *ctx.bumps.get("vault").unwrap() ;  
         //### so whats cool is we can log stuff , and check the logs in .anchor/program_logs
-
+        
         msg!("{:?}",ctx.bumps) ;   
-
+        
         //### this is a little too nested 
         //### looks somewhat intimidating 
         //#### we have transfer function in the system_program module from anchor 
@@ -61,13 +62,14 @@ pub mod deposit { //### declare deposit module
         Ok(())
     }
 
-    pub fn create_market( ctx: Context<CreateMarket>, coin_lot_size: u64,
+    pub fn create_market( ctx: Context<CreateMarket>,
+        coin_lot_size: u64,
         pc_lot_size: u64,
         vault_signer_nonce: u64,
         pc_dust_threshold: u64,
     )->Result<()>{   
-      dex::initialize_market(
-        CpiContext::new( ctx.accounts.dex.to_account_info().clone()  , 
+        dex::initialize_market(
+            CpiContext::new( ctx.accounts.dex.to_account_info().clone()  , 
         dex::InitializeMarket{      
             market:ctx.accounts.market.to_account_info().clone(),  
             coin_mint:ctx.accounts.coin_mint.to_account_info().clone(),
@@ -99,26 +101,25 @@ pub mod deposit { //### declare deposit module
     order_type: OrderType,
     client_order_id: u64,
     limit: u16, ) -> Result<()>{
-
-     dex::new_order_v3(
+        dex::new_order_v3(
         CpiContext::new(
             ctx.accounts.dex.to_account_info().clone(),
             dex::NewOrderV3{
-            market:ctx.accounts.market.to_account_info().clone(),
+                market:ctx.accounts.market.to_account_info().clone(),
             open_orders: ctx.accounts.open_orders.to_account_info().clone(),
             request_queue: ctx.accounts.request_queue.to_account_info().clone() ,    
             event_queue: ctx.accounts.event_queue.to_account_info().clone() , 
             market_bids:ctx.accounts.market_asks.to_account_info().clone() , 
             market_asks: ctx.accounts.market_asks.to_account_info().clone() ,
-            order_payer_token_account:ctx.accounts.order_payer.to_account_info().clone() , 
+            order_payer_token_account:ctx.accounts.order_payer_token_account.to_account_info().clone() , 
             open_orders_authority:ctx.accounts.open_orders.to_account_info().clone() , 
             coin_vault:ctx.accounts.coin_vault.to_account_info().clone() , 
             pc_vault:ctx.accounts.pc_vault.to_account_info().clone() , 
             token_program:ctx.accounts.token_program.to_account_info().clone() , 
             rent:ctx.accounts.rent.to_account_info().clone() , 
-            } 
-        ), 
-        side,
+        } 
+    ), 
+    side,
         limit_price,
         max_coin_qty,
         max_native_pc_qty_including_fees,
@@ -129,26 +130,26 @@ pub mod deposit { //### declare deposit module
     
     }
 
-    pub fn cancel_order(ctx:Context<CancelOrder>,side: Side,
-    order_id: u128,) -> Result<()> {        
-        dex::cancel_order_v2(
-            CpiContext::new(
-            ctx.accounts.dex.to_account_info().clone(),
-            dex::CancelOrderV2{
-                 market:ctx.accounts.market.to_account_info().clone() ,
-                 market_bids: ctx.accounts.market_bids.to_account_info().clone() ,
-                 market_asks: ctx.accounts.market_asks.to_account_info().clone() ,
-                 open_orders: ctx.accounts.open_orders.to_account_info().clone() ,
-                 open_orders_authority: ctx.accounts.open_orders_authority.to_account_info().clone() ,
-                 event_queue: ctx.accounts.event_queue.to_account_info().clone() ,
-            }
-            ),
-            side,
-            order_id
-        )
+    // pub fn cancel_order(ctx:Context<CancelOrder>,side: Side,
+    //     order_id: u128,) -> Result<()> {        
+    //         dex::cancel_order_v2(
+    //         CpiContext::new(
+    //             ctx.accounts.dex.to_account_info().clone(),
+    //         dex::CancelOrderV2{
+    //              market:ctx.accounts.market.to_account_info().clone() ,
+    //              market_bids: ctx.accounts.market_bids.to_account_info().clone() ,
+    //              market_asks: ctx.accounts.market_asks.to_account_info().clone() ,
+    //              open_orders: ctx.accounts.open_orders.to_account_info().clone() ,
+    //              open_orders_authority: ctx.accounts.open_orders_authority.to_account_info().clone() ,
+    //              event_queue: ctx.accounts.event_queue.to_account_info().clone() ,
+    //         }
+    //         ),
+    //         side,
+    //         order_id
+    //     )
        
-    }
- 
+    // }
+    
     pub fn deposit (ctx:Context<Deposit>, amount: u64) -> Result<()> {         
         system_program::transfer(
             CpiContext::new(
@@ -166,18 +167,17 @@ pub mod deposit { //### declare deposit module
      pub fn withdraw (ctx:Context<Withdraw>, amount: u64) -> Result<()> {
         **ctx.accounts.vault.to_account_info().try_borrow_mut_lamports()? -= amount ;
         **ctx.accounts.authority.to_account_info().try_borrow_mut_lamports()? += amount ;
-       Ok(()) 
+        Ok(()) 
     }
-
 
     pub fn deposit_tokens (ctx: Context<DepositToken>, amount: u64) -> Result<()> {
      //### Transfer is a struct type that is used to group the require accounts
      //### for the transfer function context 
      let accounts =  Transfer {
-        from: ctx.accounts.deposit_associated_token_acc.to_account_info(),
-        to: ctx.accounts.pda_associated_token_acc.to_account_info() ,
+         from: ctx.accounts.deposit_associated_token_acc.to_account_info(),
+         to: ctx.accounts.pda_associated_token_acc.to_account_info() ,
         authority: ctx.accounts.deposit_authority.to_account_info(),
-     };
+    };
      //#### a context requires 2 things a program_id and accounts 
      let context = CpiContext::new(
          ctx.accounts.token_program.to_account_info(), accounts
@@ -185,10 +185,10 @@ pub mod deposit { //### declare deposit module
      
     //### the transfer instruction is being called via CPI and it takes in a 
     //### a context and an amount 
-     token::transfer(context, amount)
+    token::transfer(context, amount)
 
     }
-
+    
     pub fn withdraw_tokens(ctx: Context<WithdrawToken>, amount: u64) -> Result<()>{
             token::transfer (
                 CpiContext::new(
@@ -220,9 +220,9 @@ pub struct Market {
     pub bump: u8 ,
 }
 
- ////Accounts that we need 
- ////1 --> Signer 
- ///2 ---> Vault to hold the market marker tokens 
+////Accounts that we need 
+////1 --> Signer 
+///2 ---> Vault to hold the market marker tokens 
  /// 3 ---> Token Mint A 
  /// 4 ---> Token Mint B
  /// 5 ---> PDA to own vault 
@@ -241,11 +241,11 @@ pub struct Market {
     // pub req_q: AccountInfo<'info>,
     // pub event_q: AccountInfo<'info>,
     // pub rent: AccountInfo<'info>,
-// }
-
-
-#[derive(Accounts)]
-pub struct CreateMarket<'info> {
+    // }
+    
+    
+    #[derive(Accounts)]
+    pub struct CreateMarket<'info> {
     #[account(mut)]
     pub signer: Signer<'info>,
     /// CHECK: serum market
@@ -265,7 +265,7 @@ pub struct CreateMarket<'info> {
     pub system_program: Program<'info,System>,
     /// CHECK:rent account 
     pub rent: UncheckedAccount<'info>,
-
+    
 }
 
 #[derive(Accounts)]
@@ -286,8 +286,8 @@ pub struct NewOrder<'info> {
     // Also known as the "quote" currency. For a given A/B market,
     // this is the vault for the B mint.
     pub pc_vault: AccountInfo<'info>,
-    pub token_program: AccountInfo<'info>,
-    pub rent: AccountInfo<'info>,
+    pub token_program: Program<'info,Token >,
+    pub rent: Sysvar<'info, Rent>,
     pub dex: Program<'info,Dex>,
 }
 
@@ -331,6 +331,37 @@ pub struct Deposit<'info> {
     pub vault: Account<'info, Vault>,
     pub system_program: Program<'info,System>
 }
+
+
+// #[derive(
+//     Eq, PartialEq, Copy, Clone, TryFromPrimitive, IntoPrimitive, Debug, BorshDeserialize,BorshSerialize
+// )]
+// #[repr(u8)]
+// pub enum Side {
+//     Bid = 0,
+//     Ask = 1,
+// }
+
+// #[derive(
+//     Eq, PartialEq, Copy, Clone, TryFromPrimitive, IntoPrimitive, Debug, BorshDeserialize,BorshSerialize
+// )]
+
+// #[repr(u8)]
+// pub enum OrderType {
+//     Limit = 0,
+//     ImmediateOrCancel = 1,
+//     PostOnly = 2,
+// }
+
+// #[derive(
+//     PartialEq, Eq, Copy, Clone, Debug, TryFromPrimitive, IntoPrimitive, BorshDeserialize,BorshSerialize
+// )]
+// #[repr(u8)]
+// pub enum SelfTradeBehavior {
+//     DecrementTake = 0,
+//     CancelProvide = 1,
+//     AbortTransaction = 2,
+// }
 
 
 //### marks this as an Instruction struct 

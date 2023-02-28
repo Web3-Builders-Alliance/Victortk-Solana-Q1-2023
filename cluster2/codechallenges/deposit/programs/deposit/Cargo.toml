@@ -21,4 +21,5 @@ spl-token =  "3.5.0"
 anchor-spl = {version= "0.26.0", features=["metadata", "token", "dex"]}
 solana-program = "1.14.16"
 serum_dex = "0.5.4"
+num_enum = "0.5.10"
 
