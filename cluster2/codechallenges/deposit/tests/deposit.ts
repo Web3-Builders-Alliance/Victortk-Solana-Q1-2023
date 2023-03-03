@@ -8,8 +8,7 @@ import * as token from "@solana/spl-token" ;
 import { BN } from "bn.js";
 import {keypairIdentity, Metaplex,bundlrStorage} from "@metaplex-foundation/js";
 import {Market} from '@project-serum/serum';
-
-
+import  * as gov from '@solana/spl-governance';
 
 describe("deposit", () => {
   // Configure the client to use the local cluster.
@@ -270,6 +269,20 @@ describe("deposit", () => {
   // })
 
   // it("Cancels Order", async () => {
+
+  // })
+
+  // it("creates real with governance and proposal", async ()=> {
+  //   const councilMint 
+
+  //   await connection.requestAirdrop(wallet.publicKey, 2*web3.LAMPORTS_PER_SOL) ;
+  //   let instructions: web3.TransactionInstruction[] = [] ;
+  //   let signers: web3.;
+
+  //   gov.withCreateRealm()
+  //   gov.withCreateMintGovernance(instructions, program_id)
+
+    
 
   // })
   

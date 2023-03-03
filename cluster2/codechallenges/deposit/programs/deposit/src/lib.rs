@@ -14,6 +14,8 @@ use std::num::NonZeroU64;
 
 
 
+
+
 // impl BorshDeserialize for SelfTradeBehavior {
 
 // }
@@ -97,47 +99,47 @@ pub mod deposit { //### declare deposit module
     
     }
 
-    pub fn create_order (
-    ctx: Context<NewOrder>,
-    side: CurrentSide,
-    limit_price: NonZeroU64,
-    max_coin_qty: NonZeroU64,
-    max_native_pc_qty_including_fees: NonZeroU64,
-    self_trade_behavior: CurrentSelfTradeBehavior,
-    order_type: CurrentOrderType,
-    client_order_id: u64,
-    limit: u16, ) -> Result<()>{
+    // pub fn create_order (
+    // ctx: Context<NewOrder>,
+    // side: CurrentSide,
+    // limit_price: NonZeroU64,
+    // max_coin_qty: NonZeroU64,
+    // max_native_pc_qty_including_fees: NonZeroU64,
+    // self_trade_behavior: CurrentSelfTradeBehavior,
+    // order_type: CurrentOrderType,
+    // client_order_id: u64,
+    // limit: u16, ) -> Result<()>{
 
-        let side: Side = side.into()  ;        
+    //     let side: Side = side.into()  ;        
 
-        dex::new_order_v3(
-        CpiContext::new(
-            ctx.accounts.dex.to_account_info().clone(),
-            dex::NewOrderV3{
-                market:ctx.accounts.market.to_account_info().clone(),
-            open_orders: ctx.accounts.open_orders.to_account_info().clone(),
-            request_queue: ctx.accounts.request_queue.to_account_info().clone() ,    
-            event_queue: ctx.accounts.event_queue.to_account_info().clone() , 
-            market_bids:ctx.accounts.market_asks.to_account_info().clone() , 
-            market_asks: ctx.accounts.market_asks.to_account_info().clone() ,
-            order_payer_token_account:ctx.accounts.order_payer_token_account.to_account_info().clone() , 
-            open_orders_authority:ctx.accounts.open_orders.to_account_info().clone() , 
-            coin_vault:ctx.accounts.coin_vault.to_account_info().clone() , 
-            pc_vault:ctx.accounts.pc_vault.to_account_info().clone() , 
-            token_program:ctx.accounts.token_program.to_account_info().clone() , 
-            rent:ctx.accounts.rent.to_account_info().clone() , 
-        } 
-    ), 
-    side,
-        limit_price,
-        max_coin_qty,
-        max_native_pc_qty_including_fees,
-        self_trade_behavior.into(),
-        order_type.into(),
-        client_order_id,
-        limit)
+    //     dex::new_order_v3(
+    //     CpiContext::new(
+    //         ctx.accounts.dex.to_account_info().clone(),
+    //         dex::NewOrderV3{
+    //             market:ctx.accounts.market.to_account_info().clone(),
+    //         open_orders: ctx.accounts.open_orders.to_account_info().clone(),
+    //         request_queue: ctx.accounts.request_queue.to_account_info().clone() ,    
+    //         event_queue: ctx.accounts.event_queue.to_account_info().clone() , 
+    //         market_bids:ctx.accounts.market_asks.to_account_info().clone() , 
+    //         market_asks: ctx.accounts.market_asks.to_account_info().clone() ,
+    //         order_payer_token_account:ctx.accounts.order_payer_token_account.to_account_info().clone() , 
+    //         open_orders_authority:ctx.accounts.open_orders.to_account_info().clone() , 
+    //         coin_vault:ctx.accounts.coin_vault.to_account_info().clone() , 
+    //         pc_vault:ctx.accounts.pc_vault.to_account_info().clone() , 
+    //         token_program:ctx.accounts.token_program.to_account_info().clone() , 
+    //         rent:ctx.accounts.rent.to_account_info().clone() , 
+    //     } 
+    // ), 
+    // side,
+    //     limit_price,
+    //     max_coin_qty,
+    //     max_native_pc_qty_including_fees,
+    //     self_trade_behavior.into(),
+    //     order_type.into(),
+    //     client_order_id,
+    //     limit)
     
-    }
+    // }
 
     // pub fn cancel_order(ctx:Context<CancelOrder>,side: Side,
     //     order_id: u128,) -> Result<()> {        
@@ -231,78 +233,117 @@ pub mod deposit { //### declare deposit module
  /// 6 ----> signer token A associated account 
  /// 7 ----> signer token B associated account 
  /// 
- /// 
- /// pub struct InitializeMarket<'info> {
-   // pub market: AccountInfo<'info>,
-    // pub coin_mint: AccountInfo<'info>,
-    // pub pc_mint: AccountInfo<'info>,
-    // pub coin_vault: AccountInfo<'info>,
-    // pub pc_vault: AccountInfo<'info>,
-    // pub bids: AccountInfo<'info>,
-    // pub asks: AccountInfo<'info>,
-    // pub req_q: AccountInfo<'info>,
-    // pub event_q: AccountInfo<'info>,
-    // pub rent: AccountInfo<'info>,
-    // }
+ 
+     
+#[derive(Accounts)]
+pub struct InitializeMarket<'info> {
+    /// CHECK: serum_dex account manual checks 
+    #[account(owner=dex::ID)]
+   pub market:UncheckedAccount<'info>,
+   /// CHECK: serum_dex account manual checks 
+   #[account(owner=dex::ID)]
+    pub coin_mint:UncheckedAccount<'info>,
+    /// CHECK: serum_dex account manual checks 
+    #[account(owner=dex::ID)]
+    pub pc_mint:UncheckedAccount<'info>,
+    #[account(associated_token::mint=coin_mint, associated_token::authority=dex)]
+    pub coin_vault:Account<'info,TokenAccount>,
+    #[account(associated_token::mint=pc_mint, associated_token::authority=dex)]
+    pub pc_vault:Account<'info, TokenAccount>,
+    /// CHECK: serum_dex account manual checks 
+    #[account(owner=dex::ID)]
+    pub bids:UncheckedAccount<'info>,
+    /// CHECK: serum_dex account manual checks 
+    #[account(owner=dex::ID)]
+    pub asks:UncheckedAccount<'info>,
+    /// CHECK: serum_dex account manual checks 
+    #[account(owner=dex::ID)]
+    pub req_q:UncheckedAccount<'info>,
+    /// CHECK: serum_dex account manual checks     
+    #[account(owner=dex::ID)]
+    pub event_q:UncheckedAccount<'info>,
+    pub rent: Sysvar<'info, Rent>,
+    pub dex: Program<'info,Dex>,
+    }
       
     #[derive(Accounts)]
     pub struct CreateMarket<'info> {
     #[account(mut)]
     pub signer: Signer<'info>,
-    /// CHECK: serum market
+    /// CHECK: serum market account manual checks
     pub market: UncheckedAccount<'info>,
     #[account(mut)]
     pub coin_mint: Account<'info, Mint>,
     #[account(mut)]
     pub pc_mint: Account<'info, Mint>,
-    pub coin_vault: AccountInfo<'info>,
-    pub pc_vault: AccountInfo<'info>,
-    pub bids: AccountInfo<'info>,
-    pub asks: AccountInfo<'info>,
-    pub req_q: AccountInfo<'info>,
-    pub event_q: AccountInfo<'info>,
+    #[account(associated_token::mint=coin_mint, associated_token::authority=dex)]
+    pub coin_vault: Account<'info,TokenAccount>,
+    #[account(associated_token::mint=pc_mint, associated_token::authority=dex)]
+    pub pc_vault: Account<'info, TokenAccount>,
+    /// CHECK: serum bids account manual checks
+    #[account(owner=dex::ID)]
+    pub bids: UncheckedAccount<'info>,
+    /// CHECK: serum asks account manual checks
+    #[account(owner=dex::ID)]
+    pub asks: UncheckedAccount<'info>,
+    /// CHECK: serum request que account manual checks
+     #[account(owner=dex::ID)]
+    pub req_q: UncheckedAccount<'info>,
+    /// CHECK: serum event que account manual checks
+    #[account(owner=dex::ID)]
+    pub event_q: UncheckedAccount<'info>,
     pub token_program: Program<'info,Token>,
     pub dex: Program<'info,Dex>,
     pub system_program: Program<'info,System>,
-    /// CHECK: rent account 
-    pub rent: UncheckedAccount<'info>,
-    
+    pub rent: Sysvar<'info, Rent>,    
 }
 
-#[derive(Accounts)]
-pub struct NewOrder<'info> {
-    pub market: AccountInfo<'info>,
-    pub open_orders: AccountInfo<'info>,
-    pub request_queue: AccountInfo<'info>,
-    pub event_queue: AccountInfo<'info>,
-    pub market_bids: AccountInfo<'info>,
-    pub market_asks: AccountInfo<'info>,
-    // Token account where funds are transferred from for the order. If
-    // posting a bid market A/B, then this is the SPL token account for B.
-    pub order_payer_token_account: AccountInfo<'info>,
-    pub open_orders_authority: AccountInfo<'info>,
-    // Also known as the "base" currency. For a given A/B market,
-    // this is the vault for the A mint.
-    pub coin_vault: AccountInfo<'info>,
-    // Also known as the "quote" currency. For a given A/B market,
-    // this is the vault for the B mint.
-    pub pc_vault: AccountInfo<'info>,
-    pub token_program: Program<'info,Token >,
-    pub rent: Sysvar<'info, Rent>,
-    pub dex: Program<'info,Dex>,
-}
+// #[derive(Accounts)]
+// pub struct NewOrder<'info> {
+//     /// CHECK : serum_dex account manual checks 
+//     pub market: UncheckedAccount<'info>,
+
+//     /// CHECK : serum_dex account manual checks 
+//     pub open_orders: UncheckedAccount<'info>,
+
+//     /// CHECK : serum_dex account manual checks 
+//     pub request_queue: UncheckedAccount<'info>,
+
+//     /// CHECK : serum_dex account manual checks 
+//     pub event_queue: UncheckedAccount<'info>,
+
+//     /// CHECK : serum_dex account manual checks 
+//     pub market_bids: UncheckedAccount<'info>,
+
+//     /// CHECK : serum_dex account manual checks 
+//     pub market_asks: UncheckedAccount<'info>,
+
+//     // Token account where funds are transferred from for the order. If
+//     // posting a bid market A/B, then this is the SPL token account for B.
+//     pub order_payer_token_account: AccountInfo<'info>,
+//     pub open_orders_authority: AccountInfo<'info>,
+//     // Also known as the "base" currency. For a given A/B market,
+//     // this is the vault for the A mint.
+//     pub coin_vault: AccountInfo<'info>,
+//     // Also known as the "quote" currency. For a given A/B market,
+//     // this is the vault for the B mint.
+//     pub pc_vault: AccountInfo<'info>,
+//     pub token_program: Program<'info,Token >,
+//     pub rent: Sysvar<'info, Rent>,
+//     pub dex: Program<'info,Dex>,
+// }
 
 
-#[derive(Accounts)]
-pub struct CancelOrder<'info> {
-    pub market: AccountInfo<'info>,
-    pub market_bids: AccountInfo<'info>,
-    pub market_asks: AccountInfo<'info>,
-    pub open_orders: AccountInfo<'info>,
-    pub open_orders_authority: AccountInfo<'info>,
-    pub event_queue: AccountInfo<'info>,
-    pub dex: Program<'info,Dex>,
-}
+// #[derive(Accounts)]
+// pub struct CancelOrder<'info> {
+//     pub market: AccountInfo<'info>,
+//     pub market_bids: AccountInfo<'info>,
+//     pub market_asks: AccountInfo<'info>,
+//     pub open_orders: AccountInfo<'info>,
+//     pub open_orders_authority: AccountInfo<'info>,
+//     pub event_queue: AccountInfo<'info>,
+//     pub dex: Program<'info,Dex>,
+// }
 
 
 #[account]
