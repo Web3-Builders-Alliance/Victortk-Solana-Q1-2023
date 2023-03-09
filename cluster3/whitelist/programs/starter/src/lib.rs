@@ -12,15 +12,13 @@ pub mod starter {
     }
 
     pub fn add_to_whitelist (ctx: Context<AddToWhitelist>) -> Result<()> {
-       Ok(ctx.accounts.whitelist_pda.bumps = *ctx.bumps.get("whitelist_pda").unwrap())
-       
+       Ok(ctx.accounts.whitelist_pda.bumps = *ctx.bumps.get("whitelist_pda").unwrap())       
     }
 
     pub fn remove_to_whitelist (_ctx: Context<RemoveFromWhitelist>) -> Result<()> {
         Ok(())
     }
 }
-
 
 
 #[account]
