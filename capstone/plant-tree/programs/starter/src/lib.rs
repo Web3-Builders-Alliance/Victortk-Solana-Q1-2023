@@ -19,25 +19,25 @@ pub struct Tree {
 }
 
 #[account]
+#[derive(Default)]
 pub struct Land {
     owner: Pubkey,
     is_planted: bool,
 }
 
 #[account]
+#[derive(Default)]
 pub struct Farmer {
     name: String,
-    land_areas: Vec<(u64,u64)>,
-    trees: Vec<Tree>,
     address: Pubkey
 }
 
 #[derive(Accounts)]
+#[instruction(name:String)]
 pub struct Initialize <'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
-    #[account(init, payer=payer, seeds=["farmer", payer.key().to_bytes()], bump, space = )]
+    #[account(init, payer=payer, seeds=[b"farmer", payer.key().as_ref()], bump, space = 8 + name.len() + 32)]
     pub farmer: Account<'info,Farmer>,
-    #[account(mut)]
-    pub user: SystemAccount<'info>,
+    pub system_program: Program<'info, System>,
 }
