@@ -5,14 +5,43 @@ declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 #[program]
 pub mod starter {
     use super::*;
-    pub fn initialize(ctx: Context<Initialize>) -> Result<()> {        
-        let payer = &mut ctx.accounts.payer ;
-        let cultivar = &mut ctx.accounts.tree.cultivar.name ;
+    pub fn initialize(ctx: Context<Initialize>, name: String, tree_cultivar: Cultivar ) -> Result<()> {        
+        let payer = &mut ctx.accounts.payer ; 
+        let farmer = &mut ctx.accounts.farmer ;
+        farmer.name = name ;
+        farmer.address = payer.key().clone() ;
+        farmer.land_count = 1 ;
+        farmer.tree_count = 1 ;
+
+        // let cultivar = &mut ctx.accounts.tree.cultivar.name ;
+        
+        let tree =  &mut ctx.accounts.tree ;
+        tree.cultivar = tree_cultivar.clone() ;
+        tree.height = tree_cultivar.init_height;
+        tree.girth = tree_cultivar.init_width;
+        tree.age = 0 ;
+        let time =  Clock::get()?.slot ;
+        tree.planted = time ;
+        //ticks per second/ ticks per slot * 1 year in seconds should probably get the constants 
+        tree.next_fruit_maturaturation_date =  time + 5 * 30 * 60 * 24 * 365 ; 
+
+        let cultivar_meta =  &mut ctx.accounts.cultivar_meta ;
+        // name: String,
+        // pub count:u64,
+
+        let farm_meta =  &mut ctx.accounts.farm_meta ;
+        //  pub tree_count: u64,
+        //  pub cultivar_count: u64 ,
+        //  pub cultivar_names: TreeName, 
+
+
+        let vault =  &mut ctx.accounts.vault ;
+        //transfer sol to vault
+
         let land = &mut ctx.accounts.land ;
         land.owner = payer.key() ;
-        land.is_planted = true ;
+        land.is_planted = true ;    
 
-        
         Ok(())
     }
 }
