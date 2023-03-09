@@ -15,7 +15,6 @@ pub mod starter {
 #[account]
 pub struct Tree {
     name: String,
-    location: Land 
 }
 
 #[account]
@@ -29,7 +28,9 @@ pub struct Land {
 #[derive(Default)]
 pub struct Farmer {
     name: String,
-    address: Pubkey
+    address: Pubkey,
+    land_count: u64,
+    tree_count: u64,
 }
 
 #[derive(Accounts)]
@@ -38,6 +39,10 @@ pub struct Initialize <'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
     #[account(init, payer=payer, seeds=[b"farmer", payer.key().as_ref()], bump, space = 8 + name.len() + 32)]
-    pub farmer: Account<'info,Farmer>,
+    pub farmer: Account<'info,Farmer>,    
+    #[account(init, payer=payer, seeds=[b"land", farmer.key().as_ref(),b"1"], bump, space = 8 + name.len() + 32 + 8)]
+    pub land: Account<'info,Land>,
+     #[account(init, payer=payer, seeds=[b"tree",land.key().as_ref()], bump, space = 8 + name.len() )]
+    pub tree: Account<'info, Tree>,
     pub system_program: Program<'info, System>,
 }
