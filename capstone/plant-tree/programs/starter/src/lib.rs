@@ -37,6 +37,7 @@ pub struct Initialize <'info> {
 #[account]
 #[derive(InitSpace)]
 pub struct CultivarMeta{
+    #[max_len(30)]
     name: String,
     pub count:u64,
 }
@@ -47,12 +48,12 @@ pub struct CultivarMeta{
 pub struct Farm {
     pub tree_count: u64,
     pub cultivar_count: u64 ,
-    pub cultivar_names: CultivarNames, 
+    pub cultivar_names: TreeName, 
 }
 
 #[derive(AnchorDeserialize, AnchorSerialize, Clone, Debug, )]
 #[derive(InitSpace)]
-pub enum CultivarNames{
+pub enum TreeName{
     Butternut = 1,
     Mango,
     Guava,
@@ -68,7 +69,7 @@ pub struct Vault {
 #[account]
 #[derive(InitSpace)]
 pub struct Cultivar {
-    name: String ,
+    name: TreeName ,
     init_height: u64,
     init_width: u64,
     scarcity_points: u64,   
@@ -97,6 +98,7 @@ pub struct Land {
 #[derive(Default)]
 #[derive(InitSpace)]
 pub struct Farmer {
+    #[max_len(30)]
     name: String,
     address: Pubkey,
     land_count: u64,
