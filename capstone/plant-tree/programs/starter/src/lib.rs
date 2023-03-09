@@ -11,6 +11,8 @@ pub mod starter {
         let land = &mut ctx.accounts.land ;
         land.owner = payer.key() ;
         land.is_planted = true ;
+
+        
         Ok(())
     }
 }
