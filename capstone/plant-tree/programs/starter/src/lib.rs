@@ -8,7 +8,32 @@ pub mod starter {
     use solana_program::native_token::LAMPORTS_PER_SOL;
 
     use super::*;
-    pub fn initialize(ctx: Context<InitializeFarmer>, user_name: String, cultivar_name: String ) -> Result<()> {        
+
+    pub fn initialize_farm(ctx: Context<InitializeFarm>) -> Result<()>{
+         let land_meta = &mut ctx.accounts.land_meta ;
+        land_meta.land_piece_count = 0 ; //to check for initialization
+        
+        let trees_meta = &mut ctx.accounts.trees_meta ;
+        trees_meta.tree_count = 0 ; //to check for initialization
+
+
+        let cultivar_meta =  &mut ctx.accounts.cultivar_meta ;
+        cultivar_meta.cultivars_count = 0 ;
+        
+        Ok(())
+    }
+    pub fn create_cultivar(ctx: Context<CreateCultivar>, name: String , height: u64, width: u64) -> Result<()>{
+        let cultivar_meta =  &mut ctx.accounts.cultivar_meta ;
+         cultivar_meta.cultivars_count = cultivar_meta.cultivars_count + 1 ;
+         let cultivar = &mut ctx.accounts.cultivar ;
+             cultivar.count = 0 ;
+             cultivar.name = name ;    
+             cultivar.init_height= height ;
+             cultivar.init_width= width ;
+        Ok(())
+    }
+
+    pub fn initialize_farmer(ctx: Context<InitializeFarmer>, user_name: String, cultivar_name: String ) -> Result<()> {        
         let payer = &mut ctx.accounts.payer ; 
         let farmer = &mut ctx.accounts.farmer ;
         farmer.name = user_name ;
@@ -21,10 +46,6 @@ pub mod starter {
         
         let trees_meta = &mut ctx.accounts.trees_meta ;
         trees_meta.tree_count = trees_meta.tree_count + 1 ; //to check for initialization
-
-
-        let cultivar_meta =  &mut ctx.accounts.cultivar_meta ;
-        cultivar_meta.cultivars_count = cultivar_meta.cultivars_count + 1 ;
 
 
         let cultivar = &mut ctx.accounts.cultivar ;
@@ -66,6 +87,43 @@ pub mod starter {
 
 
 #[derive(Accounts)]
+pub struct InitializeFarm <'info> {
+     #[account(mut)]
+    pub payer: Signer<'info>,
+
+    #[account(seeds=[b"farm"], bump)]
+    pub farm: Account<'info,Farm>,
+
+    #[account(init, payer=payer, seeds=[b"landmeta", farm.key().as_ref()], bump, space = 8 + LandMeta::INIT_SPACE)]
+    pub land_meta: Account<'info,LandMeta>,
+
+    #[account(seeds=[b"cultivarmeta",farm.key().as_ref()], bump)]
+    pub cultivar_meta: Account<'info, CultivarMeta>,
+
+    #[account(init, payer=payer, seeds=[b"treesmeta",farm.key().as_ref()], bump, space = 8 + TreesMeta::INIT_SPACE)]
+    pub trees_meta: Account<'info, TreesMeta>,
+    #[account(init, payer=payer, seeds=[b"carbonvault"], bump, space = 8 + Vault::INIT_SPACE)]
+    pub vault: Account<'info, Vault>,
+    pub system_program: Program<'info, System>,
+}    
+
+
+#[derive(Accounts)]
+#[instruction(cultivar_name:String)]
+pub struct CreateCultivar <'info> {
+    #[account(mut)]
+    pub payer: Signer<'info>,    
+    #[account(seeds=[b"farm"], bump)]
+    pub farm: Account<'info,Farm>,
+    #[account(seeds=[b"cultivarmeta",farm.key().as_ref()], bump,)]
+    pub cultivar_meta: Account<'info, CultivarMeta>,
+    #[account(init, payer=payer, seeds=[b"cultivar", cultivar_meta.key().as_ref(), cultivar_name.as_ref()], bump, space = 8 + Cultivar::INIT_SPACE)]
+    pub cultivar: Account<'info,Cultivar>,
+    pub system_program: Program<'info, System>,
+}
+
+
+#[derive(Accounts)]
 #[instruction(user_name:String, cultivar_name:String)]
 pub struct InitializeFarmer <'info> {
     #[account(mut)]
@@ -77,13 +135,13 @@ pub struct InitializeFarmer <'info> {
     #[account(seeds=[b"farm"], bump)]
     pub farm: Account<'info,Farm>,
 
-    #[account(init, payer=payer, seeds=[b"landmeta", farm.key().as_ref()], bump, space = 8 + LandMeta::INIT_SPACE)]
+    #[account(seeds=[b"landmeta", farm.key().as_ref()], bump, )]
     pub land_meta: Account<'info,LandMeta>,
 
-    #[account(init, payer=payer, seeds=[b"cultivarmeta",farm.key().as_ref()], bump, space = 8 + CultivarMeta::INIT_SPACE)]
+    #[account(seeds=[b"cultivarmeta",farm.key().as_ref()], bump,)]
     pub cultivar_meta: Account<'info, CultivarMeta>,
 
-    #[account(init, payer=payer, seeds=[b"treesmeta",farm.key().as_ref()], bump, space = 8 + TreesMeta::INIT_SPACE)]
+    #[account( seeds=[b"treesmeta",farm.key().as_ref()], bump,)]
     pub trees_meta: Account<'info, TreesMeta>,
 
     #[account(init, payer=payer, seeds=[b"cultivar", cultivar_meta.key().as_ref(), cultivar_name.as_ref()], bump, space = 8 + Cultivar::INIT_SPACE)]
@@ -97,11 +155,10 @@ pub struct InitializeFarmer <'info> {
     pub land_piece: Account<'info, LandPiece>,
 
 
-    #[account(init_if_needed, payer=payer, seeds=[b"carbonvault"], bump, space = 8 + Vault::INIT_SPACE)]
+    #[account(seeds=[b"carbonvault"], bump,)]
     pub vault: Account<'info, Vault>,
     pub system_program: Program<'info, System>,
 }
-
 
 #[account]
 #[derive(InitSpace)]
