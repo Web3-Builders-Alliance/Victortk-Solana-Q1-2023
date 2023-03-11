@@ -4,92 +4,173 @@ declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
 #[program]
 pub mod starter {
+    use anchor_lang::system_program;
+    use solana_program::native_token::LAMPORTS_PER_SOL;
+
     use super::*;
-    pub fn initialize(ctx: Context<Initialize>, name: String, tree_cultivar: Cultivar ) -> Result<()> {        
+    pub fn initialize(ctx: Context<InitializeFarmer>, user_name: String, cultivar_name: String ) -> Result<()> {        
         let payer = &mut ctx.accounts.payer ; 
         let farmer = &mut ctx.accounts.farmer ;
-        farmer.name = name ;
+        farmer.name = user_name ;
         farmer.address = payer.key().clone() ;
         farmer.land_count = 1 ;
         farmer.tree_count = 1 ;
 
-        // let cultivar = &mut ctx.accounts.tree.cultivar.name ;
+        let land_meta = &mut ctx.accounts.land_meta ;
+        land_meta.land_piece_count = land_meta.land_piece_count + 1 ; //to check for initialization
+        
+        let trees_meta = &mut ctx.accounts.trees_meta ;
+        trees_meta.tree_count = trees_meta.tree_count + 1 ; //to check for initialization
+
+
+        let cultivar_meta =  &mut ctx.accounts.cultivar_meta ;
+        cultivar_meta.cultivars_count = cultivar_meta.cultivars_count + 1 ;
+
+
+        let cultivar = &mut ctx.accounts.cultivar ;
+        cultivar.count = cultivar.count + 1 ;
+        //scacity points cultivar.scarcity_points = 
+
+        let land_piece = &mut ctx.accounts.land_piece ;
+        land_piece.authority = payer.key().clone();
+        land_piece.number = land_meta.land_piece_count ;
+        land_piece.is_planted = true ;   
+
         
         let tree =  &mut ctx.accounts.tree ;
-        tree.cultivar = tree_cultivar.clone() ;
-        tree.height = tree_cultivar.init_height;
-        tree.girth = tree_cultivar.init_width;
+        tree.cultivar_name = cultivar_name ;
+        tree.land_number = land_piece.number ;
+        tree.height = cultivar.init_height;
+        tree.girth = cultivar.init_width;
         tree.age = 0 ;
         let time =  Clock::get()?.slot ;
         tree.planted = time ;
         //ticks per second/ ticks per slot * 1 year in seconds should probably get the constants 
         tree.next_fruit_maturaturation_date =  time + 5 * 30 * 60 * 24 * 365 ; 
 
-        let cultivar_meta =  &mut ctx.accounts.cultivar_meta ;
-        // name: String,
-        // pub count:u64,
-
-        let farm_meta =  &mut ctx.accounts.farm_meta ;
-        //  pub tree_count: u64,
-        //  pub cultivar_count: u64 ,
-        //  pub cultivar_names: TreeName, 
-
 
         let vault =  &mut ctx.accounts.vault ;
         //transfer sol to vault
+        let lamports = LAMPORTS_PER_SOL/4 ;
+        system_program::transfer(
+            CpiContext::new(
+               ctx.accounts.system_program.to_account_info(),
+                system_program::Transfer {
+                    from: payer.to_account_info(),
+                    to: vault.to_account_info(),
+            },  
+            ), lamports)
 
-        let land = &mut ctx.accounts.land ;
-        land.owner = payer.key() ;
-        land.is_planted = true ;    
-
-        Ok(())
     }
 }
 
 
 #[derive(Accounts)]
-#[instruction(name:String)]
-pub struct Initialize <'info> {
+#[instruction(user_name:String, cultivar_name:String)]
+pub struct InitializeFarmer <'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
-    #[account(init, payer=payer, seeds=[b"farmer", payer.key().as_ref()], bump, space = 8 +Farmer::INIT_SPACE , constraint = farmer.name.len() < 30)]
-    pub farmer: Account<'info,Farmer>,    
-    #[account(init, payer=payer, seeds=[b"land", farmer.key().as_ref(),b"1"], bump, space = 8 + name.len() + 32 + 8)]
-    pub land: Account<'info,Land>,
-     #[account(init, payer=payer, seeds=[b"tree",land.key().as_ref()], bump, space = 8 + name.len() )]
+
+    #[account(init, payer=payer, seeds=[b"farmer", payer.key().as_ref()], bump, space = 8 + Farmer::INIT_SPACE)]
+    pub farmer: Account<'info,Farmer>, 
+
+    #[account(seeds=[b"farm"], bump)]
+    pub farm: Account<'info,Farm>,
+
+    #[account(init, payer=payer, seeds=[b"landmeta", farm.key().as_ref()], bump, space = 8 + LandMeta::INIT_SPACE)]
+    pub land_meta: Account<'info,LandMeta>,
+
+    #[account(init, payer=payer, seeds=[b"cultivarmeta",farm.key().as_ref()], bump, space = 8 + CultivarMeta::INIT_SPACE)]
+    pub cultivar_meta: Account<'info, CultivarMeta>,
+
+    #[account(init, payer=payer, seeds=[b"treesmeta",farm.key().as_ref()], bump, space = 8 + TreesMeta::INIT_SPACE)]
+    pub trees_meta: Account<'info, TreesMeta>,
+
+    #[account(init, payer=payer, seeds=[b"cultivar", cultivar_meta.key().as_ref(), cultivar_name.as_ref()], bump, space = 8 + Cultivar::INIT_SPACE)]
+    pub cultivar: Account<'info,Cultivar>,
+
+
+    #[account(init, payer=payer, seeds=[b"tree",trees_meta.key().as_ref(),farmer.key().as_ref()], bump, space = 8 + Tree::INIT_SPACE)]
     pub tree: Account<'info, Tree>,
-    pub cultivar_meta: Account<'info,CultivarMeta>,
-    pub farm_meta: Account<'info,Farm>,
-    #[account(init_if_needed, payer=payer, seeds=[b"carbonsolvault"], bump, space = 8 + Vault::INIT_SPACE)]
+
+    #[account(init, payer=payer, seeds=[b"landpiece",land_meta.key().as_ref(),farmer.key().as_ref()], bump, space = 8 + LandPiece::INIT_SPACE)]
+    pub land_piece: Account<'info, LandPiece>,
+
+
+    #[account(init_if_needed, payer=payer, seeds=[b"carbonvault"], bump, space = 8 + Vault::INIT_SPACE)]
     pub vault: Account<'info, Vault>,
     pub system_program: Program<'info, System>,
-}
-
-#[account]
-#[derive(InitSpace)]
-pub struct CultivarMeta{
-    #[max_len(30)]
-    name: String,
-    pub count:u64,
 }
 
 
 #[account]
 #[derive(InitSpace)]
 pub struct Farm {
-    pub tree_count: u64,
-    pub cultivar_count: u64 ,
-    pub cultivar_names: TreeName, 
 }
 
-#[derive(AnchorDeserialize, AnchorSerialize, Clone, Debug, )]
+#[account]
 #[derive(InitSpace)]
-pub enum TreeName{
-    Butternut = 1,
-    Mango,
-    Guava,
-    Eucalyptus 
+pub struct CultivarMeta{
+    pub cultivars_count:u64,
 }
+
+#[account]
+#[derive(InitSpace)]
+pub struct LandMeta{
+    pub land_piece_count:u64,
+}
+
+#[account]
+#[derive(InitSpace)]
+pub struct TreesMeta{
+    pub tree_count:u64,
+}
+
+#[account]
+#[derive(InitSpace)]
+pub struct Cultivar {
+    #[max_len(50)]
+    pub name: String,
+    pub count:u64,
+    pub init_height: u64,
+    pub init_width: u64,
+    pub scarcity_points: u64,   
+}
+
+#[account]
+#[derive(Default)]
+#[derive(InitSpace)]
+pub struct LandPiece {
+    pub authority: Pubkey,
+    pub number: u64,
+    pub is_planted: bool,
+}
+
+
+#[account]
+#[derive(InitSpace)]
+pub struct Tree {
+    #[max_len(50)]
+    pub cultivar_name: String,
+    pub land_number: u64,
+    pub height: u64,
+    pub girth: u64,
+    pub age: u64 ,
+    pub planted: u64,
+    pub next_fruit_maturaturation_date: u64 ,
+}
+
+
+
+
+// #[derive(AnchorDeserialize, AnchorSerialize, Clone, Debug, )]
+// #[derive(InitSpace)]
+// pub enum TreeName{
+//     Butternut = 1,
+//     Mango,
+//     Guava,
+//     Eucalyptus 
+// }
 
 #[account]
 #[derive(InitSpace)]
@@ -97,41 +178,14 @@ pub struct Vault {
  pub authority: Pubkey 
 }
 
-#[account]
-#[derive(InitSpace)]
-pub struct Cultivar {
-    name: TreeName ,
-    init_height: u64,
-    init_width: u64,
-    scarcity_points: u64,   
-}
-
-#[account]
-#[derive(InitSpace)]
-pub struct Tree {
-    cultivar: Cultivar,
-    height: u64,
-    girth: u64,
-    age: u64 ,
-    planted: u64,
-    next_fruit_maturaturation_date: u64 ,
-}
-
-#[account]
-#[derive(Default)]
-#[derive(InitSpace)]
-pub struct Land {
-    owner: Pubkey,
-    is_planted: bool,
-}
 
 #[account]
 #[derive(Default)]
 #[derive(InitSpace)]
 pub struct Farmer {
     #[max_len(30)]
-    name: String,
-    address: Pubkey,
-    land_count: u64,
-    tree_count: u64,
+    pub name: String,
+    pub address: Pubkey,
+    pub land_count: u64,
+    pub tree_count: u64,
 }
