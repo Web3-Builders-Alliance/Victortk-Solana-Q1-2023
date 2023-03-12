@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 use anchor_spl::{
-    mint, token::{Mint,MintTo,TokenAccount,Token},
+    mint, token::{self,Mint,TokenAccount,Token, },
     associated_token::{AssociatedToken,Create,}
 } ;
 
@@ -94,9 +94,22 @@ pub mod starter {
 
     }
 
-    // pub fn water_tree(ctx: Context<Water>)-> Result<()> {
-    //     Ok(())
-    // }
+    pub fn water_tree(ctx: Context<Nutrient>, amount: u64  )-> Result<()> {
+        let water_mint = &mut ctx.accounts.water_mint ;
+        let water_balance = &mut ctx.accounts.water_balance ;
+        let nutrient_mint_authority=  &mut ctx.accounts.nutrient_mint_authority ;
+        token::mint_to(
+            CpiContext::new(
+                ctx.accounts.token_program.to_account_info(),
+               token::MintTo{
+                   mint: water_mint.to_account_info().clone(),
+                   to: water_balance.to_account_info().clone(),
+                   authority: nutrient_mint_authority.to_account_info().clone(), 
+                }
+            ),
+            amount
+        )
+    }
 
 
 }
@@ -158,7 +171,7 @@ pub struct Nutrient<'info> {
 
     #[account(init_if_needed, payer=payer , seeds=[b"potassium",input_balance.key().as_ref()], bump, token::mint=water_mint, token::authority=input_balance)]
     pub potassium_balance: Account<'info,TokenAccount>,
-    
+
     pub token_program: Program<'info,Token>,
     pub system_program: Program<'info,System> 
 
