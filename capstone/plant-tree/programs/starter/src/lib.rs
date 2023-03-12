@@ -1,4 +1,8 @@
 use anchor_lang::prelude::*;
+use anchor_spl::{
+    mint, token::{Mint,MintTo,TokenAccount,Token},
+    associated_token::{AssociatedToken,Create,}
+} ;
 
 declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
@@ -69,6 +73,12 @@ pub mod starter {
         //ticks per second/ ticks per slot * 1 year in seconds should probably get the constants 
         tree.next_fruit_maturaturation_date =  time + 5 * 30 * 60 * 24 * 365 ; 
 
+        let input_balance = &mut  ctx.accounts.input_balance ;
+        input_balance.water= 0 ;
+        input_balance.nitrogen= 0 ;
+        input_balance.phosphorus= 0 ;
+        input_balance.potassium= 0 ;
+
 
         let vault =  &mut ctx.accounts.vault ;
         //transfer sol to vault
@@ -83,8 +93,76 @@ pub mod starter {
             ), lamports)
 
     }
+
+    // pub fn water_tree(ctx: Context<Water>)-> Result<()> {
+    //     Ok(())
+    // }
+
+
 }
 
+
+
+
+#[derive(Accounts)]
+pub struct Nutrient<'info> {
+     #[account(mut)]
+    pub payer: Signer<'info>,
+
+    #[account(seeds=[b"farmer", payer.key().as_ref()], bump, )]
+    pub farmer: Account<'info,Farmer>, 
+
+    #[account(seeds=[b"watermint"], bump, mint::decimals=9, mint::authority=nutrient_mint_authority)]
+    pub water_mint: Account<'info, Mint> ,
+
+    #[account(seeds=[b"nitrogenmint"], bump, mint::decimals=9, mint::authority=nutrient_mint_authority)]
+    pub nitrogen_mint: Account<'info, Mint> ,
+
+    #[account(seeds=[b"potassiummint"], bump, mint::decimals=9,
+    mint::authority=nutrient_mint_authority)]
+    pub potassium_mint: Account<'info, Mint> ,
+
+    #[account(seeds=[b"phosphorusmint"], bump, mint::decimals=9, mint::authority=nutrient_mint_authority)]
+    pub phosphorus_mint: Account<'info, Mint> ,
+
+    /// CHECK: mint authority pda
+    #[account(seeds=[b"mint_authority"], bump,)]
+    pub nutrient_mint_authority: UncheckedAccount<'info,>,
+
+    #[account(seeds=[b"farm"], bump)]
+    pub farm: Account<'info,Farm>,
+
+    #[account( seeds=[b"landmeta", farm.key().as_ref()], bump)]
+    pub land_meta: Account<'info,LandMeta>,
+
+     #[account( seeds=[b"treesmeta",farm.key().as_ref()], bump, )]
+    pub trees_meta: Account<'info, TreesMeta>,
+
+    #[account( seeds=[b"tree",trees_meta.key().as_ref(),farmer.key().as_ref()], bump, )]
+    pub tree: Account<'info, Tree>,
+
+    #[account( seeds=[b"landpiece",land_meta.key().as_ref(),farmer.key().as_ref()], bump,)]
+    pub land_piece: Account<'info, LandPiece>,
+
+     #[account(seeds=[b"nutrientbalance",land_piece.key().as_ref(),tree.key().as_ref()], bump,)]
+    pub input_balance: Account<'info,InputBalance>,
+
+    #[account(init_if_needed, payer=payer , seeds=[b"water",input_balance.key().as_ref()], bump, token::mint=water_mint, token::authority=input_balance)]
+    pub water_balance: Account<'info,TokenAccount>,
+
+    #[account(init_if_needed, payer=payer , seeds=[b"nitrogen",input_balance.key().as_ref()], bump, token::mint=water_mint, token::authority=input_balance)]
+    pub nitrogen_balance: Account<'info,TokenAccount>,
+
+    #[account(init_if_needed, payer=payer , seeds=[b"phosphorus",input_balance.key().as_ref()], bump, token::mint=water_mint, token::authority=input_balance)]
+    pub phosphorus_balance: Account<'info,TokenAccount>,
+
+    #[account(init_if_needed, payer=payer , seeds=[b"potassium",input_balance.key().as_ref()], bump, token::mint=water_mint, token::authority=input_balance)]
+    pub potassium_balance: Account<'info,TokenAccount>,
+    
+    pub token_program: Program<'info,Token>,
+    pub system_program: Program<'info,System> 
+
+}
 
 #[derive(Accounts)]
 pub struct InitializeFarm <'info> {
@@ -102,8 +180,17 @@ pub struct InitializeFarm <'info> {
 
     #[account(init, payer=payer, seeds=[b"treesmeta",farm.key().as_ref()], bump, space = 8 + TreesMeta::INIT_SPACE)]
     pub trees_meta: Account<'info, TreesMeta>,
+
+    #[account(init, payer=payer, seeds=[b"watermint"], bump, mint::decimals=9, mint::authority=nutrient_mint_authority)]
+    pub water_mint: Account<'info, Mint> ,
+
+      /// CHECK: mint authority pda
+    #[account(init, payer=payer, seeds=[b"mint_authority"], bump, space = 8)]
+    pub nutrient_mint_authority: UncheckedAccount<'info,>,
+
     #[account(init, payer=payer, seeds=[b"carbonvault"], bump, space = 8 + Vault::INIT_SPACE)]
     pub vault: Account<'info, Vault>,
+    pub token_program: Program<'info,Token>,
     pub system_program: Program<'info, System>,
 }    
 
@@ -144,15 +231,17 @@ pub struct InitializeFarmer <'info> {
     #[account( seeds=[b"treesmeta",farm.key().as_ref()], bump,)]
     pub trees_meta: Account<'info, TreesMeta>,
 
-    #[account(init, payer=payer, seeds=[b"cultivar", cultivar_meta.key().as_ref(), cultivar_name.as_ref()], bump, space = 8 + Cultivar::INIT_SPACE)]
+    #[account(seeds=[b"cultivar", cultivar_meta.key().as_ref(), cultivar_name.as_ref()], bump,)]
     pub cultivar: Account<'info,Cultivar>,
-
 
     #[account(init, payer=payer, seeds=[b"tree",trees_meta.key().as_ref(),farmer.key().as_ref()], bump, space = 8 + Tree::INIT_SPACE)]
     pub tree: Account<'info, Tree>,
 
     #[account(init, payer=payer, seeds=[b"landpiece",land_meta.key().as_ref(),farmer.key().as_ref()], bump, space = 8 + LandPiece::INIT_SPACE)]
     pub land_piece: Account<'info, LandPiece>,
+
+    #[account(init, payer=payer, seeds=[b"nutrientbalance",land_piece.key().as_ref(),tree.key().as_ref()], bump, space = 8 + LandPiece::INIT_SPACE)]
+    pub input_balance: Account<'info, InputBalance>,
 
 
     #[account(seeds=[b"carbonvault"], bump,)]
@@ -218,8 +307,6 @@ pub struct Tree {
 }
 
 
-
-
 // #[derive(AnchorDeserialize, AnchorSerialize, Clone, Debug, )]
 // #[derive(InitSpace)]
 // pub enum TreeName{
@@ -235,7 +322,6 @@ pub struct Vault {
  pub authority: Pubkey 
 }
 
-
 #[account]
 #[derive(Default)]
 #[derive(InitSpace)]
@@ -245,4 +331,13 @@ pub struct Farmer {
     pub address: Pubkey,
     pub land_count: u64,
     pub tree_count: u64,
+}
+#[account]
+#[derive(Default)]
+#[derive(InitSpace)]
+pub struct InputBalance {
+    pub water: u64,
+    pub nitrogen: u64,
+    pub potassium: u64,
+    pub phosphorus: u64 ,
 }
