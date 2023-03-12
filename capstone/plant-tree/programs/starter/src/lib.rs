@@ -111,6 +111,56 @@ pub mod starter {
         )
     }
 
+    pub fn add_potassium(ctx: Context<Nutrient>, amount: u64  )-> Result<()> {
+        let potassium_mint = &mut ctx.accounts.potassium_mint ;
+        let potassium_balance = &mut ctx.accounts.potassium_balance ;
+        let nutrient_mint_authority=  &mut ctx.accounts.nutrient_mint_authority ;
+        token::mint_to(
+            CpiContext::new(
+                ctx.accounts.token_program.to_account_info(),
+               token::MintTo{
+                   mint: potassium_mint.to_account_info().clone(),
+                   to: potassium_balance.to_account_info().clone(),
+                   authority: nutrient_mint_authority.to_account_info().clone(), 
+                }
+            ),
+            amount
+        )
+    }
+
+    pub fn add_phosphorus(ctx: Context<Nutrient>, amount: u64  )-> Result<()> {
+        let phosphorus_mint = &mut ctx.accounts.phosphorus_mint ;
+        let phosphorus_balance = &mut ctx.accounts.phosphorus_balance ;
+        let nutrient_mint_authority=  &mut ctx.accounts.nutrient_mint_authority ;
+        token::mint_to(
+            CpiContext::new(
+                ctx.accounts.token_program.to_account_info(),
+               token::MintTo{
+                   mint: phosphorus_mint.to_account_info().clone(),
+                   to: phosphorus_balance.to_account_info().clone(),
+                   authority: nutrient_mint_authority.to_account_info().clone(), 
+                }
+            ),
+            amount
+        )
+    }
+    pub fn add_nitrogen(ctx: Context<Nutrient>, amount: u64  )-> Result<()> {
+        let nitrogen_mint = &mut ctx.accounts.nitrogen_mint ;
+        let nitrogen_balance = &mut ctx.accounts.nitrogen_balance ;
+        let nutrient_mint_authority=  &mut ctx.accounts.nutrient_mint_authority ;
+        token::mint_to(
+            CpiContext::new(
+                ctx.accounts.token_program.to_account_info(),
+               token::MintTo{
+                   mint: nitrogen_mint.to_account_info().clone(),
+                   to: nitrogen_balance.to_account_info().clone(),
+                   authority: nutrient_mint_authority.to_account_info().clone(), 
+                }
+            ),
+            amount
+        )
+    }
+
 
 }
 
