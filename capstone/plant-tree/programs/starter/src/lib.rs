@@ -3,8 +3,11 @@ use anchor_spl::{
     mint, token::{self,Mint,TokenAccount,Token, },
     associated_token::{AssociatedToken,Create,}
 } ;
+use solana_program::clock::{DEFAULT_TICKS_PER_SLOT,DEFAULT_TICKS_PER_SECOND, SECONDS_PER_DAY} ;
 
 declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
+
+
 
 #[program]
 pub mod starter {
@@ -26,6 +29,7 @@ pub mod starter {
         
         Ok(())
     }
+
     pub fn create_cultivar(ctx: Context<CreateCultivar>, name: String , height: u64, width: u64) -> Result<()>{
         let cultivar_meta =  &mut ctx.accounts.cultivar_meta ;
          cultivar_meta.cultivars_count = cultivar_meta.cultivars_count + 1 ;
@@ -69,15 +73,18 @@ pub mod starter {
         tree.girth = cultivar.init_width;
         tree.age = 0 ;
         let time =  Clock::get()?.slot ;
-        tree.planted = time ;
+        tree.planted_time = time ;
+        tree.last_check_time = time ;
+        tree.health = 100 ;
+   
         //ticks per second/ ticks per slot * 1 year in seconds should probably get the constants 
-        tree.next_fruit_maturaturation_date =  time + 5 * 30 * 60 * 24 * 365 ; 
+        tree.next_fruit_maturaturation_time =  time + 5 * 30 * 60 * 24 * 365 ; 
 
         let input_balance = &mut  ctx.accounts.input_balance ;
-        input_balance.water= 0 ;
-        input_balance.nitrogen= 0 ;
-        input_balance.phosphorus= 0 ;
-        input_balance.potassium= 0 ;
+        // input_balance.water= 0 ;
+        // input_balance.nitrogen= 0 ;
+        // input_balance.phosphorus= 0 ;
+        // input_balance.potassium= 0 ;
 
 
         let vault =  &mut ctx.accounts.vault ;
@@ -94,16 +101,51 @@ pub mod starter {
 
     }
 
-    pub fn water_tree(ctx: Context<Nutrient>, amount: u64  )-> Result<()> {
+    fn check_and_update(){
+
+        
+
+    }
+
+    pub fn water_tree(ctx: Context<TreeUpdate>, amount: u64  )-> Result<()> {
+        let tree = &mut ctx.accounts.tree ;
         let water_mint = &mut ctx.accounts.water_mint ;
-        let water_balance = &mut ctx.accounts.water_balance ;
+
+        let water_balance_account = &mut ctx.accounts.water_balance ;
+
         let nutrient_mint_authority=  &mut ctx.accounts.nutrient_mint_authority ;
+        let input_balance  = &mut ctx.accounts.input_balance ;
+        let water_balance_account = &mut ctx.accounts.water_balance ;
+        let potassium_balance = token::accessor::amount(&ctx.accounts.potassium_balance.to_account_info())? ;
+        let nitrogen_balance = token::accessor::amount(&ctx.accounts.nitrogen_balance.to_account_info())? ;
+        let phosphorus_balance = token::accessor::amount(&ctx.accounts.phosphorus_balance.to_account_info())? ;
+
+        let water_balance = token::accessor::amount(&water_balance_account.to_account_info())? ;
+
+
+        let percent_potassium_intake = input_balance.percentage_intake(tree.root_area, potassium_balance.clone() , tree.last_check_time, tree.age)? ;
+
+        let percent_nitrogen_intake = input_balance.percentage_intake(tree.root_area, nitrogen_balance.clone() , tree.last_check_time, tree.age)? ;
+
+        let percent_phosphorus_intake = input_balance.percentage_intake(tree.root_area, phosphorus_balance.clone() , tree.last_check_time, tree.age)? ;
+
+        tree.grow_expected_fruit_count(percent_potassium_intake);
+        tree.grow_leaf_area(percent_nitrogen_intake);
+        tree.grow_root_area(percent_phosphorus_intake);
+        if tree.is_harvest_season() {
+         // if yeah harvest some fruitts 
+         tree.set_new_harvest_season(); //if true   
+        }         
+        tree.update_age() ;
+        tree.update_size(percent_nitrogen_intake, percent_phosphorus_intake, percent_potassium_intake) ;
+        tree.set_last_check_time() ;
+        
         token::mint_to(
             CpiContext::new(
                 ctx.accounts.token_program.to_account_info(),
                token::MintTo{
                    mint: water_mint.to_account_info().clone(),
-                   to: water_balance.to_account_info().clone(),
+                   to: water_balance_account.to_account_info().clone(),
                    authority: nutrient_mint_authority.to_account_info().clone(), 
                 }
             ),
@@ -111,7 +153,7 @@ pub mod starter {
         )
     }
 
-    pub fn add_potassium(ctx: Context<Nutrient>, amount: u64  )-> Result<()> {
+    pub fn add_potassium(ctx: Context<TreeUpdate>, amount: u64  )-> Result<()> {
         let potassium_mint = &mut ctx.accounts.potassium_mint ;
         let potassium_balance = &mut ctx.accounts.potassium_balance ;
         let nutrient_mint_authority=  &mut ctx.accounts.nutrient_mint_authority ;
@@ -128,7 +170,7 @@ pub mod starter {
         )
     }
 
-    pub fn add_phosphorus(ctx: Context<Nutrient>, amount: u64  )-> Result<()> {
+    pub fn add_phosphorus(ctx: Context<TreeUpdate>, amount: u64  )-> Result<()> {
         let phosphorus_mint = &mut ctx.accounts.phosphorus_mint ;
         let phosphorus_balance = &mut ctx.accounts.phosphorus_balance ;
         let nutrient_mint_authority=  &mut ctx.accounts.nutrient_mint_authority ;
@@ -144,7 +186,7 @@ pub mod starter {
             amount
         )
     }
-    pub fn add_nitrogen(ctx: Context<Nutrient>, amount: u64  )-> Result<()> {
+    pub fn add_nitrogen(ctx: Context<TreeUpdate>, amount: u64  )-> Result<()> {
         let nitrogen_mint = &mut ctx.accounts.nitrogen_mint ;
         let nitrogen_balance = &mut ctx.accounts.nitrogen_balance ;
         let nutrient_mint_authority=  &mut ctx.accounts.nutrient_mint_authority ;
@@ -159,6 +201,15 @@ pub mod starter {
             ),
             amount
         )
+
+        // growTree()
+    }
+
+    pub fn update_tree_data(ctx: Context<TreeUpdate>) -> Result<()> {
+     
+     
+    
+     Ok(())
     }
 
 
@@ -168,7 +219,7 @@ pub mod starter {
 
 
 #[derive(Accounts)]
-pub struct Nutrient<'info> {
+pub struct TreeUpdate<'info> {
      #[account(mut)]
     pub payer: Signer<'info>,
 
@@ -355,21 +406,6 @@ pub struct LandPiece {
     pub is_planted: bool,
 }
 
-
-#[account]
-#[derive(InitSpace)]
-pub struct Tree {
-    #[max_len(50)]
-    pub cultivar_name: String,
-    pub land_number: u64,
-    pub height: u64,
-    pub girth: u64,
-    pub age: u64 ,
-    pub planted: u64,
-    pub next_fruit_maturaturation_date: u64 ,
-}
-
-
 // #[derive(AnchorDeserialize, AnchorSerialize, Clone, Debug, )]
 // #[derive(InitSpace)]
 // pub enum TreeName{
@@ -382,7 +418,7 @@ pub struct Tree {
 #[account]
 #[derive(InitSpace)]
 pub struct Vault {
- pub authority: Pubkey 
+    pub authority: Pubkey 
 }
 
 #[account]
@@ -397,10 +433,200 @@ pub struct Farmer {
 }
 #[account]
 #[derive(Default)]
-#[derive(InitSpace)]
+#[derive(InitSpace)] 
 pub struct InputBalance {
-    pub water: u64,
-    pub nitrogen: u64,
-    pub potassium: u64,
-    pub phosphorus: u64 ,
+    // pub water: u64, //tokens  or not tokens that is the question 
+    // pub nitrogen: u64,
+    // pub potassium: u64,
+    // pub phosphorus: u64 ,
 }
+
+#[account]
+#[derive(InitSpace)]
+pub struct Tree {
+    #[max_len(50)]
+    pub cultivar_name: String,
+    pub land_number: u64,
+    pub height: u64,
+    pub girth: u64,
+    pub age: u64 ,
+    pub planted_time: u64,
+    pub health: u8 ,
+    pub last_check_time: u64 ,
+    pub next_fruit_maturaturation_time: u64 ,
+    pub expected_fruit_count: u64,
+    pub is_alive: bool ,
+    pub leaf_area: u64 ,
+    pub root_area: u64 ,
+}
+
+
+pub const SLOTS_PER_DAY: u64 = DEFAULT_TICKS_PER_SLOT*SECONDS_PER_DAY/DEFAULT_TICKS_PER_SECOND ;
+pub const SLOTS_PER_HALF_DAY: u64 = DEFAULT_TICKS_PER_SLOT*SECONDS_PER_DAY/(DEFAULT_TICKS_PER_SECOND * 2) ;
+pub const SLOTS_PER_YEAR: u64 = DEFAULT_TICKS_PER_SLOT*SECONDS_PER_DAY /DEFAULT_TICKS_PER_SECOND;
+pub const WIDTH_PER_YEAR: u64 = 25000 ; // 25micrometers 
+pub const HEIGHT_PER_YEAR: u64 = 500000;
+pub const HEIGHT_PER_SLOT: u64  =  HEIGHT_PER_YEAR / SLOTS_PER_YEAR ;
+pub const WIDTH_PER_SLOT: u64  =  WIDTH_PER_YEAR / SLOTS_PER_YEAR ;
+pub const ROOT_AREA_GROWTH_RATE:u64  = 1 ;
+pub const LEAF_AREA_GROWTH_RATE: u64 = 1 ;
+pub const RATE_OF_NUTRIENT_UPTAKE: u64 = 2; 
+pub const RATE_OF_WATER_UPTAKE: u64 = 3; 
+pub const RATE_OF_FRUIT_INCREMENT: u64 = 1 ;
+
+
+// const Slots_per_year = 1 ;
+// const  Girth_per_year =
+// const Height_per_year
+// const Leaf_area_per_year= 
+
+impl Tree {
+
+pub fn update_size(&mut self, percent_nitrogen_intake: u64 , percent_phosphorus_intake: u64, percent_potassium_intake: u64) -> Result<()>  {
+    //calcuate food consumption
+    // return food consumption based on tree attributes 
+
+    let slot = Clock::get()?.slot ;   
+    let period =  slot - self.last_check_time ;
+    let reduction = percent_nitrogen_intake* percent_phosphorus_intake*percent_potassium_intake ;
+    let height =  self.height + period * HEIGHT_PER_SLOT * reduction /(100 * 100* 100) ;
+    let width =  self.girth + period * WIDTH_PER_SLOT * reduction /(100 * 100* 100) ;
+
+    // should include age 
+
+    let change_height = height - self.height ;
+    let change_width = width - self.girth;
+
+    // let leaf_area_growth =  grow_leaves() ;
+
+    if change_height != 0 && change_width !=0 {
+        self.height = height ;
+        self.girth = width ;
+    }
+
+
+    Ok(())
+}
+
+// pub fn update_girth(&mut self, value: u64){
+  
+//     self.girth += value;
+// }
+
+pub fn update_age(&mut self)-> Result<()> {  
+
+    let slot = Clock::get()?.slot ;   
+    let period =  slot - self.planted_time ;
+    let year_time_slots = DEFAULT_TICKS_PER_SECOND / DEFAULT_TICKS_PER_SLOT * SECONDS_PER_DAY * 365 ;
+
+    let age = period / year_time_slots ;
+
+    if self.age < age{
+       self.age = age ;
+    }
+
+    Ok(())
+}
+
+pub fn set_last_check_time(&mut self) -> Result<()>{
+    self.last_check_time = Clock::get()?.slot ;  
+    Ok(())
+}
+
+pub fn grow_leaf_area(&mut self, percent_nitrogen_intake: u64) -> Result<()> {    
+ //use some nitrogen 
+  let period =  Clock::get()?.slot - self.last_check_time ;
+  self.leaf_area += LEAF_AREA_GROWTH_RATE * period * percent_nitrogen_intake/ self.age ;
+  Ok(())
+}
+
+pub fn grow_root_area(&mut self, percent_phosphorus_intake: u64) -> Result<()> {   
+  let period =  Clock::get()?.slot - self.last_check_time ;
+  self.root_area += ROOT_AREA_GROWTH_RATE * period * percent_phosphorus_intake/ self.age ;
+  Ok(())
+}
+
+pub fn grow_expected_fruit_count(&mut self, percent_potassium_intake: u64) -> Result<()> {    
+ //use some nitrogen 
+  let period =  Clock::get()?.slot - self.last_check_time ;
+  self.expected_fruit_count += RATE_OF_FRUIT_INCREMENT * period * percent_potassium_intake/ self.age ;
+  Ok(())
+}
+
+
+pub fn is_harvest_season(&mut self) -> Result<bool>{
+    if Clock::get()?.slot >= self.next_fruit_maturaturation_time{
+        return Ok(true)
+    }
+
+     Ok(false)
+}
+
+pub fn set_new_harvest_season(&mut self) -> Result<()> {
+     //ticks per second/ ticks per slot * 1 year in seconds should probably get the constants 
+
+    self.next_fruit_maturaturation_time = Clock::get()?.slot + DEFAULT_TICKS_PER_SECOND / DEFAULT_TICKS_PER_SLOT * SECONDS_PER_DAY * 365 ;
+
+    Ok(())
+}
+
+// fn nutrient_consumption(&mut self){
+
+//     // //Okay Imaginery stuff, 1 token water  1 token phosphorus for the root 
+//     // let root_growth = (1,1);
+//     // //More imaginary consumption  for leaf we 1
+//     // let leaf_growth = (1,1); 
+
+// } 
+
+
+}
+
+
+impl InputBalance {
+
+    pub fn required_uptake (root_area: u64, last_checked_time: u64, age: u64)-> Result<u64> {
+        let period =  Clock::get()?.slot - last_checked_time ;
+
+        Ok(RATE_OF_NUTRIENT_UPTAKE * period * root_area / age)
+       
+    }
+
+    pub fn percentage_intake(&self ,root_area: u64, balance: u64 , last_checked_time: u64, age: u64)-> Result<u64> {
+        let required = Self::required_uptake(root_area, last_checked_time, age)? ;
+        
+        if required >  balance {
+            Ok(balance * 100/required)            
+        }else {
+            Ok(100)
+        }
+    }
+
+    // pub fn potassium_uptake  (root_area: u64, balance: u64 , last_checked_time: u64, age: u64)-> Result<i64> {
+    //     let period =  Clock::get()?.slot - last_checked_time ;
+
+    //     Ok(balance as i64 -  (period as i64* RATE_OF_NUTRIENT_UPTAKE as i64* root_area as i64/ age as i64 ))
+       
+    // }
+    // pub fn phosphorus_uptake  (root_area: u64, balance: u64 , last_checked_time: u64, age: u64)-> Result<i64> {
+    //     let period =  Clock::get()?.slot - last_checked_time ;
+
+    //     Ok(balance as i64 -  (period as i64* RATE_OF_NUTRIENT_UPTAKE as i64* root_area as i64/ age as i64 ))
+       
+    // }
+    // pub fn water_uptake  (root_area: u64, balance: u64 , last_checked_time: u64, age: u64)-> Result<i64> {
+    //     let period =  Clock::get()?.slot - last_checked_time ;
+
+    //     Ok(balance as i64 -  (period as i64* RATE_OF_WATER_UPTAKE as i64* root_area as i64/ age as i64 ))
+       
+    // }
+}
+
+
+
+
+
+// #[error_code]
+// pub enum TreeError{
+
+// }
