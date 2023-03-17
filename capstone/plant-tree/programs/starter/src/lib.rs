@@ -17,7 +17,7 @@ pub mod starter {
     use super::*;
 
     pub fn initialize_farm(ctx: Context<InitializeFarm>) -> Result<()>{
-         let land_meta = &mut ctx.accounts.land_meta ;
+        let land_meta = &mut ctx.accounts.land_meta ;
         land_meta.land_piece_count = 0 ; //to check for initialization
         
         let trees_meta = &mut ctx.accounts.trees_meta ;
@@ -213,12 +213,50 @@ pub mod starter {
         // growTree()
     }
 
+
+    pub fn list_fruits(ctx:Context<ListFruit>) ->Result<()>{
+
+        Ok(())
+    }
+
+    pub fn Buy_fruits(ctx:Context<ListFruit>) ->Result<()>{
+
+        Ok(())
+    }
+
  
 
 
 }
 
 
+
+
+#[derive(Accounts)]
+pub struct ListFruit<'info> {
+    #[account(mut)]
+    pub payer: Signer<'info>,
+    #[account(seeds=[b"farmer", payer.key().as_ref()], bump, )]
+    pub farmer: Account<'info,Farmer>, 
+    #[account(seeds=[b"farm"], bump)]
+    pub farm: Account<'info,Farm>,
+    #[account(seeds=[b"fruit_vault"], bump)]
+    pub fruit_vault_authority: UncheckedAccount<'info>,
+     #[account( seeds=[b"treesmeta",farm.key().as_ref()], bump, )]
+    pub trees_meta: Account<'info, TreesMeta>,
+    #[account( seeds=[b"tree",trees_meta.key().as_ref(),farmer.key().as_ref()], bump, )]
+    pub tree: Account<'info, Tree>,
+    #[account(seeds=[b"fruitmint"], bump, mint::decimals=9,)]
+    pub fruit_mint: Account<'info, Mint> ,
+    #[account(seeds=[b"fruit"], bump,token::mint=fruit_mint, )] //token::authority=program. does that happen by default 
+    pub fruit_vault: Account<'info,TokenAccount>, 
+    #[account(seeds=[b"fruit",tree.key().as_ref()], bump, token::mint=fruit_mint, token::authority=payer)]
+    pub fruit_balance: Account<'info,TokenAccount>,
+    #[account(seeds=[b"carbonvault"], bump, )]
+    pub vault: Account<'info, Vault>,
+    pub token_program: Program<'info,Token>,
+
+}
 
 
 #[derive(Accounts)]
@@ -440,7 +478,7 @@ pub struct LandPiece {
 #[account]
 #[derive(InitSpace)]
 pub struct Vault {
-    pub authority: Pubkey 
+    // pub authority: Pubkey 
 }
 
 #[account]
