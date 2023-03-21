@@ -239,7 +239,8 @@ pub struct BuyFruit<'info> {
     pub farmer: Account<'info,Farmer>, 
     #[account(seeds=[b"farm"], bump)]
     pub farm: Account<'info,Farm>,
-    #[account(seeds=[b"fruit_vault"], bump)]
+    /// CHECK: pda used for signing 
+    #[account(seeds=[b"fruitvaultauthority"], bump)]
     pub fruit_vault_authority: UncheckedAccount<'info>, 
      #[account( seeds=[b"treesmeta",farm.key().as_ref()], bump, )]
     pub trees_meta: Account<'info, TreesMeta>,
@@ -247,7 +248,7 @@ pub struct BuyFruit<'info> {
     pub tree: Account<'info, Tree>,
     #[account(seeds=[b"fruitmint"], bump, mint::decimals=9,)]
     pub fruit_mint: Account<'info, Mint> ,
-    #[account(seeds=[b"fruit"], bump,token::mint=fruit_mint, )] //token::authority=program. does that happen by default 
+    #[account(seeds=[b"fruitvault"], bump,token::mint=fruit_mint,token::authority=fruit_vault_authority )] //token::authority=program. does that happen by default 
     pub fruit_vault: Account<'info,TokenAccount>, 
     #[account(seeds=[b"fruit",tree.key().as_ref()], bump, token::mint=fruit_mint, token::authority=payer)]
     pub fruit_balance: Account<'info,TokenAccount>,
@@ -282,7 +283,7 @@ pub struct ListFruit<'info> {
     pub tree: Account<'info, Tree>,
     #[account(seeds=[b"fruitmint"], bump, mint::decimals=9,)]
     pub fruit_mint: Account<'info, Mint> ,
-    #[account(seeds=[b"fruit"], bump,token::mint=fruit_mint, )] //token::authority=program. does that happen by default 
+    #[account(seeds=[b"fruit"], bump,token::mint=fruit_mint,token::authority=fruit_vault_authority )] //token::authority=program. does that happen by default 
     pub fruit_vault: Account<'info,TokenAccount>, 
     #[account(seeds=[b"fruit",tree.key().as_ref()], bump, token::mint=fruit_mint, token::authority=payer)]
     pub fruit_balance: Account<'info,TokenAccount>,
@@ -343,7 +344,7 @@ pub struct TreeUpdate<'info> {
     pub phosphorus_mint: Account<'info, Mint> ,
 
     /// CHECK: mint authority pda
-    #[account(seeds=[b"mint_authority"], bump,)]
+    #[account(seeds=[b"nutrientmintauthority"], bump,)]
     pub nutrient_mint_authority: UncheckedAccount<'info,>,
 
     #[account(seeds=[b"farm"], bump)]
@@ -376,7 +377,7 @@ pub struct TreeUpdate<'info> {
     #[account(init_if_needed, payer=payer , seeds=[b"potassium",input_balance.key().as_ref()], bump, token::mint=water_mint, token::authority=input_balance)]
     pub potassium_balance: Account<'info,TokenAccount>,
 
-    #[account( seeds=[b"fruitmint",tree.key().as_ref()], bump,)]
+    #[account( seeds=[b"fruitmintauthority"], bump,)] //,tree.key().as_ref() removed
     pub fruit_mint_authority: UncheckedAccount<'info>,
 
     #[account(seeds=[b"fruitmint"], bump, mint::decimals=9, mint::authority=fruit_mint_authority)]
@@ -397,6 +398,12 @@ pub struct InitializeFarm <'info> {
 
     #[account(seeds=[b"farm"], bump)]
     pub farm: Account<'info,Farm>,
+      
+    #[account(seeds=[b"fruitmarket"], bump)]
+    pub fruit_market: Account<'info,FruitMarket>,
+
+    #[account(seeds=[b"fruitvaultauthority"], bump)]
+    pub fruit_vault_authority: UncheckedAccount<'info>, 
 
     #[account(init, payer=payer, seeds=[b"landmeta", farm.key().as_ref()], bump, space = 8 + LandMeta::INIT_SPACE)]
     pub land_meta: Account<'info,LandMeta>,
@@ -410,9 +417,17 @@ pub struct InitializeFarm <'info> {
     #[account(init, payer=payer, seeds=[b"watermint"], bump, mint::decimals=9, mint::authority=nutrient_mint_authority)]
     pub water_mint: Account<'info, Mint> ,
 
+     #[account(init, payer=payer,seeds=[b"fruitmint"], bump, mint::decimals=9, mint::authority=fruit_mint_authority)]
+    pub fruit_mint: Account<'info, Mint> ,
+      
+    #[account(init, payer=payer , seeds=[b"fruitvault"], bump,token::mint=fruit_mint,token::authority=fruit_vault_authority)] //token::authority=program. does that happen by default 
+    pub fruit_vault: Account<'info,TokenAccount>, 
       /// CHECK: mint authority pda
-    #[account(init, payer=payer, seeds=[b"nutrientmintauthority"], bump, space = 8)]
+    #[account(seeds=[b"nutrientmintauthority"], bump)]
     pub nutrient_mint_authority: UncheckedAccount<'info,>,
+     /// CHECK: mint authority pda
+    #[account(seeds=[b"fruitmintauthority"], bump,)] //,tree.key().as_ref() removed
+    pub fruit_mint_authority: UncheckedAccount<'info>,
 
     #[account(init, payer=payer, seeds=[b"carbonvault"], bump, space = 8 + Vault::INIT_SPACE)]
     pub vault: Account<'info, Vault>,
@@ -477,8 +492,6 @@ pub struct InitializeFarmer <'info> {
 
     #[account(init, payer=payer, seeds=[b"nutrientbalance",land_piece.key().as_ref(),tree.key().as_ref()], bump, space = 8 + LandPiece::INIT_SPACE)]
     pub input_balance: Account<'info, InputBalance>,
-
-
     #[account(seeds=[b"carbonvault"], bump,)]
     pub vault: Account<'info, Vault>,
     pub token_program: Program<'info,Token>,
@@ -760,4 +773,4 @@ impl InputBalance {
 // #[error_code]
 // pub enum TreeError{
 
-// }
+// }                                                                                                                                                                                                                                                                                                                                                                                                                                                                
