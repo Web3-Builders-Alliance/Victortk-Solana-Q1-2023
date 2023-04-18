@@ -21,70 +21,71 @@ pub mod starter {
         let trees_meta = &mut ctx.accounts.trees_meta ;
         trees_meta.tree_count = 0 ; //to check for initialization
 
-
         let cultivar_meta =  &mut ctx.accounts.cultivar_meta ;
         cultivar_meta.cultivars_count = 0 ;
         
         Ok(())
     }    
 
-    pub fn initialize_farmer(ctx: Context<InitializeFarmer>, user_name: String, cultivar_name: String ) -> Result<()> {        
+    pub fn initialize_farmer(ctx: Context<InitializeFarmer>, user_name: String) -> Result<()> {        
         let payer = &mut ctx.accounts.payer ; 
         let farmer = &mut ctx.accounts.farmer ;
         farmer.name = user_name ;
         farmer.address = payer.key().clone() ;
-        farmer.land_count = 1 ;
-        farmer.tree_count = 1 ;
+        farmer.land_count = 0 ;
+        farmer.tree_count = 0 ;
 
-        let land_meta = &mut ctx.accounts.land_meta ;
-        land_meta.land_piece_count = land_meta.land_piece_count + 1 ; //to check for initialization
+        Ok(())
+
+        // let land_meta = &mut ctx.accounts.land_meta ;
+        // land_meta.land_piece_count = land_meta.land_piece_count + 1 ; //to check for initialization
         
-        let trees_meta = &mut ctx.accounts.trees_meta ;
-        trees_meta.tree_count = trees_meta.tree_count + 1 ; //to check for initialization
+        // let trees_meta = &mut ctx.accounts.trees_meta ;
+        // trees_meta.tree_count = trees_meta.tree_count + 1 ; //to check for initialization
 
 
-        let cultivar = &mut ctx.accounts.cultivar ;
-        cultivar.count = cultivar.count + 1 ;
-        //scacity points cultivar.scarcity_points = 
+        // let cultivar = &mut ctx.accounts.cultivar ;
+        // cultivar.count = cultivar.count + 1 ;
+        // //scacity points cultivar.scarcity_points = 
 
-        let land_piece = &mut ctx.accounts.land_piece ;
-        land_piece.authority = payer.key().clone();
-        land_piece.number = land_meta.land_piece_count ;
-        land_piece.is_planted = true ;   
+        // let land_piece = &mut ctx.accounts.land_piece ;
+        // land_piece.authority = payer.key().clone();
+        // land_piece.number = land_meta.land_piece_count ;
+        // land_piece.is_planted = true ;   
 
         
-        let tree =  &mut ctx.accounts.tree ;
-        tree.cultivar_name = cultivar_name ;
-        tree.land_number = land_piece.number ;
-        tree.height = cultivar.init_height;
-        tree.girth = cultivar.init_width;
-        tree.age = 0 ;
-        let time =  Clock::get()?.slot ;
-        tree.planted_time = time ;
-        tree.last_check_time = time ;
-        tree.health = 100 ;
+        // let tree =  &mut ctx.accounts.tree ;
+        // tree.cultivar_name = cultivar_name ;
+        // tree.land_number = land_piece.number ;
+        // tree.height = cultivar.init_height;
+        // tree.girth = cultivar.init_width;
+        // tree.age = 0 ;
+        // let time =  Clock::get()?.slot ;
+        // tree.planted_time = time ;
+        // tree.last_check_time = time ;
+        // tree.health = 100 ;
    
-        //ticks per second/ ticks per slot * 1 year in seconds should probably get the constants 
-        tree.next_fruit_maturaturation_time =  time + 5 * 30 * 60 * 24 * 365 ; 
+        // //ticks per second/ ticks per slot * 1 year in seconds should probably get the constants 
+        // tree.next_fruit_maturaturation_time =  time + 5 * 30 * 60 * 24 * 365 ; 
 
-        let input_balance = &mut  ctx.accounts.input_balance ;
-        // input_balance.water= 0 ;
-        // input_balance.nitrogen= 0 ;
-        // input_balance.phosphorus= 0 ;
-        // input_balance.potassium= 0 ;
+        // let input_balance = &mut  ctx.accounts.input_balance ;
+        // // input_balance.water= 0 ;
+        // // input_balance.nitrogen= 0 ;
+        // // input_balance.phosphorus= 0 ;
+        // // input_balance.potassium= 0 ;
 
 
-        let vault =  &mut ctx.accounts.vault ;
-        //transfer sol to vault
-        let lamports = LAMPORTS_PER_SOL/4 ;
-        system_program::transfer(
-            CpiContext::new(
-               ctx.accounts.system_program.to_account_info(),
-                system_program::Transfer {
-                    from: payer.to_account_info(),
-                    to: vault.to_account_info(),
-            },  
-            ), lamports)
+        // let vault =  &mut ctx.accounts.vault ;
+        // //transfer sol to vault
+        // let lamports = LAMPORTS_PER_SOL/4 ;
+        // system_program::transfer(
+        //     CpiContext::new(
+        //        ctx.accounts.system_program.to_account_info(),
+        //         system_program::Transfer {
+        //             from: payer.to_account_info(),
+        //             to: vault.to_account_info(),
+        //     },  
+        //     ), lamports)
 
     }
 
@@ -457,29 +458,12 @@ pub struct PlantTree <'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
     #[account(seeds=[b"farmer", payer.key().as_ref()], bump,)]
-    pub farmer: Account<'info,Farmer>, 
-}
-
-
-#[derive(Accounts)]
-#[instruction(user_name:String, cultivar_name:String)]
-pub struct InitializeFarmer <'info> {
-    #[account(mut)]
-    pub payer: Signer<'info>,
-
-    #[account(init, payer=payer, seeds=[b"farmer", payer.key().as_ref()], bump, space = 8 + Farmer::INIT_SPACE)]
-    pub farmer: Account<'info,Farmer>, 
-
+    pub farmer: Account<'info,Farmer>,     
     #[account(seeds=[b"farm"], bump)]
     pub farm: Account<'info,Farm>,
-
-    #[account(seeds=[b"landmeta", farm.key().as_ref()], bump, )]
-    pub land_meta: Account<'info,LandMeta>,
-
     #[account(seeds=[b"cultivarmeta",farm.key().as_ref()], bump,)]
     pub cultivar_meta: Account<'info, CultivarMeta>,
-
-    #[account( seeds=[b"treesmeta",farm.key().as_ref()], bump,)]
+     #[account( seeds=[b"treesmeta",farm.key().as_ref()], bump,)]
     pub trees_meta: Account<'info, TreesMeta>,
 
     #[account(seeds=[b"cultivar", cultivar_meta.key().as_ref(), cultivar_name.as_ref()], bump,)]
@@ -496,14 +480,44 @@ pub struct InitializeFarmer <'info> {
 
     #[account(init, payer=payer, seeds=[b"fruit",tree.key().as_ref()], bump, token::mint=fruit_mint, token::authority=payer)]
     pub fruit_balance: Account<'info,TokenAccount>,
-
-    #[account(init, payer=payer, seeds=[b"landpiece",land_meta.key().as_ref(),farmer.key().as_ref()], bump, space = 8 + LandPiece::INIT_SPACE)]
+    #[account(seeds=[b"landmeta", farm.key().as_ref()], bump, )]
+    pub land_meta: Account<'info,LandMeta>,
+    #[account(seeds=[b"landpiece",land_meta.key().as_ref(),farmer.key().as_ref()], bump,)]
     pub land_piece: Account<'info, LandPiece>,
 
     #[account(init, payer=payer, seeds=[b"nutrientbalance",land_piece.key().as_ref(),tree.key().as_ref()], bump, space = 8 + LandPiece::INIT_SPACE)]
     pub input_balance: Account<'info, InputBalance>,
     #[account(seeds=[b"carbonvault"], bump,)]
     pub vault: Account<'info, Vault>,
+    pub token_program: Program<'info,Token>,
+    pub system_program: Program<'info, System>
+}
+
+#[derive(Accounts)]
+#[instruction(user_name:String, cultivar_name:String)]
+pub struct BuyLand <'info> { 
+    #[account(mut)]
+    pub payer: Signer<'info>,      
+    #[account(seeds=[b"farm"], bump)]
+    pub farm: Account<'info,Farm>, 
+    #[account(init, payer=payer, seeds=[b"farmer", payer.key().as_ref()], bump, space = 8 + Farmer::INIT_SPACE)]
+    pub farmer: Account<'info,Farmer>, 
+    #[account(seeds=[b"landmeta", farm.key().as_ref()], bump, )]
+    pub land_meta: Account<'info,LandMeta>,
+    #[account(init, payer=payer, seeds=[b"landpiece",land_meta.key().as_ref(),farmer.key().as_ref()], bump, space = 8 + LandPiece::INIT_SPACE)]
+    pub land_piece: Account<'info, LandPiece>,
+     #[account(seeds=[b"carbonvault"], bump,)]
+    pub vault: Account<'info, Vault>,
+    pub system_program: Program<'info, System>
+}
+
+
+#[derive(Accounts)]
+pub struct InitializeFarmer <'info> {
+    #[account(mut)]
+    pub payer: Signer<'info>,
+    #[account(init, payer=payer, seeds=[b"farmer", payer.key().as_ref()], bump, space = 8 + Farmer::INIT_SPACE)]
+    pub farmer: Account<'info,Farmer>, 
     pub token_program: Program<'info,Token>,
     pub system_program: Program<'info, System>,
 }

@@ -18,7 +18,11 @@ describe("starter", () => {
 		[Buffer.from("farm")],
 		program.programId
 		);
-	console.log(farm.toString()) ;
+  
+  let [farmer] = anchor.web3.PublicKey.findProgramAddressSync(
+		[Buffer.from("farmer"),
+		payer.publicKey.toBuffer()],
+		program.programId);
 
 	// fruit_market
   let [fruitMarket] = anchor.web3.PublicKey.findProgramAddressSync(
@@ -74,7 +78,6 @@ describe("starter", () => {
 			vault
 	  }).rpc();
 
-
 		console.log('Your transaction signature', tx);
 
 		let treesState = await program.account.treesMeta.fetch(treesMeta);
@@ -87,5 +90,26 @@ describe("starter", () => {
 				landState.landPieceCount.toString() +
 				' trees on the Farm'
 		);
+
+	
 	});
+	it('Initializes the Farmer', async() => {
+		let name = "Jonh Doe";
+		const tx = await program.methods
+		.initializeFarmer(name)
+		.accounts({
+			farmer,			
+		})
+		.rpc() ;
+
+		console.log('Your transaction signature', tx);
+
+		let farmerState = await program.account.farmer.fetch(farmer);
+		console.log("the famer name is,",farmerState.name);
+		console.log("the famer address is,",farmerState.address.toString());
+		console.log("the famer land count is,",farmerState.landCount.toString());
+		console.log("the famer tree count is,",farmerState.treeCount.toString());
+
+	})
+	
 });
