@@ -23,25 +23,28 @@ describe("starter", () => {
 		[Buffer.from("farmer"),
 		payer.publicKey.toBuffer()],
 		program.programId);
-
+		
 	// fruit_market
-  let [fruitMarket] = anchor.web3.PublicKey.findProgramAddressSync(
+	let [fruitMarket] = anchor.web3.PublicKey.findProgramAddressSync(
 		[Buffer.from('fruitmarket')],
-		program.programId
+  	program.programId
 	);
 	// land_meta
-  let [landMeta] = anchor.web3.PublicKey.findProgramAddressSync(
+	let [landMeta] = anchor.web3.PublicKey.findProgramAddressSync(
 		[Buffer.from("landmeta"), farm.toBuffer()],
 		program.programId
 	);
-
+	//land_piece 	
+	let [landPiece] = anchor.web3.PublicKey.findProgramAddressSync(
+			[Buffer.from('landpiece'), landMeta.toBuffer(), farmer.toBuffer()],
+			program.programId
+	);
 	// cultivar_meta
 	let [cultivarMeta] = anchor.web3.PublicKey.findProgramAddressSync(
 		[Buffer.from("cultivarmeta"), farm.toBuffer()],
 		program.programId
 	);
 	// trees_meta
-
 	let [treesMeta] = anchor.web3.PublicKey.findProgramAddressSync(
 		[Buffer.from("treesmeta"),farm.toBuffer()],
 		program.programId 
@@ -88,9 +91,8 @@ describe("starter", () => {
 		console.log(
 			'There are now ' +
 				landState.landPieceCount.toString() +
-				' trees on the Farm'
+				' owned land pieces'
 		);
-
 	
 	});
 	it('Initializes the Farmer', async() => {
@@ -110,6 +112,36 @@ describe("starter", () => {
 		console.log("the famer land count is,",farmerState.landCount.toString());
 		console.log("the famer tree count is,",farmerState.treeCount.toString());
 
+	})
+
+	it ('Buys land', async() => {
+
+		const tx = await program.methods
+			.buyLand()
+			.accounts({
+				farm,
+				farmer,
+				landMeta,
+				landPiece,
+				vault,
+			})
+			.rpc();
+		console.log('Your transaction signature', tx);
+		let farmerState2 = await program.account.farmer.fetch(farmer);
+		let landState2 = await program.account.landMeta.fetch(landMeta);
+		let landPieceState2 = await program.account.landPiece.fetch(landPiece);
+		console.log('the famer land count is,', farmerState2.landCount.toString());
+		console.log(
+			'There are now ' +
+				landState2.landPieceCount.toString() +
+				' owned land pieces'
+		);
+
+		console.log('Land piece authority: ', landPieceState2.owner.toString());
+
+		console.log('Land piece number: ', landPieceState2.number.toString());
+
+		console.log('Land is planted? ', landPieceState2.isPlanted);
 	})
 	
 });
