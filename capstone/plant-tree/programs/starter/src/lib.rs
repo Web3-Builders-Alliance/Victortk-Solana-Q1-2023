@@ -52,13 +52,15 @@ pub mod starter {
         ), lamports)
     }
 
-    pub fn plant_tree(ctx: Context<PlantTree>,user_name:String, cultivar_name:String)-> Result<()> {
+    pub fn plant_tree(ctx: Context<PlantTree>, cultivar_name:String)-> Result<()> {
         let farmer = &mut  ctx.accounts.farmer ;
         farmer.tree_count += 1 ;
         let trees_meta  = &mut ctx.accounts.trees_meta ;
         trees_meta.tree_count += 1 ;
 
         let cultivar = &mut ctx.accounts.cultivar ;
+        assert!(cultivar.is_initialized) ;
+
         cultivar.count = cultivar.count + 1 ;
         //scacity points cultivar.scarcity_points = 
 
@@ -68,7 +70,7 @@ pub mod starter {
         let tree =  &mut ctx.accounts.tree ;
         tree.cultivar_name =  cultivar.name.clone() ;
         tree.land_number = land_piece.number ;
-
+        tree.cultivar_name = cultivar_name ;
         tree.height = cultivar.init_height;
         tree.girth = cultivar.init_width;
         tree.age = 0 ;
@@ -82,16 +84,19 @@ pub mod starter {
     }
 
 
-    // pub fn create_cultivar(ctx: Context<CreateCultivar>, name: String , height: u64, width: u64) -> Result<()>{
-    //     let cultivar_meta =  &mut ctx.accounts.cultivar_meta ;
-    //      cultivar_meta.cultivars_count = cultivar_meta.cultivars_count + 1 ;
-    //      let cultivar = &mut ctx.accounts.cultivar ;
-    //          cultivar.count = 0 ;
-    //          cultivar.name = name ;    
-    //          cultivar.init_height= height ;
-    //          cultivar.init_width= width ;
-    //     Ok(())
-    // }
+    pub fn create_cultivar(ctx: Context<CreateCultivar>, name:    String , height: u64, width: u64) -> Result<()>{
+        let cultivar_meta =  &mut ctx.accounts.cultivar_meta ;
+         cultivar_meta.cultivars_count = cultivar_meta.cultivars_count + 1 ;
+         let cultivar = &mut ctx.accounts.cultivar ;
+             cultivar.count = 0 ;
+             cultivar.name = name ;    
+             cultivar.init_height= height ;
+             cultivar.init_width= width ;
+             cultivar.is_initialized = true ;
+        Ok(())
+    }
+
+
 
     // pub fn check_and_update(ctx: Context<TreeUpdate>)-> Result<()>{
 
@@ -429,19 +434,19 @@ pub struct InitializeFarm <'info> {
 }    
 
 
-// #[derive(Accounts)]
-// #[instruction(cultivar_name:String)]
-// pub struct CreateCultivar <'info> {
-//     #[account(mut)]
-//     pub payer: Signer<'info>,    
-//     #[account(seeds=[b"farm"], bump)]
-//     pub farm: Account<'info,Farm>,
-//     #[account(seeds=[b"cultivarmeta",farm.key().as_ref()], bump,)]
-//     pub cultivar_meta: Account<'info, CultivarMeta>,
-//     #[account(init, payer=payer, seeds=[b"cultivar", cultivar_meta.key().as_ref(), cultivar_name.as_ref()], bump, space = 8 + Cultivar::INIT_SPACE)]
-//     pub cultivar: Account<'info,Cultivar>,
-//     pub system_program: Program<'info, System>,
-// }
+#[derive(Accounts)]
+#[instruction(cultivar_name:String)]
+pub struct CreateCultivar <'info> {
+    #[account(mut)]
+    pub payer: Signer<'info>,    
+    #[account(seeds=[b"farm"], bump)]
+    pub farm: Account<'info,Farm>,
+    #[account(seeds=[b"cultivarmeta",farm.key().as_ref()], bump,)]
+    pub cultivar_meta: Account<'info, CultivarMeta>,
+    #[account(init, payer=payer, seeds=[b"cultivar", cultivar_meta.key().as_ref(), cultivar_name.as_ref()], bump, space = 8 + Cultivar::INIT_SPACE)]
+    pub cultivar: Account<'info,Cultivar>,
+    pub system_program: Program<'info, System>,
+}
 
 
 #[derive(Accounts)]
@@ -466,9 +471,9 @@ pub struct PlantTree <'info> {
     pub tree: Account<'info, Tree>,
 
     /// CHECK: Pda authority 
-     #[account(seeds=[b"fruitmint",tree.key().as_ref()], bump,)]
+     #[account(seeds=[b"fruitmintauthority",tree.key().as_ref()], bump,)]
     pub fruit_mint_authority: UncheckedAccount<'info>,
-
+    ///INIT INIT IINIT INIT INIT INIT INIT when we create the cultivar 
     #[account(seeds=[b"fruitmint", cultivar_name.as_ref()], bump, mint::decimals=9, mint::authority=fruit_mint_authority)] // different fruits 
     pub fruit_mint: Account<'info, Mint>,
     
@@ -483,6 +488,7 @@ pub struct PlantTree <'info> {
 
     #[account(init, payer=payer, seeds=[b"nutrientbalance",land_piece.key().as_ref(),tree.key().as_ref()], bump, space = 8 + LandPiece::INIT_SPACE)]
     pub input_balance: Account<'info, InputBalance>,
+
     pub token_program: Program<'info,Token>,
     pub system_program: Program<'info, System>
 }
@@ -546,7 +552,8 @@ pub struct Cultivar {
     pub count:u64,
     pub init_height: u64,
     pub init_width: u64,
-    pub scarcity_points: u64,   
+    pub scarcity_points: u64,  
+    pub is_initialized: bool , 
 }
 
 #[account]
