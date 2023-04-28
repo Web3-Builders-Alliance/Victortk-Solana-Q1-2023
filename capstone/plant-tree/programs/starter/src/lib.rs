@@ -51,7 +51,6 @@ pub mod starter {
             },  
         ), lamports)
     }
-
     pub fn plant_tree(ctx: Context<PlantTree>, cultivar_name:String)-> Result<()> {
         let farmer = &mut  ctx.accounts.farmer ;
         farmer.tree_count += 1 ;
@@ -59,7 +58,7 @@ pub mod starter {
         trees_meta.tree_count += 1 ;
 
         let cultivar = &mut ctx.accounts.cultivar ;
-        assert!(cultivar.is_initialized) ;
+        // assert!(cultivar.is_initialized) ;
 
         cultivar.count = cultivar.count + 1 ;
         //scacity points cultivar.scarcity_points = 
@@ -78,11 +77,10 @@ pub mod starter {
         tree.planted_time = time ;
         tree.last_check_time = time ;
         tree.health = 100 ;
-        // //ticks per second/ ticks per slot * 1 year in seconds should probably get the constants 
-        // tree.next_fruit_maturaturation_time =  time + 5 * 30 * 60 * 24 * 365 ;        
+        //ticks per second/ ticks per slot * 1 year in seconds should probably get the constants 
+        tree.next_fruit_maturaturation_time =  time + 5 * 30 * 60 * 24 * 365 ;        
         Ok(())
     }
-
 
     pub fn create_cultivar(ctx: Context<CreateCultivar>, name:    String , height: u64, width: u64) -> Result<()>{
         let cultivar_meta =  &mut ctx.accounts.cultivar_meta ;
@@ -96,49 +94,49 @@ pub mod starter {
         Ok(())
     }
 
+    pub fn check_and_update(ctx: Context<TreeUpdate>)-> Result<()>{
+        let input_balance  = &mut ctx.accounts.input_balance ;
 
+        let tree = &mut ctx.accounts.tree ;
 
-    // pub fn check_and_update(ctx: Context<TreeUpdate>)-> Result<()>{
+        let potassium_balance = token::accessor::amount(&ctx.accounts.water_balance.to_account_info())? ;
 
-    //     let nutrient_mint_authority=  &mut ctx.accounts.nutrient_mint_authority ;
-    //     let input_balance  = &mut ctx.accounts.input_balance ;
-    //     let tree = &mut ctx.accounts.tree ;
-    //     let potassium_balance = token::accessor::amount(&ctx.accounts.water_balance.to_account_info())? ;
-    //     let nitrogen_balance = token::accessor::amount(&ctx.accounts.nitrogen_balance.to_account_info())? ;
-    //     let phosphorus_balance = token::accessor::amount(&ctx.accounts.phosphorus_balance.to_account_info())? ;
-    //     let water_balance = token::accessor::amount(&ctx.accounts.water_balance.to_account_info())? ;
-    //     let percent_potassium_intake = input_balance.percentage_intake(tree.root_area, potassium_balance.clone() , tree.last_check_time, tree.age,false)? ;
+        let nitrogen_balance = token::accessor::amount(&ctx.accounts.nitrogen_balance.to_account_info())? ;
 
-    //     let percent_nitrogen_intake = input_balance.percentage_intake(tree.root_area, nitrogen_balance.clone() , tree.last_check_time, tree.age,false)? ;
+        let phosphorus_balance = token::accessor::amount(&ctx.accounts.phosphorus_balance.to_account_info())? ;
 
-    //     let percent_phosphorus_intake = input_balance.percentage_intake(tree.root_area, phosphorus_balance.clone() , tree.last_check_time, tree.age,false)? ;
+        let water_balance = token::accessor::amount(&ctx.accounts.water_balance.to_account_info())? ;
 
-    //     let percent_water_intake = input_balance.percentage_intake(tree.root_area, water_balance.clone() , tree.last_check_time, tree.age,true)? ;
+        let percent_potassium_intake = input_balance.percentage_intake(tree.root_area, potassium_balance.clone() , tree.last_check_time, tree.age,false)? ;
 
-    //     tree.grow_expected_fruit_count(percent_potassium_intake,percent_water_intake);
-    //     tree.grow_leaf_area(percent_nitrogen_intake,percent_water_intake);
-    //     tree.grow_root_area(percent_phosphorus_intake,percent_water_intake);
-    //     if tree.is_harvest_season()? {
-    //      // if yeah harvest some fruitts 
-    //         token::mint_to(
-    //             CpiContext::new(
-    //               ctx.accounts.token_program.to_account_info().clone() ,
-    //               token::MintTo{
-    //                 mint: ctx.accounts.fruit_mint.to_account_info().clone(),
-    //                 to: ctx.accounts.fruit_balance.to_account_info().clone() ,
-    //                 authority: ctx.accounts.fruit_mint_authority.to_account_info().clone(), 
-    //               } 
-    //             ) , tree.expected_fruit_count)? ;
+        // let percent_nitrogen_intake = input_balance.percentage_intake(tree.root_area, nitrogen_balance.clone() , tree.last_check_time, tree.age,false)? ;
+
+        // let percent_phosphorus_intake = input_balance.percentage_intake(tree.root_area, phosphorus_balance.clone() , tree.last_check_time, tree.age,false)? ;
+
+        // let percent_water_intake = input_balance.percentage_intake(tree.root_area, water_balance.clone() , tree.last_check_time, tree.age,true)? ;
+
+        // tree.grow_expected_fruit_count(percent_potassium_intake,percent_water_intake);
+        // tree.grow_leaf_area(percent_nitrogen_intake,percent_water_intake);
+        // tree.grow_root_area(percent_phosphorus_intake,percent_water_intake);
+        // if tree.is_harvest_season()? {
+        //  // if yeah harvest some fruitts 
+        //     token::mint_to(
+        //         CpiContext::new(
+        //           ctx.accounts.token_program.to_account_info().clone() ,
+        //           token::MintTo{
+        //             mint: ctx.accounts.fruit_mint.to_account_info().clone(),
+        //             to: ctx.accounts.fruit_balance.to_account_info().clone() ,
+        //             authority: ctx.accounts.fruit_mint_authority.to_account_info().clone(), 
+        //           } 
+        //         ) , tree.expected_fruit_count)? ;
        
-    //      tree.set_new_harvest_season()?; //if true   
-    //     }         
-    //     tree.update_age() ;
-    //     tree.update_size(percent_nitrogen_intake, percent_phosphorus_intake, percent_potassium_intake,percent_water_intake) ;
-    //     tree.set_last_check_time() ; 
-
-    //     Ok(())
-
-    // }
+        //  tree.set_new_harvest_season()?; //if true   
+        // }         
+        // tree.update_age() ;
+        // tree.update_size(percent_nitrogen_intake, percent_phosphorus_intake, percent_potassium_intake,percent_water_intake) ;
+        // tree.set_last_check_time() ; 
+        Ok(())
+    }
 
     // pub fn water_tree(ctx: Context<TreeUpdate>, amount: u64  )-> Result<()> {     
     //     let water_mint = &mut ctx.accounts.water_mint ;
@@ -320,74 +318,64 @@ pub struct FruitMarket {
 
 }
 
-// #[derive(Accounts)]
-// pub struct TreeUpdate<'info> {
-//      #[account(mut)]
-//     pub payer: Signer<'info>,
+#[derive(Accounts)]
+pub struct TreeUpdate<'info> {
+    #[account(mut)]
+    pub payer: Signer<'info>,
+    #[account(seeds=[b"farm"], bump)]
+    pub farm: Box<Account<'info,Farm>>,  
+    #[account(seeds=[b"farmer", payer.key().as_ref()], bump, )]
+    pub farmer: Box<Account<'info,Farmer>>,
+    #[account(seeds=[b"watermint"], bump, mint::decimals=9, mint::authority=nutrient_mint_authority)]
+    pub water_mint: Box<Account<'info, Mint>> ,
+    #[account(seeds=[b"nitrogenmint"], bump, mint::decimals=9, mint::authority=nutrient_mint_authority)]
+    pub nitrogen_mint: Box<Account<'info, Mint>> ,
+    #[account(seeds=[b"potassiummint"], bump, mint::decimals=9,
+    mint::authority=nutrient_mint_authority)]
+    pub potassium_mint: Box<Account<'info, Mint>> ,
+    #[account(seeds=[b"phosphorusmint"], bump, mint::decimals=9, mint::authority=nutrient_mint_authority)]
+    pub phosphorus_mint: Box<Account<'info, Mint>> ,
+    /// CHECK: mint authority pda
+    #[account(seeds=[b"nutrientmintauthority"], bump,)]
+    pub nutrient_mint_authority: UncheckedAccount<'info,>,
+    #[account( seeds=[b"landmeta", farm.key().as_ref()], bump)]
+    pub land_meta: Box<Account<'info,LandMeta>>,
+    #[account( seeds=[b"treesmeta",farm.key().as_ref()], bump, )]
+    pub trees_meta: Box<Account<'info, TreesMeta>>,
+    #[account(seeds=[b"tree",trees_meta.key().as_ref(),farmer.key().as_ref()], bump, )]
+    pub tree: Box<Account<'info, Tree>>,
 
-//     #[account(seeds=[b"farmer", payer.key().as_ref()], bump, )]
-//     pub farmer: Account<'info,Farmer>, 
+    #[account( seeds=[b"landpiece",land_meta.key().as_ref(),farmer.key().as_ref()], bump,)]
+    pub land_piece:Box<Account<'info, LandPiece>>,
 
-//     #[account(seeds=[b"watermint"], bump, mint::decimals=9, mint::authority=nutrient_mint_authority)]
-//     pub water_mint: Account<'info, Mint> ,
+    #[account(seeds=[b"nutrientbalance",land_piece.key().as_ref(),tree.key().as_ref()], bump,)]
+    pub input_balance: Box<Account<'info,InputBalance>>,
 
-//     #[account(seeds=[b"nitrogenmint"], bump, mint::decimals=9, mint::authority=nutrient_mint_authority)]
-//     pub nitrogen_mint: Account<'info, Mint> ,
+    #[account(init_if_needed, payer=payer , seeds=[b"water",input_balance.key().as_ref()], bump, token::mint=water_mint, token::authority=input_balance)]
+    pub water_balance: Box<Account<'info,TokenAccount>>,
 
-//     #[account(seeds=[b"potassiummint"], bump, mint::decimals=9,
-//     mint::authority=nutrient_mint_authority)]
-//     pub potassium_mint: Account<'info, Mint> ,
+    #[account(init_if_needed, payer=payer , seeds=[b"nitrogen",input_balance.key().as_ref()], bump, token::mint=water_mint, token::authority=input_balance)]
+    pub nitrogen_balance: Box<Account<'info,TokenAccount>>,
 
-//     #[account(seeds=[b"phosphorusmint"], bump, mint::decimals=9, mint::authority=nutrient_mint_authority)]
-//     pub phosphorus_mint: Account<'info, Mint> ,
+    #[account(init_if_needed, payer=payer , seeds=[b"phosphorus",input_balance.key().as_ref()], bump, token::mint=water_mint, token::authority=input_balance)]
+    pub phosphorus_balance: Box<Account<'info,TokenAccount>>,
 
-//     /// CHECK: mint authority pda
-//     #[account(seeds=[b"nutrientmintauthority"], bump,)]
-//     pub nutrient_mint_authority: UncheckedAccount<'info,>,
+    #[account(init_if_needed, payer=payer , seeds=[b"potassium",input_balance.key().as_ref()], bump, token::mint=water_mint, token::authority=input_balance)]
+    pub potassium_balance: Box<Account<'info,TokenAccount>>,
 
-//     #[account(seeds=[b"farm"], bump)]
-//     pub farm: Account<'info,Farm>,
+    /// CHECK:  pda
+    #[account( seeds=[b"fruitmintauthority"], bump,)]
+    pub fruit_mint_authority: UncheckedAccount<'info>,
 
-//     #[account( seeds=[b"landmeta", farm.key().as_ref()], bump)]
-//     pub land_meta: Account<'info,LandMeta>,
+    #[account(seeds=[b"fruitmint",tree.cultivar_name.as_ref()], bump, mint::decimals=9, mint::authority=fruit_mint_authority)]
+    pub fruit_mint: Box<Account<'info, Mint>> ,
 
-//      #[account( seeds=[b"treesmeta",farm.key().as_ref()], bump, )]
-//     pub trees_meta: Account<'info, TreesMeta>,
+    #[account(seeds=[b"fruit",tree.key().as_ref()], bump, token::mint=fruit_mint, token::authority=payer)]
+    pub fruit_balance: Box<Account<'info,TokenAccount>>,
 
-//     #[account( seeds=[b"tree",trees_meta.key().as_ref(),farmer.key().as_ref()], bump, )]
-//     pub tree: Account<'info, Tree>,
-
-//     #[account( seeds=[b"landpiece",land_meta.key().as_ref(),farmer.key().as_ref()], bump,)]
-//     pub land_piece: Account<'info, LandPiece>,
-
-//      #[account(seeds=[b"nutrientbalance",land_piece.key().as_ref(),tree.key().as_ref()], bump,)]
-//     pub input_balance: Account<'info,InputBalance>,
-
-//     #[account(init_if_needed, payer=payer , seeds=[b"water",input_balance.key().as_ref()], bump, token::mint=water_mint, token::authority=input_balance)]
-//     pub water_balance: Account<'info,TokenAccount>,
-
-//     #[account(init_if_needed, payer=payer , seeds=[b"nitrogen",input_balance.key().as_ref()], bump, token::mint=water_mint, token::authority=input_balance)]
-//     pub nitrogen_balance: Account<'info,TokenAccount>,
-
-//     #[account(init_if_needed, payer=payer , seeds=[b"phosphorus",input_balance.key().as_ref()], bump, token::mint=water_mint, token::authority=input_balance)]
-//     pub phosphorus_balance: Account<'info,TokenAccount>,
-
-//     #[account(init_if_needed, payer=payer , seeds=[b"potassium",input_balance.key().as_ref()], bump, token::mint=water_mint, token::authority=input_balance)]
-//     pub potassium_balance: Account<'info,TokenAccount>,
-//     /// CHECK:  pda
-//     #[account( seeds=[b"fruitmintauthority"], bump,)] //,tree.key().as_ref() removed
-//     pub fruit_mint_authority: UncheckedAccount<'info>,
-
-//     #[account(seeds=[b"fruitmint"], bump, mint::decimals=9, mint::authority=fruit_mint_authority)]
-//     pub fruit_mint: Account<'info, Mint> ,
-
-//     #[account(seeds=[b"fruit",tree.key().as_ref()], bump, token::mint=fruit_mint, token::authority=payer)]
-//     pub fruit_balance: Account<'info,TokenAccount>,
-
-//     pub token_program: Program<'info,Token>,
-//     pub system_program: Program<'info,System> 
-
-// }
+    pub token_program: Program<'info,Token>,
+    pub system_program: Program<'info,System> 
+}
 
 #[derive(Accounts)]
 pub struct InitializeFarm <'info> {
@@ -415,6 +403,8 @@ pub struct InitializeFarm <'info> {
     #[account(init, payer=payer, seeds=[b"watermint"], bump, mint::decimals=9, mint::authority=nutrient_mint_authority)]
     pub water_mint: Account<'info, Mint> ,
 
+    
+
     // #[account(init, payer=payer,seeds=[b"fruitmint"], bump, mint::decimals=9, mint::authority=fruit_mint_authority)]
     // pub fruit_mint: Account<'info, Mint> ,
       
@@ -427,6 +417,16 @@ pub struct InitializeFarm <'info> {
     // #[account(seeds=[b"fruitmintauthority"], bump,)] //,tree.key().as_ref() removed because the mint should be same for everybody
     // /// CHECK: mint authority pda
     // pub fruit_mint_authority: UncheckedAccount<'info>,
+    #[account(init, payer=payer, seeds=[b"nitrogenmint"], bump, mint::decimals=9, mint::authority=nutrient_mint_authority)]
+    pub nitrogen_mint: Box<Account<'info, Mint>> ,
+
+    #[account(init, payer=payer,seeds=[b"potassiummint"], bump, mint::decimals=9,
+    mint::authority=nutrient_mint_authority)]
+    pub potassium_mint: Box<Account<'info, Mint>> ,
+
+    #[account(init, payer=payer,seeds=[b"phosphorusmint"], bump, mint::decimals=9, mint::authority=nutrient_mint_authority)]
+    pub phosphorus_mint: Box<Account<'info, Mint>> ,
+
     #[account(init, payer=payer, seeds=[b"carbonvault"], bump, space = 8 + Vault::INIT_SPACE)]
     pub vault: Account<'info, Vault>,
     pub token_program: Program<'info,Token>,
@@ -438,58 +438,62 @@ pub struct InitializeFarm <'info> {
 #[instruction(cultivar_name:String)]
 pub struct CreateCultivar <'info> {
     #[account(mut)]
-    pub payer: Signer<'info>,    
+    pub payer: Signer<'info>, 
+
     #[account(seeds=[b"farm"], bump)]
     pub farm: Account<'info,Farm>,
-    #[account(seeds=[b"cultivarmeta",farm.key().as_ref()], bump,)]
+
+    #[account(seeds=[b"cultivarmeta",
+    farm.key().as_ref()], bump,)]
     pub cultivar_meta: Account<'info, CultivarMeta>,
-    #[account(init, payer=payer, seeds=[b"cultivar", cultivar_meta.key().as_ref(), cultivar_name.as_ref()], bump, space = 8 + Cultivar::INIT_SPACE)]
-    pub cultivar: Account<'info,Cultivar>,
+
+    #[account(init, payer=payer, seeds=[b"cultivar", cultivar_meta.key().as_ref(), cultivar_name.as_bytes().as_ref()], bump, space = 8 + Cultivar::INIT_SPACE)]
+    pub cultivar: Account<'info,Cultivar>,   
+
+    /// CHECK: Pda authority 
+     #[account(seeds=[b"fruitmintauthority"], bump,)]
+    pub fruit_mint_authority: UncheckedAccount<'info>,
+
+    #[account(init, payer=payer , seeds=[b"fruitmint", 
+    cultivar_name.as_bytes().as_ref()],bump, mint::decimals=9, mint::authority=fruit_mint_authority)] // different fruits 
+    pub fruit_mint: Account<'info, Mint>, 
+    pub token_program: Program<'info,Token>,
     pub system_program: Program<'info, System>,
 }
 
 
 #[derive(Accounts)]
-#[instruction(user_name:String, cultivar_name:String)]
+#[instruction(cultivar_name:String)]
 pub struct PlantTree <'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
     #[account(seeds=[b"farmer", payer.key().as_ref()], bump,)]
-    pub farmer: Account<'info,Farmer>,     
+    pub farmer: Box<Account<'info,Farmer>>,     
     #[account(seeds=[b"farm"], bump)]
-    pub farm: Account<'info,Farm>,
+    pub farm: Box<Account<'info,Farm>>,
     #[account(seeds=[b"cultivarmeta",farm.key().as_ref()], bump,)]
     pub cultivar_meta: Account<'info, CultivarMeta>,
-
-    #[account( seeds=[b"treesmeta",farm.key().as_ref()], bump,)]
+    #[account(seeds=[b"treesmeta",farm.key().as_ref()], bump,)]
     pub trees_meta: Account<'info, TreesMeta>,
-
-    #[account(seeds=[b"cultivar", cultivar_meta.key().as_ref(), cultivar_name.as_ref()], bump,)]
-    pub cultivar: Account<'info,Cultivar>,
-    
+    #[account(seeds=[b"cultivar", cultivar_meta.key().as_ref(), cultivar_name.as_bytes().as_ref()], bump,)]
+    pub cultivar: Account<'info,Cultivar>,    
     #[account(init, payer=payer, seeds=[b"tree",trees_meta.key().as_ref(),farmer.key().as_ref()], bump, space = 8 + Tree::INIT_SPACE)]
     pub tree: Account<'info, Tree>,
-
     /// CHECK: Pda authority 
-     #[account(seeds=[b"fruitmintauthority",tree.key().as_ref()], bump,)]
-    pub fruit_mint_authority: UncheckedAccount<'info>,
-    ///INIT INIT IINIT INIT INIT INIT INIT when we create the cultivar 
-    #[account(seeds=[b"fruitmint", cultivar_name.as_ref()], bump, mint::decimals=9, mint::authority=fruit_mint_authority)] // different fruits 
-    pub fruit_mint: Account<'info, Mint>,
-    
-    #[account(init, payer=payer, seeds=[b"fruit",tree.key().as_ref()], bump, token::mint=fruit_mint, token::authority=payer)]
+     #[account(seeds=[b"fruitmintauthority"], bump,)]
+    pub fruit_mint_authority: UncheckedAccount<'info>,        
+    #[account(seeds=[b"fruitmint", cultivar_name.as_bytes().as_ref()],bump, mint::decimals=9, mint::authority=fruit_mint_authority)] // different fruits 
+    pub fruit_mint: Account<'info, Mint>, 
+    #[account(init, seeds=[b"fruit", tree.key().as_ref()],bump, payer=payer, token::mint=fruit_mint, token::authority=payer)]
     pub fruit_balance: Account<'info,TokenAccount>,
-
     #[account(seeds=[b"landmeta", farm.key().as_ref()], bump, )]
     pub land_meta: Account<'info,LandMeta>,
-
     #[account(seeds=[b"landpiece",land_meta.key().as_ref(),farmer.key().as_ref()], bump,)]
     pub land_piece: Account<'info, LandPiece>,
-
     #[account(init, payer=payer, seeds=[b"nutrientbalance",land_piece.key().as_ref(),tree.key().as_ref()], bump, space = 8 + LandPiece::INIT_SPACE)]
     pub input_balance: Account<'info, InputBalance>,
-
     pub token_program: Program<'info,Token>,
+    pub associated_token_program: Program<'info, AssociatedToken>,
     pub system_program: Program<'info, System>
 }
 
@@ -744,32 +748,39 @@ pub fn set_new_harvest_season(&mut self) -> Result<()> {
 impl InputBalance {
 
     pub fn required_uptake (root_area: u64, last_checked_time: u64, age: u64)-> Result<u64> {
-        let period =  Clock::get()?.slot - last_checked_time ;
-
-        Ok(RATE_OF_NUTRIENT_UPTAKE * period * root_area / age)
-       
+        let current_slot =Clock::get()?.slot ;
+        msg!("currrent slot:{} ", current_slot );
+        let period = current_slot - last_checked_time ;
+        msg!("period that has passed since last check:{} ", period) ;
+        // Ok(RATE_OF_NUTRIENT_UPTAKE * period * root_area / age) 
+        Ok(1)      
     }
 
     pub fn required_water_uptake (root_area: u64, last_checked_time: u64, age: u64)-> Result<u64> {
         let period =  Clock::get()?.slot - last_checked_time ;
-
-        Ok(RATE_OF_WATER_UPTAKE * period * root_area / age)
-       
+        Ok(RATE_OF_WATER_UPTAKE * period * root_area / age)       
     }
 
     pub fn percentage_intake(&self ,root_area: u64, balance: u64 , last_checked_time: u64, age: u64, water: bool)-> Result<u64> {
-        let required ;
-        if water {
-         required = Self::required_water_uptake(root_area, last_checked_time, age)? ;
-        }else {
-        required = Self::required_uptake(root_area, last_checked_time, age)? ;
-        }        
-        
-        if required >  balance {
-            Ok(balance * 100/required)            
-        }else {
-            Ok(100)
-        }
+        msg!("In this bitch ");
+        msg!("root area: {}, balance: {}, last_checked_time: {} , age: {} , water: {} ",root_area, balance , last_checked_time, age, water );
+        let required:u64 ;
+
+       required =  match water {
+            true => { Self::required_water_uptake(root_area,     last_checked_time, age)?},
+            false =>  {
+             Self::required_uptake(root_area, last_checked_time, age)? 
+           }  
+        } ;
+     
+     msg!("the required: {} , ",required) ;
+
+        // if required >  balance {
+        //     Ok(balance * 100/required)            
+        // }else {
+        //     Ok(100)
+        // }
+        Ok(65)
     }
 
     // pub fn potassium_uptake  (root_area: u64, balance: u64 , last_checked_time: u64, age: u64)-> Result<i64> {
@@ -787,8 +798,7 @@ impl InputBalance {
     // pub fn water_uptake  (root_area: u64, balance: u64 , last_checked_time: u64, age: u64)-> Result<i64> {
     //     let period =  Clock::get()?.slot - last_checked_time ;
 
-    //     Ok(balance as i64 -  (period as i64* RATE_OF_WATER_UPTAKE as i64* root_area as i64/ age as i64 ))
-       
+    //     Ok(balance as i64 -  (period as i64* RATE_OF_WATER_UPTAKE as i64* root_area as i64/ age as i64 ))       
     // }
 }
 

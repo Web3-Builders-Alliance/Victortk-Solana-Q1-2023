@@ -2,6 +2,7 @@ import * as anchor from '@project-serum/anchor';
 import { Program } from '@project-serum/anchor';
 import { Account } from '@solana/web3.js';
 import { Starter } from '../target/types/starter';
+import * as token from '@solana/spl-token';
 
 describe('starter', () => {
 	// Configure the client to use the local cluster.
@@ -52,7 +53,7 @@ describe('starter', () => {
 		[
 			Buffer.from('cultivar'),
 			cultivarMeta.toBuffer(),
-			Buffer.from(cultivarName),			
+			Buffer.from(cultivarName),
 		],
 		program.programId
 	);
@@ -72,12 +73,18 @@ describe('starter', () => {
 		[Buffer.from('watermint')],
 		program.programId
 	);
+
+
+
+
 	// nutrient_mint_authority
 
 	let [nutrientMintAuthority] = anchor.web3.PublicKey.findProgramAddressSync(
 		[Buffer.from('nutrientmintauthority')],
 		program.programId
 	);
+	
+
 
 	//vault
 	let [vault] = anchor.web3.PublicKey.findProgramAddressSync(
@@ -88,7 +95,7 @@ describe('starter', () => {
 	// fruitMintAuthority,
 
 	let [fruitMintAuthority] = anchor.web3.PublicKey.findProgramAddressSync(
-		[Buffer.from('fruitmintauthority'), tree.toBuffer()],
+		[Buffer.from('fruitmintauthority')],
 		program.programId
 	);
 
@@ -105,12 +112,52 @@ describe('starter', () => {
 		program.programId
 	);
 
-	// 	inputBalance,
 
+	// 	inputBalance,
 	let [inputBalance] = anchor.web3.PublicKey.findProgramAddressSync(
 		[Buffer.from('nutrientbalance'), landPiece.toBuffer(), tree.toBuffer()],
 		program.programId
 	);
+
+	// nitrogenMint,
+	let [nitrogenMint] = anchor.web3.PublicKey.findProgramAddressSync(
+		[Buffer.from('nitrogenmint')],
+		program.programId
+	);
+
+	// potassiumMint,
+	let [potassiumMint] = anchor.web3.PublicKey.findProgramAddressSync(
+		[Buffer.from('potassiummint')],
+		program.programId
+	);
+	// phosphorusMint,
+	let [phosphorusMint] = anchor.web3.PublicKey.findProgramAddressSync(
+		[Buffer.from('phosphorusmint')],
+		program.programId
+	);
+
+	// waterBalance,
+	let [waterBalance] = anchor.web3.PublicKey.findProgramAddressSync(
+		[Buffer.from('water'), inputBalance.toBuffer()],
+		program.programId
+	);
+
+	// 	nitrogenBalance,
+	let [nitrogenBalance] = anchor.web3.PublicKey.findProgramAddressSync(
+		[Buffer.from('nitrogen'), inputBalance.toBuffer()],
+		program.programId
+	);
+	// 	phosphorusBalance,
+			let [phosphorusBalance] = anchor.web3.PublicKey.findProgramAddressSync(
+				[Buffer.from('phosphorus'), inputBalance.toBuffer()],
+				program.programId
+			);
+	// 	potassiumBalance,
+		let [potassiumBalance] = anchor.web3.PublicKey.findProgramAddressSync(
+			[Buffer.from('potassium'), inputBalance.toBuffer()],
+			program.programId
+		);
+
 
 	it('Initializes the Farm', async () => {
 		// Add your test here.
@@ -125,6 +172,9 @@ describe('starter', () => {
 				waterMint,
 				nutrientMintAuthority,
 				vault,
+				nitrogenMint,
+				potassiumMint,
+				phosphorusMint
 			})
 			.rpc();
 
@@ -200,16 +250,38 @@ describe('starter', () => {
 					farm,
 					cultivarMeta,
 					cultivar,
+					fruitMint,
+					fruitMintAuthority
 				})
 				.rpc();
 			console.log('create cultivar transaction', tx);
-	});
+		});
+
 	it('Plants a tree', async () => {
-			const tx = await program.methods
+		  // let fruitMint = await  token.createMint(
+			// 	provider.connection,
+			// 	payer.payer,
+			// 	fruitMintAuthority,
+			// 	fruitMintAuthority,
+			// 	9
+			// );
+
+			// let fm = await token.getMint(
+			// 	provider.connection,
+			// 	fruitMint,
+			// ) ;
+			// let fruitBalance = await token.createAssociatedTokenAccount(
+			// 	provider.connection,
+			// 	payer.payer,
+			// 	fm.address,
+			// 	payer.publicKey,
+			// );
+
+		const tx = await program.methods
 			.plantTree(cultivarName)
 			.accounts({
-				farm,
 				farmer,
+				farm, 
 				cultivarMeta,
 				cultivar,
 				landMeta,
@@ -222,6 +294,41 @@ describe('starter', () => {
 				inputBalance,
 			})
 			.rpc();
-		  console.log(`The transaction signature is ${tx.toString()}`);
+		console.log(`The transaction signature is ${tx.toString()}`);
+	});
+
+	it('Updates the tree', async () => {
+		// let fm = await token.getMint(provider.connection, fruitMint);
+
+		// let fruitBalance = await token.getOrCreateAssociatedTokenAccount(
+		// 	provider.connection,
+		// 	payer.payer,
+		// 	fruitMint,
+		// 	payer.publicKey
+		// );
+
+		const tx = await program.methods.checkAndUpdate().accounts({
+			farm,
+			farmer,
+			waterMint,
+			nitrogenMint,
+			potassiumMint,
+			phosphorusMint,
+			nutrientMintAuthority,
+			landMeta,
+			treesMeta,
+			tree,
+			landPiece,
+			inputBalance,
+			waterBalance,
+			nitrogenBalance,
+			phosphorusBalance,
+			potassiumBalance,
+			fruitMintAuthority,
+			fruitMint,
+			fruitBalance,
+		}).rpc();
+
+		console.log('Checks and updates the tree data: ', tx.toString());
 	});
 });
