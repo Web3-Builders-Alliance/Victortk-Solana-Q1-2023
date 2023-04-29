@@ -331,4 +331,156 @@ describe('starter', () => {
 
 		console.log('Checks and updates the tree data: ', tx.toString());
 	});
+
+	it('Waters tree', async () => {
+		// let wm = await token.getMint(, waterMint);
+
+		let wb = await token.getAccount(provider.connection, waterBalance);
+
+		console.log('The water balance before the transaction is ,', wb.amount);
+
+		const tx = await program.methods
+			.waterTree(new anchor.BN(2000))
+			.accounts({
+				farm,
+				farmer,
+				waterMint,
+				nitrogenMint,
+				potassiumMint,
+				phosphorusMint,
+				nutrientMintAuthority,
+				landMeta,
+				treesMeta,
+				tree,
+				landPiece,
+				inputBalance,
+				waterBalance,
+				nitrogenBalance,
+				phosphorusBalance,
+				potassiumBalance,
+				fruitMintAuthority,
+				fruitMint,
+				fruitBalance,
+			})
+			.rpc();
+		let wm2 = await token.getAccount(provider.connection, waterBalance);
+		console.log('The plant has been watered: ', tx.toString());
+		let water = wm2.amount;
+		console.log('The water balance is now: {} ', water);
+	});
+
+	it('Applies Nitrogen', async () => {
+		// let wm = await token.getMint(, waterMint);
+
+		let nb = await token.getAccount(provider.connection, nitrogenBalance);
+
+		console.log('The nitrogen balance before the transaction is ,', nb.amount);
+
+		const tx = await program.methods
+			.addNitrogen(new anchor.BN(2001))
+			.accounts({
+				farm,
+				farmer,
+				waterMint,
+				nitrogenMint,
+				potassiumMint,
+				phosphorusMint,
+				nutrientMintAuthority,
+				landMeta,
+				treesMeta,
+				tree,
+				landPiece,
+				inputBalance,
+				waterBalance,
+				nitrogenBalance,
+				phosphorusBalance,
+				potassiumBalance,
+				fruitMintAuthority,
+				fruitMint,
+				fruitBalance,
+			})
+			.rpc();
+		let nb2 = await token.getAccount(provider.connection,nitrogenBalance);
+		console.log('The nutrient has been Apllied: ', tx.toString());
+		let nitrogen = nb2.amount;
+		console.log('The nitrogen balance is now: {} ', nitrogen);
+
+	});
+	it('Applies Phosphorus', async () => {
+		// let wm = await token.getMint(, waterMint);
+
+		let pb = await token.getAccount(provider.connection, phosphorusBalance);
+
+		console.log('The phosphorus balance before the transaction is ,', pb.amount);
+
+		const tx = await program.methods
+			.addPhosphorus(new anchor.BN(2000))
+			.accounts({
+				farm,
+				farmer,
+				waterMint,
+				nitrogenMint,
+				potassiumMint,
+				phosphorusMint,
+				nutrientMintAuthority,
+				landMeta,
+				treesMeta,
+				tree,
+				landPiece,
+				inputBalance,
+				waterBalance,
+				nitrogenBalance,
+				phosphorusBalance,
+				potassiumBalance,
+				fruitMintAuthority,
+				fruitMint,
+				fruitBalance,
+			})
+			.rpc();
+		let pb2 = await token.getAccount(provider.connection, phosphorusBalance);
+		console.log('The nutrient has been Apllied: ', tx.toString());
+		let phosphorus = pb2.amount;
+		console.log('The phosphorus balance is now: {} ', phosphorus);
+
+	});
+
+
+	it('Applies Potassium', async () => {
+		// let wm = await token.getMint(, waterMint);
+
+		let pb = await token.getAccount(provider.connection, potassiumBalance);
+
+		console.log('The potassium balance before the transaction is ,', pb.amount);
+
+		const tx = await program.methods
+			.addPotassium(new anchor.BN(2000))
+			.accounts({
+				farm,
+				farmer,
+				waterMint,
+				nitrogenMint,
+				potassiumMint,
+				phosphorusMint,
+				nutrientMintAuthority,
+				landMeta,
+				treesMeta,
+				tree,
+				landPiece,
+				inputBalance,
+				waterBalance,
+				nitrogenBalance,
+				phosphorusBalance,
+				potassiumBalance,
+				fruitMintAuthority,
+				fruitMint,
+				fruitBalance,
+			})
+			.rpc();
+		let pb2 = await token.getAccount(provider.connection, potassiumBalance);
+		console.log('The nutrient has been Apllied: ', tx.toString());
+		let potassium = pb2.amount;
+		console.log('The water balance is now: {} ', potassium);
+	});
+
+	
 });
