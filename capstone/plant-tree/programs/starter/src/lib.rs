@@ -319,6 +319,71 @@ pub mod starter {
         )
     }
 
+    pub fn consume_nitrogen(ctx: Context<TreeUpdate>, amount: u64 )-> Result<()> {
+        let nitrogen_mint = &mut ctx.accounts.nitrogen_mint ;
+        let nitrogen_balance = &mut ctx.accounts.nitrogen_balance ;
+        let land_piece = &mut ctx.accounts.land_piece.key() ;
+        let tree = &mut ctx.accounts.tree.key() ;
+        let input_balance = &mut ctx.accounts.input_balance ;      
+        let bump = *ctx.bumps.get("input_balance").unwrap() ;
+        let seeds = &[ "nutrientbalance".as_bytes(),land_piece.as_ref(), tree.as_ref(), &[bump]] ;
+        token::burn(
+            CpiContext::new_with_signer(
+                ctx.accounts.token_program.to_account_info(),
+               token::Burn{
+                   mint: nitrogen_mint.to_account_info().clone(),
+                   from: nitrogen_balance.to_account_info().clone(),
+                   authority: input_balance.to_account_info().clone(), 
+                },
+                &[&seeds[..]]
+            ),
+            amount
+        )
+    }
+
+    pub fn consume_phosphorus(ctx: Context<TreeUpdate>, amount: u64 )-> Result<()> {
+        let phosphorus_mint = &mut ctx.accounts.phosphorus_mint ;
+        let phosphorus_balance = &mut ctx.accounts.phosphorus_balance ;
+        let land_piece = &mut ctx.accounts.land_piece.key() ;
+        let tree = &mut ctx.accounts.tree.key() ;
+        let input_balance = &mut ctx.accounts.input_balance ;      
+        let bump = *ctx.bumps.get("input_balance").unwrap() ;
+        let seeds = &[ "nutrientbalance".as_bytes(),land_piece.as_ref(), tree.as_ref(), &[bump]] ;
+        token::burn(
+            CpiContext::new_with_signer(
+                ctx.accounts.token_program.to_account_info(),
+               token::Burn{
+                   mint: phosphorus_mint.to_account_info().clone(),
+                   from: phosphorus_balance.to_account_info().clone(),
+                   authority: input_balance.to_account_info().clone(), 
+                },
+                &[&seeds[..]]
+            ),
+            amount
+        )
+    }
+    pub fn consume_potassium(ctx: Context<TreeUpdate>, amount: u64 )-> Result<()> {
+        let potassium_mint = &mut ctx.accounts.potassium_mint ;
+        let potassium_balance = &mut ctx.accounts.potassium_balance ;
+        let land_piece = &mut ctx.accounts.land_piece.key() ;
+        let tree = &mut ctx.accounts.tree.key() ;
+        let input_balance = &mut ctx.accounts.input_balance ;      
+        let bump = *ctx.bumps.get("input_balance").unwrap() ;
+        let seeds = &[ "nutrientbalance".as_bytes(),land_piece.as_ref(), tree.as_ref(), &[bump]] ;
+        token::burn(
+            CpiContext::new_with_signer(
+                ctx.accounts.token_program.to_account_info(),
+               token::Burn{
+                   mint: potassium_mint.to_account_info().clone(),
+                   from: potassium_balance.to_account_info().clone(),
+                   authority: input_balance.to_account_info().clone(), 
+                },
+                &[&seeds[..]]
+            ),
+            amount
+        )
+    }
+
   
    
 
@@ -462,7 +527,7 @@ pub struct TreeUpdate<'info> {
     #[account(seeds=[b"landpiece",land_meta.key().as_ref(),farmer.key().as_ref()], bump,)]
     pub land_piece:Box<Account<'info, LandPiece>>,
 
-    #[account(seeds=[b"nutrientbalance",land_piece.key().as_ref(),tree.key().as_ref()], bump,)]
+    #[account(mut, seeds=[b"nutrientbalance",land_piece.key().as_ref(),tree.key().as_ref()], bump,)]
     pub input_balance: Box<Account<'info,InputBalance>>,
 
     #[account(init_if_needed, payer=payer , seeds=[b"water",input_balance.key().as_ref()], bump, token::mint=water_mint, token::authority=input_balance)]
