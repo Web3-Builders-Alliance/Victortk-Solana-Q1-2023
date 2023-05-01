@@ -1,8 +1,9 @@
 import * as anchor from '@project-serum/anchor';
 import { Program } from '@project-serum/anchor';
-import { Account } from '@solana/web3.js';
+import { ConfirmOptions } from '@solana/web3.js';
 import { Starter } from '../target/types/starter';
 import * as token from '@solana/spl-token';
+import { assert } from 'chai';
 
 describe('starter', () => {
 	// Configure the client to use the local cluster.
@@ -109,6 +110,11 @@ describe('starter', () => {
 
 	let [fruitBalance] = anchor.web3.PublicKey.findProgramAddressSync(
 		[Buffer.from('fruit'), tree.toBuffer()],
+		program.programId
+	);
+
+	let [requiredNutrients] = anchor.web3.PublicKey.findProgramAddressSync(
+		[Buffer.from('requirednutrients'), tree.toBuffer()],
 		program.programId
 	);
 
@@ -281,7 +287,7 @@ describe('starter', () => {
 			.plantTree(cultivarName)
 			.accounts({
 				farmer,
-				farm, 
+				farm,
 				cultivarMeta,
 				cultivar,
 				landMeta,
@@ -292,6 +298,7 @@ describe('starter', () => {
 				fruitMint,
 				fruitBalance,
 				inputBalance,
+				requiredNutrients,
 			})
 			.rpc();
 		console.log(`The transaction signature is ${tx.toString()}`);
@@ -307,27 +314,31 @@ describe('starter', () => {
 		// 	payer.publicKey
 		// );
 
-		const tx = await program.methods.checkAndUpdate().accounts({
-			farm,
-			farmer,
-			waterMint,
-			nitrogenMint,
-			potassiumMint,
-			phosphorusMint,
-			nutrientMintAuthority,
-			landMeta,
-			treesMeta,
-			tree,
-			landPiece,
-			inputBalance,
-			waterBalance,
-			nitrogenBalance,
-			phosphorusBalance,
-			potassiumBalance,
-			fruitMintAuthority,
-			fruitMint,
-			fruitBalance,
-		}).rpc();
+		const tx = await program.methods
+			.checkAndUpdate()
+			.accounts({
+				farm,
+				farmer,
+				waterMint,
+				nitrogenMint,
+				potassiumMint,
+				phosphorusMint,
+				nutrientMintAuthority,
+				landMeta,
+				treesMeta,
+				tree,
+				landPiece,
+				inputBalance,
+				waterBalance,
+				nitrogenBalance,
+				phosphorusBalance,
+				potassiumBalance,
+				fruitMintAuthority,
+				fruitMint,
+				fruitBalance,
+				requiredNutrients,
+			})
+			.rpc();
 
 		console.log('Checks and updates the tree data: ', tx.toString());
 	});
@@ -361,6 +372,7 @@ describe('starter', () => {
 				fruitMintAuthority,
 				fruitMint,
 				fruitBalance,
+				requiredNutrients,
 			})
 			.rpc();
 		let wm2 = await token.getAccount(provider.connection, waterBalance);
@@ -398,6 +410,7 @@ describe('starter', () => {
 				fruitMintAuthority,
 				fruitMint,
 				fruitBalance,
+				requiredNutrients,
 			})
 			.rpc();
 		let nb2 = await token.getAccount(provider.connection,nitrogenBalance);
@@ -435,6 +448,7 @@ describe('starter', () => {
 				fruitMintAuthority,
 				fruitMint,
 				fruitBalance,
+				requiredNutrients,
 			})
 			.rpc();
 		let nb2 = await token.getAccount(provider.connection,nitrogenBalance);
@@ -472,6 +486,7 @@ describe('starter', () => {
 				fruitMintAuthority,
 				fruitMint,
 				fruitBalance,
+				requiredNutrients,
 			})
 			.rpc();
 		let pb2 = await token.getAccount(provider.connection, phosphorusBalance);
@@ -510,6 +525,7 @@ describe('starter', () => {
 				fruitMintAuthority,
 				fruitMint,
 				fruitBalance,
+				requiredNutrients,
 			})
 			.rpc();
 		let pb2 = await token.getAccount(provider.connection, phosphorusBalance);
@@ -548,6 +564,7 @@ describe('starter', () => {
 				fruitMintAuthority,
 				fruitMint,
 				fruitBalance,
+				requiredNutrients,
 			})
 			.rpc();
 		let pb2 = await token.getAccount(provider.connection, potassiumBalance);
@@ -587,6 +604,7 @@ describe('starter', () => {
 				fruitMintAuthority,
 				fruitMint,
 				fruitBalance,
+				requiredNutrients,
 			})
 			.rpc();
 		let pb2 = await token.getAccount(provider.connection, potassiumBalance);
@@ -595,5 +613,56 @@ describe('starter', () => {
 		console.log('The phosphorus balance is now: {} ', potassium);
 	});
 
+	it("calculates the required nutrients for the period", async () =>{
+			const tx = await program.methods
+				.calculateRequired()
+				.accounts({
+					farm,
+					farmer,
+					waterMint,
+					nitrogenMint,
+					potassiumMint,
+					phosphorusMint,
+					nutrientMintAuthority,
+					landMeta,
+					treesMeta,
+					tree,
+					landPiece,
+					inputBalance,
+					waterBalance,
+					nitrogenBalance,
+					phosphorusBalance,
+					potassiumBalance,
+					fruitMintAuthority,
+					fruitMint,
+					fruitBalance,
+					requiredNutrients,
+				})
+				.rpc();
+				const rn = await program.account.requiredNutrients.fetch(requiredNutrients);
+				
+				console.log('The nutrient required since last apply has been calculated: ', tx.toString());
+				console.log(`required Nitrogen: ${rn.nitrogen} Required phosphorus: ${rn.phosphorus} Required potassium: ${rn.potassium} Required water: ${rn.water}`);
+
+				
+				
+	})
+
+	
+
 	
 });
+
+
+
+
+// const getReturnLog = (confirmedTransaction) => {
+// 	const prefix = "Program return: " ;
+//   let log = confirmedTransaction.meta.logMessages.find((log) => 
+// 		log.startsWith(prefix)
+// 	);
+// 	log = log.slice(prefix.length);
+// 	const [key,data] = log.split(" ", 2) ;
+// 	const buffer = Buffer.from(data,"base64") ;
+// 	return [key,data,buffer];
+// };
