@@ -339,8 +339,11 @@ describe('starter', () => {
 				requiredNutrients,
 			})
 			.rpc();
+    	let t = await program.account.tree.fetch(tree);
+			
+		  console.log('Checks and updates the tree data: ', tx.toString());
 
-		console.log('Checks and updates the tree data: ', tx.toString());
+			console.log("lets see what tree state is like ", t)
 	});
 
 	it('Waters tree', async () => {
@@ -504,7 +507,7 @@ describe('starter', () => {
 		console.log('The phosphorus balance before the transaction is ,', pb.amount);
 
 		const tx = await program.methods
-			.consumePhosphorus(new anchor.BN(201))
+			.consumePhosphorus(new anchor.BN(1996))
 			.accounts({
 				farm,
 				farmer,
@@ -611,9 +614,57 @@ describe('starter', () => {
 		let potassium = pb2.amount;
 		console.log('The phosphorus balance is now: {} ', potassium);
 	});
-	it("calculates the required nutrients for the period", async () =>{
+	it('calculates the required nutrients for the period', async () => {
+		const tx = await program.methods
+			.calculateRequired()
+			.accounts({
+				farm,
+				farmer,
+				waterMint,
+				nitrogenMint,
+				potassiumMint,
+				phosphorusMint,
+				nutrientMintAuthority,
+				landMeta,
+				treesMeta,
+				tree,
+				landPiece,
+				inputBalance,
+				waterBalance,
+				nitrogenBalance,
+				phosphorusBalance,
+				potassiumBalance,
+				fruitMintAuthority,
+				fruitMint,
+				fruitBalance,
+				requiredNutrients,
+			})
+			.rpc();
+		const rn = await program.account.requiredNutrients.fetch(requiredNutrients);
+		console.log(
+			'The nutrient required since last apply has been calculated: ',
+			tx.toString()
+		);
+		console.log(
+			`required Nitrogen: ${rn.nitrogen} Required phosphorus: ${rn.phosphorus} Required potassium: ${rn.potassium} Required water: ${rn.water}`
+		);
+
+		console.log(
+			`Available Nitrogen: ${rn.percentAvailableNitrogen} Available phosphorus: ${rn.percentAvailablePhosphorus} Available potassium: ${rn.percentAvailablePotassium} Available water: ${rn.percentAvailableWater}`
+		);
+	});
+		it('Updates the tree Again', async () => {
+			// let fm = await token.getMint(provider.connection, fruitMint);
+
+			// let fruitBalance = await token.getOrCreateAssociatedTokenAccount(
+			// 	provider.connection,
+			// 	payer.payer,
+			// 	fruitMint,
+			// 	payer.publicKey
+			// );
+
 			const tx = await program.methods
-				.calculateRequired()
+				.checkAndUpdate()
 				.accounts({
 					farm,
 					farmer,
@@ -637,10 +688,15 @@ describe('starter', () => {
 					requiredNutrients,
 				})
 				.rpc();
-				const rn = await program.account.requiredNutrients.fetch(requiredNutrients);				
-				console.log('The nutrient required since last apply has been calculated: ', tx.toString());
-				console.log(`required Nitrogen: ${rn.nitrogen} Required phosphorus: ${rn.phosphorus} Required potassium: ${rn.potassium} Required water: ${rn.water}`);				
-	})	
+			let pb = await token.getAccount(provider.connection, fruitBalance);
+			let t = await program.account.tree.fetch(tree);
+
+			console.log('Checks and updates the tree data: ', tx.toString());
+
+			console.log('balance ', pb.amount);
+		});
+		
+
 });
 
 
