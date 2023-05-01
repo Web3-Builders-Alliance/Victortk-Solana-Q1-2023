@@ -397,7 +397,7 @@ pub mod starter {
         r_nutrients.nitrogen = input_balance.percentage_intake(tree.root_area,  nitrogen_balance.clone() , tree.last_check_time, tree.age,false)? ;
         r_nutrients.phosphorus = input_balance.percentage_intake(tree.root_area, phosphorus_balance.clone() , tree.last_check_time, tree.age,false)? ;
         r_nutrients.potassium = input_balance.percentage_intake(tree.root_area, potassium_balance.clone() , tree.last_check_time, tree.age,false)? ;
-        r_nutrients.water = input_balance.percentage_intake(tree.root_area, water_balance.clone() , tree.last_check_time, tree.age,false)? ;
+        r_nutrients.water = input_balance.percentage_intake(tree.root_area, water_balance.clone() , tree.last_check_time, tree.age,true)? ;
         r_nutrients.last_check_time = Clock::get()?.slot ;  
         Ok(())
     }  

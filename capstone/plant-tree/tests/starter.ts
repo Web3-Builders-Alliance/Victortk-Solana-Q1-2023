@@ -572,7 +572,6 @@ describe('starter', () => {
 		let potassium = pb2.amount;
 		console.log('The water balance is now: {} ', potassium);
 	});
-
 	it('Burns Potassium', async () => {
 		// let wm = await token.getMint(, waterMint);
 
@@ -612,7 +611,6 @@ describe('starter', () => {
 		let potassium = pb2.amount;
 		console.log('The phosphorus balance is now: {} ', potassium);
 	});
-
 	it("calculates the required nutrients for the period", async () =>{
 			const tx = await program.methods
 				.calculateRequired()
@@ -639,18 +637,10 @@ describe('starter', () => {
 					requiredNutrients,
 				})
 				.rpc();
-				const rn = await program.account.requiredNutrients.fetch(requiredNutrients);
-				
+				const rn = await program.account.requiredNutrients.fetch(requiredNutrients);				
 				console.log('The nutrient required since last apply has been calculated: ', tx.toString());
-				console.log(`required Nitrogen: ${rn.nitrogen} Required phosphorus: ${rn.phosphorus} Required potassium: ${rn.potassium} Required water: ${rn.water}`);
-
-				
-				
-	})
-
-	
-
-	
+				console.log(`required Nitrogen: ${rn.nitrogen} Required phosphorus: ${rn.phosphorus} Required potassium: ${rn.potassium} Required water: ${rn.water}`);				
+	})	
 });
 
 
