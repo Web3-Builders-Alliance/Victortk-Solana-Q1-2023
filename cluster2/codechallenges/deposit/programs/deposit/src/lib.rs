@@ -436,50 +436,47 @@ impl From <CurrentSelfTradeBehavior> for SelfTradeBehavior {
 }
 
 
+### marks this as an Instruction struct 
+#[derive(Accounts)]
+pub struct DepositToken<'info> { //#### DepositToken capitalize everyfirst word rust struct naming convention 
+    //#### 'info is a lifetime parameter which is equal to the lifetime of the longest of all the Account types that use it??
 
-
-
-//### marks this as an Instruction struct 
-// #[derive(Accounts)]
-// pub struct DepositToken<'info> { //#### DepositToken capitalize everyfirst word rust struct naming convention 
-//     //#### 'info is a lifetime parameter which is equal to the lifetime of the longest of all the Account types that use it??
-
-//  #[account(mut)] //### should the token mint be mutable?
-//  pub token_mint: Account<'info, Mint> ,
-//  #[account(mut)] //### we need this account to sign for the transaction and to sign the token transfer function 
-//  pub deposit_authority: Signer<'info> ,
-//  #[account( 
-//     init_if_needed, //###we need a way to determine if we already have a associated token account
-//     associated_token::mint = token_mint,//### here we tell anchor that if it ends up creating an associated token account to use token_mint account as the token "type", if already initialized to confirm that the token mint of the passed account matches that of token_mint
-//     payer = deposit_authority,//### if init payer will be deposit_authority
-//     associated_token::authority = pda_authority, //###if anchor initializes the account we tell it to make pda_authority the authority of the account 
-//  )]
-//  //###TokenAccount is a struct type that represents the structure of a token account, here we tell anchor to deserialize it into that type  
-//  pub pda_associated_token_acc: Account<'info, TokenAccount>,
+ #[account(mut)] //### should the token mint be mutable?
+ pub token_mint: Account<'info, Mint> ,
+ #[account(mut)] //### we need this account to sign for the transaction and to sign the token transfer function 
+ pub deposit_authority: Signer<'info> ,
+ #[account( 
+    init_if_needed, //###we need a way to determine if we already have a associated token account
+    associated_token::mint = token_mint,//### here we tell anchor that if it ends up creating an associated token account to use token_mint account as the token "type", if already initialized to confirm that the token mint of the passed account matches that of token_mint
+    payer = deposit_authority,//### if init payer will be deposit_authority
+    associated_token::authority = pda_authority, //###if anchor initializes the account we tell it to make pda_authority the authority of the account 
+ )]
+ //###TokenAccount is a struct type that represents the structure of a token account, here we tell anchor to deserialize it into that type  
+ pub pda_associated_token_acc: Account<'info, TokenAccount>,
  
-//  #[account(
-//     //###We need seeds that make this account unique per user,
-//     //###and unique per token mint/ which is token type  
-//     seeds=[b"tokenvault",deposit_authority.to_account_info().key.as_ref(),token_mint.to_account_info().key.as_ref()],bump)]
-//     //### we use seeds and bump to make sure that the right address is passed
-//     /// CHECK: We are not using this inside the program and its a pda
-//      pub pda_authority: UncheckedAccount<'info>,
-//  //### for the depositors' ATA its supposed to already be initialize
-//  //### under no circumstance is it allowed to no be
-//  #[account(mut,
-//      //### we need to make sure the account has the correct mint type 
-//     associated_token::mint = token_mint,
-//     //### we need to make sure the authority is deposit authority because t is supposed to sign for the transaction
-//     associated_token::authority = deposit_authority,
-//  )]
-//  pub deposit_associated_token_acc: Account<'info, TokenAccount>,
-//  //### the associated token program ATP is required when creating a new token account of a certain mint kind???
-//  pub associated_token_program: Program<'info, AssociatedToken>,
-//  //###the token program is required since its the owner of all token accounts, for creation and transfering the tokens 
-//  pub token_program: Program<'info,Token>,
-//  //### creating accounts always requires system_program???
-//  pub system_program: Program<'info,System> 
-// }
+ #[account(
+    //###We need seeds that make this account unique per user,
+    //###and unique per token mint/ which is token type  
+    seeds=[b"tokenvault",deposit_authority.to_account_info().key.as_ref(),token_mint.to_account_info().key.as_ref()],bump)]
+    //### we use seeds and bump to make sure that the right address is passed
+    /// CHECK: We are not using this inside the program and its a pda
+     pub pda_authority: UncheckedAccount<'info>,
+ //### for the depositors' ATA its supposed to already be initialize
+ //### under no circumstance is it allowed to no be
+ #[account(mut,
+     //### we need to make sure the account has the correct mint type 
+    associated_token::mint = token_mint,
+    //### we need to make sure the authority is deposit authority because t is supposed to sign for the transaction
+    associated_token::authority = deposit_authority,
+ )]
+ pub deposit_associated_token_acc: Account<'info, TokenAccount>,
+ //### the associated token program ATP is required when creating a new token account of a certain mint kind???
+ pub associated_token_program: Program<'info, AssociatedToken>,
+ //###the token program is required since its the owner of all token accounts, for creation and transfering the tokens 
+ pub token_program: Program<'info,Token>,
+ //### creating accounts always requires system_program???
+ pub system_program: Program<'info,System> 
+}
 
 #[derive(Accounts)]
 pub struct DepositToken<'info> {    

@@ -2,7 +2,7 @@
 //#### anotations
 
 
-//####the keyword use is used to shorten the path when calling types from another module or crate 
+//####the use keyword  is used to shorten the path when calling types from another module or crate 
 //####You can use a different diffferent name for the type or item when you bring it in
 //####scope with the as keyword
 use solana_program::{
