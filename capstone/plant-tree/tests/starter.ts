@@ -5,13 +5,12 @@ import { Starter } from '../target/types/starter';
 import * as token from '@solana/spl-token';
 import { assert } from 'chai';
 
-describe('starter', () => {
 	let cultivarName = 'Muti';
 	// Configure the client to use the local cluster.
 	let provider = anchor.AnchorProvider.env();
 	anchor.setProvider(provider);
 
-	const program = anchor.workspace.Starter as Program<Starter>;
+const program = anchor.workspace.Starter as Program<Starter>;
 
 	// payer
 	let payer = provider.wallet as anchor.Wallet;
@@ -187,6 +186,8 @@ describe('starter', () => {
 		program.programId
 	);
 
+
+describe('Initialize', () => {
 	it('Initializes the Farm', async () => {
 		// Add your test here.
 		const tx = await program.methods
@@ -271,7 +272,7 @@ describe('starter', () => {
 		console.log('Land is planted? ', landPieceState2.isPlanted);
 	});
 
-	it('Creates a cultivar', async () => {	
+	it('Creates a cultivar', async () => {
 		// currentTopMarketEntry,
 		let [currentTopMarketEntry] = anchor.web3.PublicKey.findProgramAddressSync(
 			[
@@ -295,48 +296,52 @@ describe('starter', () => {
 			.rpc();
 		console.log('create cultivar transaction', tx);
 	});
+});
 
+describe('plants the tree', () => {
 	it('Plants a tree', async () => {
-		// let fruitMint = await  token.createMint(
-		// 	provider.connection,
-		// 	payer.payer,
-		// 	fruitMintAuthority,
-		// 	fruitMintAuthority,
-		// 	9
-		// );
+			// let fruitMint = await  token.createMint(
+			// 	provider.connection,
+			// 	payer.payer,
+			// 	fruitMintAuthority,
+			// 	fruitMintAuthority,
+			// 	9
+			// );
 
-		// let fm = await token.getMint(
-		// 	provider.connection,
-		// 	fruitMint,
-		// ) ;
-		// let fruitBalance = await token.createAssociatedTokenAccount(
-		// 	provider.connection,
-		// 	payer.payer,
-		// 	fm.address,
-		// 	payer.publicKey,
-		// );
+			// let fm = await token.getMint(
+			// 	provider.connection,
+			// 	fruitMint,
+			// ) ;
+			// let fruitBalance = await token.createAssociatedTokenAccount(
+			// 	provider.connection,
+			// 	payer.payer,
+			// 	fm.address,
+			// 	payer.publicKey,
+			// );
 
-		const tx = await program.methods
-			.plantTree(cultivarName)
-			.accounts({
-				farmer,
-				farm,
-				cultivarMeta,
-				cultivar,
-				landMeta,
-				landPiece,
-				treesMeta,
-				tree,
-				fruitMintAuthority,
-				fruitMint,
-				fruitBalance,
-				inputBalance,
-				requiredNutrients,
-			})
-			.rpc();
-		console.log(`The transaction signature is ${tx.toString()}`);
-	});
+			const tx = await program.methods
+				.plantTree(cultivarName)
+				.accounts({
+					farmer,
+					farm,
+					cultivarMeta,
+					cultivar,
+					landMeta,
+					landPiece,
+					treesMeta,
+					tree,
+					fruitMintAuthority,
+					fruitMint,
+					fruitBalance,
+					inputBalance,
+					requiredNutrients,
+				})
+				.rpc();
+			console.log(`The transaction signature is ${tx.toString()}`);
+		});
 
+});
+describe('Checks tree', () => {
 	it('Updates the tree', async () => {
 		// let fm = await token.getMint(provider.connection, fruitMint);
 
@@ -377,83 +382,179 @@ describe('starter', () => {
 		console.log('Checks and updates the tree data: ', tx.toString());
 
 		console.log('lets see what tree state is like ', t);
+  	
+		let fb = await token.getAccount(provider.connection, fruitBalance);
+
+		console.log("fruit Account initiailized with free fruitus ",  fb);
+		console.log("the fruit balance is now ",  fb.amount);
 	});
 
-	it('Waters tree', async () => {
-		// let wm = await token.getMint(, waterMint);
 
-		let wb = await token.getAccount(provider.connection, waterBalance);
+});
+describe('Adds nutriens', () => {
+		it('Waters tree', async () => {
+			// let wm = await token.getMint(, waterMint);
 
-		console.log('The water balance before the transaction is ,', wb.amount);
+			let wb = await token.getAccount(provider.connection, waterBalance);
 
-		const tx = await program.methods
-			.waterTree(new anchor.BN(2000))
-			.accounts({
-				farm,
-				farmer,
-				waterMint,
-				nitrogenMint,
-				potassiumMint,
-				phosphorusMint,
-				nutrientMintAuthority,
-				landMeta,
-				treesMeta,
-				tree,
-				landPiece,
-				inputBalance,
-				waterBalance,
-				nitrogenBalance,
-				phosphorusBalance,
-				potassiumBalance,
-				fruitMintAuthority,
-				fruitMint,
-				fruitBalance,
-				requiredNutrients,
-			})
-			.rpc();
-		let wm2 = await token.getAccount(provider.connection, waterBalance);
-		console.log('The plant has been watered: ', tx.toString());
-		let water = wm2.amount;
-		console.log('The water balance is now: {} ', water);
-	});
+			console.log('The water balance before the transaction is ,', wb.amount);
 
-	it('Applies Nitrogen', async () => {
-		// let wm = await token.getMint(, waterMint);
+			const tx = await program.methods
+				.waterTree(new anchor.BN(2000))
+				.accounts({
+					farm,
+					farmer,
+					waterMint,
+					nitrogenMint,
+					potassiumMint,
+					phosphorusMint,
+					nutrientMintAuthority,
+					landMeta,
+					treesMeta,
+					tree,
+					landPiece,
+					inputBalance,
+					waterBalance,
+					nitrogenBalance,
+					phosphorusBalance,
+					potassiumBalance,
+					fruitMintAuthority,
+					fruitMint,
+					fruitBalance,
+					requiredNutrients,
+				})
+				.rpc();
+			let wm2 = await token.getAccount(provider.connection, waterBalance);
+			console.log('The plant has been watered: ', tx.toString());
+			let water = wm2.amount;
+			console.log('The water balance is now: {} ', water);
+		});
 
-		let nb = await token.getAccount(provider.connection, nitrogenBalance);
+		it('Applies Nitrogen', async () => {
+			// let wm = await token.getMint(, waterMint);
 
-		console.log('The nitrogen balance before the transaction is ,', nb.amount);
+			let nb = await token.getAccount(provider.connection, nitrogenBalance);
 
-		const tx = await program.methods
-			.addNitrogen(new anchor.BN(2001))
-			.accounts({
-				farm,
-				farmer,
-				waterMint,
-				nitrogenMint,
-				potassiumMint,
-				phosphorusMint,
-				nutrientMintAuthority,
-				landMeta,
-				treesMeta,
-				tree,
-				landPiece,
-				inputBalance,
-				waterBalance,
-				nitrogenBalance,
-				phosphorusBalance,
-				potassiumBalance,
-				fruitMintAuthority,
-				fruitMint,
-				fruitBalance,
-				requiredNutrients,
-			})
-			.rpc();
-		let nb2 = await token.getAccount(provider.connection, nitrogenBalance);
-		console.log('The nutrient has been Apllied: ', tx.toString());
-		let nitrogen = nb2.amount;
-		console.log('The nitrogen balance is now: {} ', nitrogen);
-	});
+			console.log(
+				'The nitrogen balance before the transaction is ,',
+				nb.amount
+			);
+
+			const tx = await program.methods
+				.addNitrogen(new anchor.BN(2001))
+				.accounts({
+					farm,
+					farmer,
+					waterMint,
+					nitrogenMint,
+					potassiumMint,
+					phosphorusMint,
+					nutrientMintAuthority,
+					landMeta,
+					treesMeta,
+					tree,
+					landPiece,
+					inputBalance,
+					waterBalance,
+					nitrogenBalance,
+					phosphorusBalance,
+					potassiumBalance,
+					fruitMintAuthority,
+					fruitMint,
+					fruitBalance,
+					requiredNutrients,
+				})
+				.rpc();
+			let nb2 = await token.getAccount(provider.connection, nitrogenBalance);
+			console.log('The nutrient has been Apllied: ', tx.toString());
+			let nitrogen = nb2.amount;
+			console.log('The nitrogen balance is now: {} ', nitrogen);
+		});
+		
+		it('Applies Phosphorus', async () => {
+			// let wm = await token.getMint(, waterMint);
+
+			let pb = await token.getAccount(provider.connection, phosphorusBalance);
+
+			console.log(
+				'The phosphorus balance before the transaction is ,',
+				pb.amount
+			);
+
+			const tx = await program.methods
+				.addPhosphorus(new anchor.BN(2000))
+				.accounts({
+					farm,
+					farmer,
+					waterMint,
+					nitrogenMint,
+					potassiumMint,
+					phosphorusMint,
+					nutrientMintAuthority,
+					landMeta,
+					treesMeta,
+					tree,
+					landPiece,
+					inputBalance,
+					waterBalance,
+					nitrogenBalance,
+					phosphorusBalance,
+					potassiumBalance,
+					fruitMintAuthority,
+					fruitMint,
+					fruitBalance,
+					requiredNutrients,
+				})
+				.rpc();
+			let pb2 = await token.getAccount(provider.connection, phosphorusBalance);
+			console.log('The nutrient has been Apllied: ', tx.toString());
+			let phosphorus = pb2.amount;
+			console.log('The phosphorus balance is now: {} ', phosphorus);
+		});
+		it('Applies Potassium', async () => {
+				// let wm = await token.getMint(, waterMint);
+
+				let pb = await token.getAccount(provider.connection, potassiumBalance);
+
+				console.log(
+					'The potassium balance before the transaction is ,',
+					pb.amount
+				);
+
+				const tx = await program.methods
+					.addPotassium(new anchor.BN(2000))
+					.accounts({
+						farm,
+						farmer,
+						waterMint,
+						nitrogenMint,
+						potassiumMint,
+						phosphorusMint,
+						nutrientMintAuthority,
+						landMeta,
+						treesMeta,
+						tree,
+						landPiece,
+						inputBalance,
+						waterBalance,
+						nitrogenBalance,
+						phosphorusBalance,
+						potassiumBalance,
+						fruitMintAuthority,
+						fruitMint,
+						fruitBalance,
+						requiredNutrients,
+					})
+					.rpc();
+				let pb2 = await token.getAccount(provider.connection, potassiumBalance);
+				console.log('The nutrient has been Apllied: ', tx.toString());
+				let potassium = pb2.amount;
+				console.log('The water balance is now: {} ', potassium);
+		});
+
+});
+describe('Consumes nutrients ', () => {	
+	
 	it('Burns Nitrogen', async () => {
 		// let wm = await token.getMint(, waterMint);
 
@@ -492,161 +593,90 @@ describe('starter', () => {
 		console.log('The nitrogen balance is now: {} ', nitrogen);
 	});
 
-	it('Applies Phosphorus', async () => {
-		// let wm = await token.getMint(, waterMint);
-
-		let pb = await token.getAccount(provider.connection, phosphorusBalance);
-
-		console.log(
-			'The phosphorus balance before the transaction is ,',
-			pb.amount
-		);
-
-		const tx = await program.methods
-			.addPhosphorus(new anchor.BN(2000))
-			.accounts({
-				farm,
-				farmer,
-				waterMint,
-				nitrogenMint,
-				potassiumMint,
-				phosphorusMint,
-				nutrientMintAuthority,
-				landMeta,
-				treesMeta,
-				tree,
-				landPiece,
-				inputBalance,
-				waterBalance,
-				nitrogenBalance,
-				phosphorusBalance,
-				potassiumBalance,
-				fruitMintAuthority,
-				fruitMint,
-				fruitBalance,
-				requiredNutrients,
-			})
-			.rpc();
-		let pb2 = await token.getAccount(provider.connection, phosphorusBalance);
-		console.log('The nutrient has been Apllied: ', tx.toString());
-		let phosphorus = pb2.amount;
-		console.log('The phosphorus balance is now: {} ', phosphorus);
-	});
-
 	it('Burns Phosphorus', async () => {
-		// let wm = await token.getMint(, waterMint);
+			// let wm = await token.getMint(, waterMint);
 
-		let pb = await token.getAccount(provider.connection, phosphorusBalance);
+			let pb = await token.getAccount(provider.connection, phosphorusBalance);
 
-		console.log(
-			'The phosphorus balance before the transaction is ,',
-			pb.amount
-		);
+			console.log(
+				'The phosphorus balance before the transaction is ,',
+				pb.amount
+			);
 
-		const tx = await program.methods
-			.consumePhosphorus(new anchor.BN(1996))
-			.accounts({
-				farm,
-				farmer,
-				waterMint,
-				nitrogenMint,
-				potassiumMint,
-				phosphorusMint,
-				nutrientMintAuthority,
-				landMeta,
-				treesMeta,
-				tree,
-				landPiece,
-				inputBalance,
-				waterBalance,
-				nitrogenBalance,
-				phosphorusBalance,
-				potassiumBalance,
-				fruitMintAuthority,
-				fruitMint,
-				fruitBalance,
-				requiredNutrients,
-			})
-			.rpc();
-		let pb2 = await token.getAccount(provider.connection, phosphorusBalance);
-		console.log('The nutrient has been consumed: ', tx.toString());
-		let phosphorus = pb2.amount;
-		console.log('The phosphorus balance is now: {} ', phosphorus);
+			const tx = await program.methods
+				.consumePhosphorus(new anchor.BN(1996))
+				.accounts({
+					farm,
+					farmer,
+					waterMint,
+					nitrogenMint,
+					potassiumMint,
+					phosphorusMint,
+					nutrientMintAuthority,
+					landMeta,
+					treesMeta,
+					tree,
+					landPiece,
+					inputBalance,
+					waterBalance,
+					nitrogenBalance,
+					phosphorusBalance,
+					potassiumBalance,
+					fruitMintAuthority,
+					fruitMint,
+					fruitBalance,
+					requiredNutrients,
+				})
+				.rpc();
+			let pb2 = await token.getAccount(provider.connection, phosphorusBalance);
+			console.log('The nutrient has been consumed: ', tx.toString());
+			let phosphorus = pb2.amount;
+			console.log('The phosphorus balance is now: {} ', phosphorus);
 	});
 
-	it('Applies Potassium', async () => {
-		// let wm = await token.getMint(, waterMint);
-
-		let pb = await token.getAccount(provider.connection, potassiumBalance);
-
-		console.log('The potassium balance before the transaction is ,', pb.amount);
-
-		const tx = await program.methods
-			.addPotassium(new anchor.BN(2000))
-			.accounts({
-				farm,
-				farmer,
-				waterMint,
-				nitrogenMint,
-				potassiumMint,
-				phosphorusMint,
-				nutrientMintAuthority,
-				landMeta,
-				treesMeta,
-				tree,
-				landPiece,
-				inputBalance,
-				waterBalance,
-				nitrogenBalance,
-				phosphorusBalance,
-				potassiumBalance,
-				fruitMintAuthority,
-				fruitMint,
-				fruitBalance,
-				requiredNutrients,
-			})
-			.rpc();
-		let pb2 = await token.getAccount(provider.connection, potassiumBalance);
-		console.log('The nutrient has been Apllied: ', tx.toString());
-		let potassium = pb2.amount;
-		console.log('The water balance is now: {} ', potassium);
-	});
 	it('Burns Potassium', async () => {
-		// let wm = await token.getMint(, waterMint);
+			// let wm = await token.getMint(, waterMint);
 
-		let pb = await token.getAccount(provider.connection, potassiumBalance);
+			let pb = await token.getAccount(provider.connection, potassiumBalance);
 
-		console.log('The Potassium balance before the transaction is ,', pb.amount);
-		const tx = await program.methods
-			.consumePotassium(new anchor.BN(201))
-			.accounts({
-				farm,
-				farmer,
-				waterMint,
-				nitrogenMint,
-				potassiumMint,
-				phosphorusMint,
-				nutrientMintAuthority,
-				landMeta,
-				treesMeta,
-				tree,
-				landPiece,
-				inputBalance,
-				waterBalance,
-				nitrogenBalance,
-				phosphorusBalance,
-				potassiumBalance,
-				fruitMintAuthority,
-				fruitMint,
-				fruitBalance,
-				requiredNutrients,
-			})
-			.rpc();
-		let pb2 = await token.getAccount(provider.connection, potassiumBalance);
-		console.log('The nutrient has been consumed: ', tx.toString());
-		let potassium = pb2.amount;
-		console.log('The phosphorus balance is now: {} ', potassium);
+			console.log(
+				'The Potassium balance before the transaction is ,',
+				pb.amount
+			);
+			const tx = await program.methods
+				.consumePotassium(new anchor.BN(201))
+				.accounts({
+					farm,
+					farmer,
+					waterMint,
+					nitrogenMint,
+					potassiumMint,
+					phosphorusMint,
+					nutrientMintAuthority,
+					landMeta,
+					treesMeta,
+					tree,
+					landPiece,
+					inputBalance,
+					waterBalance,
+					nitrogenBalance,
+					phosphorusBalance,
+					potassiumBalance,
+					fruitMintAuthority,
+					fruitMint,
+					fruitBalance,
+					requiredNutrients,
+				})
+				.rpc();
+			let pb2 = await token.getAccount(provider.connection, potassiumBalance);
+			console.log('The nutrient has been consumed: ', tx.toString());
+			let potassium = pb2.amount;
+			console.log('The phosphorus balance is now: {} ', potassium);
 	});
+	
+});
+
+describe('calcultions', () => {
 	it('calculates the required nutrients for the period', async () => {
 		const tx = await program.methods
 			.calculateRequired()
@@ -729,6 +759,180 @@ describe('starter', () => {
 		console.log('balance ', pb.amount);
 	});
 
+});
+describe('Lists fruits ', () => {
+	it('lists fruits', async () => {
+		// let t = await program.account.tree.fetch(tree);
+
+		let fm = await program.account.fruitMarket.fetch(fruitMarket);
+
+		// currentTopMarketEntry,
+		let [currentTopMarketEntry] = anchor.web3.PublicKey.findProgramAddressSync(
+			[
+				Buffer.from('marketentry'),
+				fruitMarket.toBuffer(),
+				fm.topMaker.toBuffer(),
+			],
+			program.programId
+		);
+
+		// 	entryFruitBalance,
+		let [entryFruitBalance] = anchor.web3.PublicKey.findProgramAddressSync(
+			[Buffer.from('fruit'), marketEntry.toBuffer()],
+			program.programId
+		);
+
+		let tknn = await token.getAccount(provider.connection, fruitBalance);	
+
+		console.log(`token tkn b4: ${tknn.amount}`);
+
+		// let fv = await token.getAccount(provider.connection, fruitVault);
+		// console.log(`token vault tkn b4: ${fv.amount}`);
+
+		// console.log('currentTopMarketEntry ', currentTopMarketEntry.toString());
+		// console.log('EntryFruitBalance ', entryFruitBalance.toString());
+    // console.log(farmer.toString());
+
+		const tx = await program.methods
+			.listFruits(new anchor.BN(5000000))
+			.accounts({
+				payer: payer.publicKey,
+				farm,
+				farmer,
+				treesMeta,
+				tree,
+				fruitMintAuthority,
+				fruitMint,
+				fruitBalance,
+				fruitMarket,
+				marketEntry,
+				currentTopMarketEntry,
+				entryFruitBalance,
+			})
+			.rpc();
+
+			console.log("the fruits have been listed , transaction hash:" , tx);
+			let fm2 = await program.account.fruitMarket.fetch(fruitMarket);
+			console.log('the fruit market account:', fm2);
+
+			console.log('the fruit market address:', fm2.address);
+
+      console.log(`the new fruit market top is ${fm2.topMaker.toString()}`);
+			let tkn = await token.getAccount(provider.connection, fruitBalance);
+			
+			let fvv = await token.getAccount(provider.connection, entryFruitBalance);
+			
+			console.log(`farmer fruit balance tkn b4: ${tkn.amount}`);
+
+			console.log(`token entry address: ${fvv.address}`);
+
+			console.log(`token entry tkns after: ${fvv.amount}`);			
+
+	});
+
+});
+describe('Buys fruits', () => {	
+		it('buys fruits', async () => {
+			let fm = await program.account.fruitMarket.fetch(fruitMarket);
+
+			console.log("fruit market address is now ", fm.address); 
+			console.log('Same as: ', fm); 
+
+			console.log(`the  fruit market top is ${fm.topMaker.toString()}`);
+
+
+
+			// console.log(`token entry address: ${fvv.address}`);
+
+			// console.log(`token entry tkns after: ${fvv.amount}`);
+
+	
+
+			// // currentTopMarketEntry,
+			let [currentTopMarketEntry] =
+				anchor.web3.PublicKey.findProgramAddressSync(
+					[
+						Buffer.from('marketentry'),
+						fruitMarket.toBuffer(),
+						fm.topMaker.toBuffer(),
+					],
+					program.programId
+				);
+
+				console.log(
+					'one ' +
+						payer.publicKey.toString() +
+						' vs two ' +
+						fm.topMaker.toString()
+				);
+
+			let [topEntryFruitBalance] = anchor.web3.PublicKey.findProgramAddressSync(
+				[Buffer.from('fruit'), currentTopMarketEntry.toBuffer()],
+				program.programId
+			);
+
+			console.log(
+				'currentTopMarketEntry, ',
+				currentTopMarketEntry.toString()
+			);
+
+			console.log('topEntryFruitBalance ', topEntryFruitBalance.toString());
+
+			// let balance = await token.getAccount(provider.connection , topEntryFruitBalance);
+
+
+			// console.log('topEntryFruitBalance before ', balance.amount);
+
+			let [seedVault] = anchor.web3.PublicKey.findProgramAddressSync(
+				[Buffer.from('seedvault'),farmer.toBuffer()],
+				program.programId
+			);
+
+			let [seedsBalance] = anchor.web3.PublicKey.findProgramAddressSync(
+				[Buffer.from('seedsbalance'), farmer.toBuffer()],
+				program.programId
+			);
+			const tx = await program.methods
+				.buyFruits(cultivarName)
+				.accounts({
+					farmer,
+					farm,
+					cultivarMeta,
+					cultivar,
+					fruitMintAuthority,
+					fruitMint,
+					seedsBalance,
+					fruitMarket,
+					currentTopMarketEntry,
+					topEntryFruitBalance,
+				})
+				.rpc();
+
+			console.log('The buy fruit transaction has been processed: -> ', tx);
+      
+				let balance2 = await token.getAccount(provider.connection , topEntryFruitBalance);
+
+
+			console.log('topEntryFruitBalance in now ', balance2.amount);
+
+				let seed = await token.getAccount(provider.connection , seedsBalance);
+
+
+			console.log('seedsBalance is now ',seed.amount);
+
+		});
+});
+
+	
+
+
+
+
+
+
+
+	
+
 	// it ("Initializes market",async () =>  {
 
 	// 	const tx = await program.methods
@@ -745,114 +949,10 @@ describe('starter', () => {
 
 	// })
 
-	it('lists fruits', async () => {
-		// let t = await program.account.tree.fetch(tree);
-
-		let fm = await program.account.fruitMarket.fetch(fruitMarket);
-
-		
-
-			// currentTopMarketEntry,
-		let [currentTopMarketEntry] = anchor.web3.PublicKey.findProgramAddressSync(
-			[
-				Buffer.from('marketentry'),
-				fruitMarket.toBuffer(),
-				fm.topMaker.toBuffer(),
-			],
-			program.programId
-		);
-
-		// 	entryFruitBalance,
-		let [entryFruitBalance] = anchor.web3.PublicKey.findProgramAddressSync(
-			[Buffer.from('fruit'), marketEntry.toBuffer()],
-			program.programId
-		);
-
-		
-		
-		console.log('currentTopMarketEntry ', currentTopMarketEntry.toString());
-		console.log('EntryFruitBalance ', entryFruitBalance.toString());
 	
 
-		const tx = await program.methods
-			.listFruits(new anchor.BN(5))
-			.accounts({
-				payer: payer.publicKey,
-				farm,
-				farmer,
-				fruitVaultAuthority,
-				treesMeta,
-				tree,
-				fruitMintAuthority,
-				fruitMint,
-				fruitVault,
-				fruitBalance,
-				fruitMarket,
-				marketEntry,
-				currentTopMarketEntry,
-				entryFruitBalance,
-			})
-			.rpc();
-	});
 
-	it('buys fruits', async () => {
 
-	let fm = await program.account.fruitMarket.fetch(fruitMarket);
-
-	// // currentTopMarketEntry,
-	let [currentTopMarketEntry] = anchor.web3.PublicKey.findProgramAddressSync(
-		[
-			Buffer.from('marketentry'),
-			fruitMarket.toBuffer(),
-			fm.topMaker.toBuffer(),
-		],
-		program.programId
-	);
-	
-	
-	let [topEntryFruitBalance] = anchor.web3.PublicKey.findProgramAddressSync(
-		[
-			Buffer.from('fruit'),
-			currentTopMarketEntry.toBuffer(),
-		],
-		program.programId
-	);
-
-  console.log(
-		'currentTopMarketEntry.toBuffer(), ',
-		currentTopMarketEntry.toString()
-	);
-
-  console.log('topEntryFruitBalance ', topEntryFruitBalance.toString());
-
-	let [seedVault] = anchor.web3.PublicKey.findProgramAddressSync(
-		[Buffer.from('seedvault'),farmer.toBuffer()],
-		program.programId
-	);
-
-	let [seedsBalance] = anchor.web3.PublicKey.findProgramAddressSync(
-		[Buffer.from('seedsbalance'), seedVault.toBuffer()],
-		program.programId
-	);
-    // const tx = await program.methods.buyFruits(cultivarName).accounts({
-		// 		farmer,
-		// 		farm,
-		// 		cultivarMeta,
-		// 		cultivar,
-		// 		fruitMintAuthority,
-		// 		fruitMint,
-		// 		seedVault,
-		// 		seedsBalance,
-		// 		fruitMarket,
-		// 		currentTopMarketEntry,
-		// 		topEntryFruitBalance,
-		// 	})
-		// 	.rpc();
-
-		// console.log("The buy fruit transaction has been processed: -> ", tx) ;
-
-	});
-});
 
 // const getReturnLog = (confirmedTransaction) => {
 // 	const prefix = "Program return: " ;
