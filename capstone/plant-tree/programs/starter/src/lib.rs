@@ -491,7 +491,6 @@ pub mod starter {
 }
 
 
-
 #[derive(Accounts)]
 #[instruction(cultivar_name:String)]
 pub struct BuyFruit<'info> {

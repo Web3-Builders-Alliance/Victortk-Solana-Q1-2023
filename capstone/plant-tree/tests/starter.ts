@@ -910,12 +910,12 @@ describe('Buys fruits', () => {
 
 			console.log('The buy fruit transaction has been processed: -> ', tx);
       
-				let balance2 = await token.getAccount(provider.connection , topEntryFruitBalance);
+			let balance2 = await token.getAccount(provider.connection , topEntryFruitBalance);
 
 
 			console.log('topEntryFruitBalance in now ', balance2.amount);
 
-				let seed = await token.getAccount(provider.connection , seedsBalance);
+			let seed = await token.getAccount(provider.connection , seedsBalance);
 
 
 			console.log('seedsBalance is now ',seed.amount);
