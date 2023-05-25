@@ -3,13 +3,17 @@ import React, { FC, ReactNode } from 'react';
 import Connection from './Connection';
 import Header from './Header';
 import Theme from './Theme';
+import styles from "./container.module.css";
+import { Box } from '@mui/material';
 
 const Container: FC<{ children: ReactNode }> = ({ children }) => {
 	return (
-		<Connection>
-			<Theme>
+		<Connection >
+			<Theme>	
 				<Header />
-				{children}
+				<Box className={styles.box}>		
+				{children}	
+				</Box>				
 			</Theme>
 		</Connection>
 	);

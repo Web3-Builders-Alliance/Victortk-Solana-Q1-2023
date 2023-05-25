@@ -1,78 +1,47 @@
 use anchor_lang::prelude::*;
 use anchor_spl::{
     mint, token::{self,Mint,TokenAccount,Token, },
-    associated_token::{AssociatedToken,Create,},
-   
+    associated_token::{AssociatedToken,Create,},   
 };
-use anchor_lang::solana_program::{pubkey} ;
-
+use anchor_lang::solana_program::{pubkey,} ;
+use solana_program::{native_token::LAMPORTS_PER_SOL};
+use anchor_lang::system_program;
 use solana_program::clock::{DEFAULT_TICKS_PER_SLOT,DEFAULT_TICKS_PER_SECOND, SECONDS_PER_DAY} ;
+use farm::cpi::accounts::{UpdateFarm};
+// use tree::cpi::accounts::InitializeFarmer;
+// use farmer::program::Farmer as FarmerProgram;
+use farm::program::Farm as FarmProgram;
+// use fruit_market::program::FruitMarket as FruitMarketProgram;
+// use farmer::{self,Farmer} ;
+use farm::{self,Farm,LandMeta,CultivarMeta,TreesMeta,Vault} ;
+// use fruit_market::{self, FruitMarket, MarketEntry} ;
 
-declare_id!("E77dkm2gqBYsPeJzdbvFWDrMP2zvKhnKg4J8uP9UV164");
+declare_id!("EfYywm823JAajvTAHFv7wnKGi8M4R7BwqufaUEECxUxG");
 
 #[program]
-pub mod starter {
-    use anchor_lang::system_program;
-    use solana_program::native_token::LAMPORTS_PER_SOL;
+pub mod tree {
     use super::*;
-    pub fn initialize_farm(ctx: Context<InitializeFarm>) -> Result<()>{
-        let land_meta = &mut ctx.accounts.land_meta ;
-        land_meta.land_piece_count = 0 ; //to check for initialization        
-        let trees_meta = &mut ctx.accounts.trees_meta ;
-        trees_meta.tree_count = 0 ; //to check for initialization
-        let cultivar_meta =  &mut ctx.accounts.cultivar_meta ;
-        cultivar_meta.cultivars_count = 0 ;        
-        Ok(())
-    }    
-    pub fn initialize_farmer(ctx: Context<InitializeFarmer>, user_name: String) -> Result<()> {        
-        let payer = &mut ctx.accounts.payer ; 
-        let farmer = &mut ctx.accounts.farmer ;
-        farmer.name = user_name ;
-        farmer.address = payer.key().clone() ;
-        farmer.land_count = 0 ;
-        farmer.tree_count = 0 ;
-        Ok(())      
-    }    
-    pub fn buy_land(ctx: Context<BuyLand>) -> Result<()> {
-        let vault =  &mut ctx.accounts.vault ;
-        let payer = &mut ctx.accounts.payer ; 
-        let farmer = &mut ctx.accounts.farmer ;
-        let land_meta = &mut ctx.accounts.land_meta ;
-        let land_piece = &mut ctx.accounts.land_piece ;
-        land_meta.land_piece_count += 1 ; //to check for initialization
-        farmer.land_count += 1 ;
-        land_piece.owner = farmer.key() ;
-        land_piece.number = land_meta.land_piece_count ;
-        //transfer sol to vault
-        let lamports = LAMPORTS_PER_SOL/4 ;
-        system_program::transfer(
-            CpiContext::new(
-               ctx.accounts.system_program.to_account_info(),
-                system_program::Transfer {
-                    from: payer.to_account_info(),
-                    to: vault.to_account_info(),
-            },  
-        ), lamports)
-    }
-    pub fn plant_tree(ctx: Context<PlantTree>, cultivar_name:String)-> Result<()> {
-        let farmer = &mut  ctx.accounts.farmer ;
-        farmer.tree_count += 1 ;
+    
+    pub fn create_tree(ctx: Context<CreateTree>)-> Result<()> {
+        msg!("Inside this function yeeyeyeyeyey lets plant some trees");  
+
+        let payer = ctx.accounts.payer.to_account_info();
+
+        let farmer = &mut  ctx.accounts.farmer ;    
+
         let trees_meta  = &mut ctx.accounts.trees_meta ;
         trees_meta.tree_count += 1 ;
 
-        let cultivar = &mut ctx.accounts.cultivar ;
-        // assert!(cultivar.is_initialized) ;
+        let cultivar = &mut ctx.accounts.cultivar ;       
+        require!(cultivar.is_initialized, TreeError::CultivarNotInitialized) ;
 
         cultivar.count = cultivar.count + 1 ;
-        //scacity points cultivar.scarcity_points = 
+    //     //scacity points cultivar.scarcity_points = 
 
-        let land_piece = &mut ctx.accounts.land_piece ;     
-        land_piece.is_planted = true ;   
-
-        let tree =  &mut ctx.accounts.tree ;
-        tree.cultivar_name =  cultivar.name.clone() ;
-        tree.land_number = land_piece.number ;
-        tree.cultivar_name = cultivar_name ;
+      
+       let tree =  &mut ctx.accounts.tree ;
+        tree.cultivar_name =  cultivar.name.clone() ; 
+        // tree.land_number = 1 ;
         tree.height = cultivar.init_height;
         tree.girth = cultivar.init_width;
         tree.age = 1 ;
@@ -81,30 +50,15 @@ pub mod starter {
         tree.last_check_time = time ;
         tree.health = 100 ;
         tree.is_alive = true ;
-        //ticks per second/ ticks per slot * 1 year in seconds should probably get the constants  + 5 * 30 * 60 * 24 * 365 
-        tree.next_fruit_maturaturation_time =  time + 1;        
+    // // //ticks per second/ ticks per slot * 1 year in seconds should probably get the constants  + 5 * 30 * 60 * 24 * 365 
+        tree.next_fruit_maturaturation_time =  time + 1;  
+
         Ok(())
-    }
-   
-    pub fn create_cultivar(ctx: Context<CreateCultivar>, name:    String , height: u64, width: u64) -> Result<()>{
+    }    
+
+    pub fn create_cultivar(ctx: Context<CreateCultivar>, name:String , height: u64, width: u64) -> Result<()>{
         let cultivar_meta =  &mut ctx.accounts.cultivar_meta ;
-        cultivar_meta.cultivars_count = cultivar_meta.cultivars_count + 1 ;
-
-        let market = &mut ctx.accounts.fruit_market ;
-        let market_entry  = &mut ctx.accounts.market_entry ;
-
-        //   maker: Pubkey ,
-        //   count: u64 ,
-        //   next_maker: Option<Pubkey>,
-
-        market_entry.maker = *ctx.program_id ;
-        market_entry.count = 0 ;
-        market_entry.next_maker = Some(*ctx.program_id) ;
-        
-        market.bottom_maker =Some(*ctx.program_id) ;
-        market.top_maker = Some(*ctx.program_id);  
-        market.total_fruit_balance = 0 ;      
-        
+        cultivar_meta.cultivars_count = cultivar_meta.cultivars_count + 1 ;        
         let cultivar = &mut ctx.accounts.cultivar ;
             cultivar.count = 0 ;
             cultivar.name = name ;    
@@ -113,20 +67,27 @@ pub mod starter {
             cultivar.is_initialized = true ;
         Ok(())
     }
+    pub fn create_seed(ctx: Context<CreateSeed>, name:String) -> Result<()>{
+        Ok(())
+    } 
     pub fn check_and_update(ctx: Context<TreeUpdate>)-> Result<()>{
-        msg!("In=================================================>In");
+      
         let r_nutrients = &mut *ctx.accounts.required_nutrients;
 
         let current_slot = Clock::get()?.slot;
 
         if current_slot < 11 {
+            msg!("got me in herreee 1111111111111111111111111111111");  
             return Ok(())
         };
 
         if r_nutrients.last_check_time < current_slot -10 {
+            msg!("got me in herreee 22222222222222222");  
             // Err
             return Ok(())
-        }         
+        } 
+
+        msg!("In=================================================>In");        
 
         let nutrient_authority =  &mut ctx.accounts.nutrient_mint_authority ;
         let n_mint = &mut *ctx.accounts.nitrogen_mint;
@@ -137,7 +98,7 @@ pub mod starter {
         let input_balance  = &mut ctx.accounts.input_balance ;
 
         let tree = &mut *ctx.accounts.tree ;
-        let land_piece = &mut *ctx.accounts.land_piece ;
+        // let land_piece = &mut *ctx.accounts.land_piece ;
         
         let nitrogen = &ctx.accounts.nitrogen_balance.to_account_info();
         
@@ -159,7 +120,7 @@ pub mod starter {
         let seeds = &[ "nutrientmintauthority".as_bytes(), &[bump]] ;
 
         let tree_key = tree.key() ;
-        let land_piece_key = land_piece.key() ;
+        // let land_piece_key = land_piece.key() ;
         // // seeds=[b"nutrientbalance",land_piece.key().as_ref(),tree.key().as_ref()], bump,      
        
         msg!("r_nutrients.percent_available_potassium: {} , r_nutrients.percent_available_water: {} ,r_nutrients.last_check_time: {}", r_nutrients.percent_available_potassium,r_nutrients.percent_available_water, r_nutrients.last_check_time) ;
@@ -173,8 +134,8 @@ pub mod starter {
 
         let seeds = &[ "fruitmintauthority".as_bytes(),&[bump]] ;
         let fb = &mut ctx.accounts.fruit_balance;
-        if tree.is_harvest_season()? { 
-         
+        
+        if tree.is_harvest_season()? {
             token::mint_to(
                 CpiContext::new_with_signer(
                   ctx.accounts.token_program.to_account_info().clone() ,
@@ -186,42 +147,70 @@ pub mod starter {
                   &[&seeds[..]]
                 ) ,1000000000)? ;
         //  tree.expected_fruit_count
-        tree.set_new_harvest_season()?;
+        // tree.set_new_harvest_season()?;
         } //if true   
-        fb.reload()?;
+        // fb.reload()?;
 
         msg!("The new fb account is  {:?} ,", fb) ;    
         msg!("The new fb balance is  {} ,", fb.amount) ; 
         
 
-        tree.update_age()? ;
-        tree.update_size(r_nutrients.percent_available_nitrogen,r_nutrients.percent_available_phosphorus,r_nutrients.percent_available_potassium,r_nutrients.percent_available_water, r_nutrients.last_check_time)? ;
-        tree.set_last_check_time()? ; 
+        // tree.update_age()? ;
+        // tree.update_size(r_nutrients.percent_available_nitrogen,r_nutrients.percent_available_phosphorus,r_nutrients.percent_available_potassium,r_nutrients.percent_available_water, r_nutrients.last_check_time)? ;
+        // tree.set_last_check_time()? ; 
         Ok(())
+    }  
+    pub fn harvest_fruit (ctx: Context<HarvestFruit>, amount: u64  )-> Result<()> {   
+
+       let fruit_vault = &mut ctx.accounts.fruit_vault ;
+
+       let fruit_balance = &mut ctx.accounts.fruit_balance ;
+
+       let tree: &mut Account<Tree> = &mut ctx.accounts.tree ;
+       let trees_meta= &mut ctx.accounts.trees_meta.key() ;
+       let farmer= &mut ctx.accounts.farmer.key() ;
+       let bump  = *ctx.bumps.get("tree").unwrap();
+
+       let seeds=[b"tree",trees_meta.as_ref(),farmer.as_ref(),&[bump]] ;
+       
+		// topEntryFruitBalance,  
+        token::transfer(
+            CpiContext::new_with_signer(
+                ctx.accounts.token_program.to_account_info().clone(), 
+                token::Transfer{
+                  from: fruit_balance.to_account_info().clone(), 
+                  to: fruit_vault.to_account_info().clone(),
+                  authority: tree.to_account_info().clone(), 
+                },
+                &[&seeds[..]]
+            ),   
+            amount         
+        )?;     
+      Ok(())
     }
+    pub fn water_tree(ctx: Context<TreeUpdate>, amount: u64  )-> Result<()> {   
 
-    pub fn water_tree(ctx: Context<TreeUpdate>, amount: u64  )-> Result<()> {     
-        let water_mint = &mut ctx.accounts.water_mint ;
-        let water_balance_account = &mut ctx.accounts.water_balance ;
-        let nutrient_mint_authority=  &mut ctx.accounts.nutrient_mint_authority ; 
-
+      let water_mint = &mut ctx.accounts.water_mint ;
+        let water_balance = &mut ctx.accounts.water_balance ;
+        let nutrient_mint_authority=  &mut ctx.accounts.nutrient_mint_authority ;
+        
         let bump = *ctx.bumps.get("nutrient_mint_authority").unwrap() ;
 
         let seeds = &[ "nutrientmintauthority".as_bytes(), &[bump]] ;
-      
         token::mint_to(
             CpiContext::new_with_signer(
                 ctx.accounts.token_program.to_account_info(),
                token::MintTo{
                    mint: water_mint.to_account_info().clone(),
-                   to: water_balance_account.to_account_info().clone(),
+                   to: water_balance.to_account_info().clone(),
                    authority: nutrient_mint_authority.to_account_info().clone(), 
                 },
                 &[&seeds[..]]
             ),
             amount
         )
-    }
+      
+    } 
     pub fn add_nitrogen(ctx: Context<TreeUpdate>, amount: u64  )-> Result<()> {
         let nitrogen_mint = &mut ctx.accounts.nitrogen_mint ;
         let nitrogen_balance = &mut ctx.accounts.nitrogen_balance ;
@@ -274,7 +263,7 @@ pub mod starter {
         let seeds = &[ "nutrientmintauthority".as_bytes(), &[bump]] ;  
         token::mint_to(
             CpiContext::new_with_signer(
-                ctx.accounts.token_program.to_account_info(),
+               ctx.accounts.token_program.to_account_info(),
                token::MintTo{
                    mint: phosphorus_mint.to_account_info().clone(),
                    to: phosphorus_balance.to_account_info().clone(),
@@ -292,11 +281,11 @@ pub mod starter {
         let tree = &mut ctx.accounts.tree.key() ;
         let input_balance = &mut ctx.accounts.input_balance ;      
         let bump = *ctx.bumps.get("input_balance").unwrap() ;
-        let seeds = &[ "nutrientbalance".as_bytes(),land_piece.as_ref(), tree.as_ref(), &[bump]] ;
+        let seeds = &[ "nutrientbalance".as_bytes(), tree.as_ref(), &[bump]] ;
         token::burn(
             CpiContext::new_with_signer(
                 ctx.accounts.token_program.to_account_info(),
-               token::Burn{
+                token::Burn{
                    mint: nitrogen_mint.to_account_info().clone(),
                    from: nitrogen_balance.to_account_info().clone(),
                    authority: input_balance.to_account_info().clone(), 
@@ -313,7 +302,7 @@ pub mod starter {
         let tree = &mut ctx.accounts.tree.key() ;
         let input_balance = &mut ctx.accounts.input_balance ;      
         let bump = *ctx.bumps.get("input_balance").unwrap() ;
-        let seeds = &[ "nutrientbalance".as_bytes(),land_piece.as_ref(), tree.as_ref(), &[bump]] ;
+        let seeds = &[ "nutrientbalance".as_bytes(), tree.as_ref(), &[bump]] ;
         token::burn(
             CpiContext::new_with_signer(
                 ctx.accounts.token_program.to_account_info(),
@@ -334,7 +323,7 @@ pub mod starter {
         let tree = &mut ctx.accounts.tree.key() ;
         let input_balance = &mut ctx.accounts.input_balance ;      
         let bump = *ctx.bumps.get("input_balance").unwrap() ;
-        let seeds = &[ "nutrientbalance".as_bytes(),land_piece.as_ref(), tree.as_ref(), &[bump]] ;
+        let seeds = &[ "nutrientbalance".as_bytes(),tree.as_ref(), &[bump]] ;
 
 
         token::burn(
@@ -384,256 +373,158 @@ pub mod starter {
         Ok(())
     }  
 
-    pub fn list_fruits(ctx:Context<ListFruit>, amount: u64) ->Result<()>{
-        // transfer tokens quantity  from tree to the market token account 
-      
-        // fruit_mint_authority
-        let fruit_mint_authority = &mut ctx.accounts.fruit_mint_authority ;
-        // fruit_mint
-         let fruit_mint = &mut ctx.accounts.fruit_mint ;
-        // fruit_vault
-         let entry_fruit_balance = &mut ctx.accounts.entry_fruit_balance ;
-        // fruit_balance
-         let fruit_balance = &mut *ctx.accounts.fruit_balance ;
-         let farmer = &mut ctx.accounts.farmer ;
-         let payer = &mut ctx.accounts.payer.key() ;     
-
-         
-         //increment the market volume info 
-         let market = &mut *ctx.accounts.fruit_market ;
-
-         msg!("market b4 was  :{:?} ", market.top_maker);
-         let market_entry  = &mut *ctx.accounts.market_entry ;
-
-         let current_top_market_entry  = &mut **ctx.accounts.current_top_market_entry ;
-         
-        //   maker: Pubkey ,
-        //   count: u64 ,
-        //   next_maker: Option<Pubkey>,
-        msg!("the maker is : ======>> {}", payer ) ;
-
-        market_entry.maker = *payer ;
-        market_entry.count = amount ;
-
-        market_entry.next_maker = Some(current_top_market_entry.maker) ;       
-        
-        market.top_maker = Some(market_entry.maker);  
-        market.total_fruit_balance += market_entry.count ;
-
-        let bump = *ctx.bumps.get("farmer").unwrap() ;
-        let seeds = &["farmer".as_bytes(), payer.as_ref(), &[bump]] ;
-       
-        let k =  pubkey::Pubkey::find_program_address(&["farmer".as_bytes(), payer.as_ref()], ctx.program_id);
-
-
-        token::transfer(
-            CpiContext::new_with_signer(
-                ctx.accounts.token_program.to_account_info().clone(), 
-                token::Transfer{
-                  from: fruit_balance.to_account_info().clone(), 
-                  to: entry_fruit_balance.to_account_info().clone(),
-                  authority: farmer.to_account_info().clone(), 
-                },
-                &[&seeds[..]]
-            ),   
-            amount         
-        )?;
-
-
-        // market.reload()?; 
-
-        msg!("market is now :{:?} ", market.top_maker);
-
-        Ok(())
-    }
-
-    pub fn buy_fruits(ctx:Context<BuyFruit>, cultivar_name:String) ->Result<()>{
-        // // seedVault,
-        // let seed_vault: &mut Box<Account<SeedVault>> = &mut ctx.accounts.seed_vault ;
-
-		// seedsBalance,
-        let seeds_balance = &mut ctx.accounts.seeds_balance ;
-		// fruit_market,
-        let fruit_market = &mut ctx.accounts.fruit_market ;
-		// current_top_market_entry,
-        let current_top_market_entry = &mut ctx.accounts.current_top_market_entry ;
-         
-        let current_top_market_entry = &mut ctx.accounts.current_top_market_entry ;
-
-        let market = &mut ctx.accounts.fruit_market ;
-
-        let top_entry_fruit_balance  = &mut ctx.accounts.top_entry_fruit_balance ;
-
-        let fruit_mint_authority  = &mut ctx.accounts.fruit_mint_authority ;
-
-        //   maker: Pubkey ,
-        //   count: u64 ,
-        //   next_maker: Option<Pubkey>,
-
-        let bump  = *ctx.bumps.get("fruit_mint_authority").unwrap();
-        let seeds = &["fruitmintauthority".as_bytes(), &[bump]] ;
-		// topEntryFruitBalance,  
-        token::transfer(
-            CpiContext::new_with_signer(
-                ctx.accounts.token_program.to_account_info().clone(), 
-                token::Transfer{
-                  from: top_entry_fruit_balance.to_account_info().clone(), 
-                  to: seeds_balance.to_account_info().clone(),
-                  authority: fruit_mint_authority.to_account_info().clone(), 
-                },
-                &[&seeds[..]]
-            ),   
-            1         
-        )?;        
-        Ok(())
-    }
-
 }
 
 
 #[derive(Accounts)]
 #[instruction(cultivar_name:String)]
-pub struct BuyFruit<'info> {
+pub struct CreateSeed <'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
-
-    #[account(seeds=[b"farmer", payer.key().as_ref()], bump, )]
-    pub farmer: Account<'info,Farmer>, 
-
-    #[account(seeds=[b"farm"], bump)]
-    pub farm: Box<Account<'info,Farm>>,
-
-    #[account(mut,seeds=[b"cultivarmeta",
-    farm.key().as_ref()], bump,)]
-    pub cultivar_meta: Box<Account<'info, CultivarMeta>>,
-
-    #[account(mut,seeds=[b"cultivar", cultivar_meta.key().as_ref(), cultivar_name.as_bytes().as_ref()], bump)]
-    pub cultivar: Box<Account<'info,Cultivar>>,   
-    
-    /// CHECK: fruit mint authourity pda 
+    #[account(seeds=[b"farm"], bump, seeds::program=farm_program)]
+    pub farm: Box<Account<'info,Farm>>,   
+    /// CHECK: It is used to derive other accounts which are checked
+    pub farmer: UncheckedAccount<'info>, 
+    /// CHECK: mint authority for fruit 
     #[account(mut, seeds=[b"fruitmintauthority"], bump,)]
     pub fruit_mint_authority: UncheckedAccount<'info>,
 
-    #[account(seeds=[b"fruitmint",cultivar_name.as_bytes().as_ref()], bump, mint::decimals=9, mint::authority=fruit_mint_authority)]
+    #[account(seeds=[b"fruitmint",cultivar_name.as_bytes().as_ref()], bump, mint::decimals=9, mint::authority=fruit_mint_authority,)]
     pub fruit_mint: Account<'info, Mint>,
 
-    // #[account(init_if_needed, payer=payer , seeds=[b"seedvault",farmer.key().as_ref()], bump,space=8 + SeedVault::INIT_SPACE )] //token::authority=program. does that happen by default 
-    // pub seed_vault: Box<Account<'info,SeedVault>>, 
-
-    #[account(init_if_needed, payer=payer ,seeds=[b"seedsbalance",farmer.key().as_ref()], bump, token::mint=fruit_mint, token::authority=farmer)]
+    #[account(init, payer=payer ,seeds=[b"seedsbalance", farmer.key().as_ref(),cultivar_name.as_bytes().as_ref()],bump,token::mint=fruit_mint, token::authority=farmer)]
     pub seeds_balance: Box<Account<'info,TokenAccount>>,
     
-    #[account(mut,seeds=[b"fruitmarket", cultivar_name.as_bytes().as_ref()], bump)]
-    pub fruit_market: Account<'info,FruitMarket>,
-
-    #[account(mut,seeds=[b"marketentry", fruit_market.key().as_ref(),fruit_market.top_maker.unwrap().as_ref()], bump)]
-    pub current_top_market_entry: Account<'info,MarketEntry>,
-
-    #[account(mut,seeds=[b"fruit",current_top_market_entry.key().as_ref()], bump, token::mint=fruit_mint,)]
-    pub top_entry_fruit_balance: Account<'info,TokenAccount>,
-
-    pub system_program: Program<'info,System>,
     pub token_program: Program<'info,Token>,
+    pub system_program: Program<'info, System> ,
+    // pub tree_program: Program<'info, TreeProgram>,
+    pub farm_program: Program<'info, FarmProgram>, 
+
+}
+#[derive(Accounts)]
+pub struct HarvestFruit <'info> {
+    #[account(mut)]
+    pub payer: Signer<'info>,
+    #[account(seeds=[b"farm"], bump, seeds::program=farm_program)]
+    pub farm: Box<Account<'info,Farm>>,    
+    /// CHECK: It is used to derive other accounts which are checked
+    pub farmer: UncheckedAccount<'info>, 
+     /// CHECK: Pda authority 
+     #[account(seeds=[b"fruitmintauthority"], bump,)]
+    pub fruit_mint_authority: UncheckedAccount<'info>, 
+    #[account(mut, seeds=[b"treesmeta",farm.key().as_ref()], bump,seeds::program=farm_program)]
+    pub trees_meta: Account<'info, TreesMeta>,
+
+    #[account(seeds=[b"tree",trees_meta.key().as_ref(),farmer.key().as_ref()], bump,)]
+    pub tree: Account<'info, Tree>,
+
+    #[account(seeds=[b"fruitmint", tree.cultivar_name.as_bytes().as_ref()],bump,mint::decimals=9, mint::authority=fruit_mint_authority)] // different fruits 
+    pub fruit_mint: Account<'info, Mint>, 
+
+    #[account(mut,token::mint=fruit_mint, token::authority=farmer)]
+    pub fruit_vault: Box<Account<'info,TokenAccount>>,
+
+    #[account(mut, seeds=[b"fruit", tree.key().as_ref()],bump,token::mint=fruit_mint, token::authority=tree)]
+    pub fruit_balance: Account<'info,TokenAccount>, 
+    
+    pub token_program: Program<'info,Token>,
+    pub system_program: Program<'info, System> ,
+    // pub tree_program: Program<'info, TreeProgram>,
+    pub farm_program: Program<'info, FarmProgram>,
 }
 
 
 #[derive(Accounts)]
-pub struct ListFruit<'info> {
+pub struct CreateTree <'info> {
     #[account(mut)]
-    pub payer: Signer<'info>,    
-    #[account(seeds=[b"farm"], bump)]
+    pub payer: Signer<'info>,
+
+    #[account(seeds=[b"farm"], bump, seeds::program=farm_program)]
     pub farm: Box<Account<'info,Farm>>,
-    #[account(mut, seeds=[b"farmer", payer.key().as_ref()], bump, )]
-    pub farmer: Account<'info,Farmer>,
-    // #[account(seeds=[b"fruitvaultauthority"], bump)]
-    // /// CHECK: this is  a PDA authrity acc
-    // pub fruit_vault_authority: UncheckedAccount<'info>, 
-    #[account( seeds=[b"treesmeta",farm.key().as_ref()], bump, )]
-    pub trees_meta: Box<Account<'info, TreesMeta>>,
-    #[account( seeds=[b"tree",trees_meta.key().as_ref(),farmer.key().as_ref()], bump, )]
-    pub tree: Box<Account<'info, Tree>>,
-    /// CHECK: fruit mint authourity pda 
-    #[account(seeds=[b"fruitmintauthority"], bump,)]
-    pub fruit_mint_authority: UncheckedAccount<'info>,
-    #[account(seeds=[b"fruitmint", 
-    tree.cultivar_name.as_bytes()],bump, mint::decimals=9, mint::authority=fruit_mint_authority)] // different fruits 
-    pub fruit_mint: Box<Account<'info, Mint>>,
-  
-    #[account(mut, seeds=[b"fruit",tree.key().as_ref()], bump, token::mint=fruit_mint, token::authority=farmer)]
-    pub fruit_balance: Box<Account<'info,TokenAccount>>,
+    /// CHECK: It is used to derive other accounts which are checked
+    pub farmer: UncheckedAccount<'info>, 
 
-    #[account(mut, seeds=[b"fruitmarket", tree.cultivar_name.as_bytes()], bump)]
-    pub fruit_market: Account<'info,FruitMarket>,
-    #[account(init_if_needed, payer=payer, seeds=[b"marketentry", fruit_market.key().as_ref(),payer.key().as_ref()],space =  8 + MarketEntry::INIT_SPACE,bump)]
-    pub market_entry: Account<'info,MarketEntry>,
-    
-    #[account(init_if_needed, payer=payer,seeds=[b"marketentry", fruit_market.key().as_ref(),fruit_market.top_maker.unwrap().as_ref()], bump, space =  8 + MarketEntry::INIT_SPACE)]
-    pub current_top_market_entry: Box<Account<'info,MarketEntry>>,
+    #[account(mut, seeds=[b"cultivarmeta",farm.key().as_ref()], bump, seeds::program=farm_program)]
+    pub cultivar_meta: Account<'info, CultivarMeta>,
 
-    #[account(init, payer=payer, seeds=[b"fruit",market_entry.key().as_ref()], bump, token::mint=fruit_mint, token::authority=fruit_mint_authority)]
-    pub entry_fruit_balance: Account<'info,TokenAccount>, //entry you are making
+    #[account(mut, seeds=[b"treesmeta",farm.key().as_ref()], bump,seeds::program=farm_program)]
+    pub trees_meta: Account<'info, TreesMeta>,
+
+    #[account(mut,seeds=[b"cultivar", cultivar_meta.key().as_ref(), cultivar.name.as_bytes().as_ref()],bump)]
+    pub cultivar: Account<'info,Cultivar>, 
+
+    #[account(init,seeds=[b"tree",trees_meta.key().as_ref(),farmer.key().as_ref()], bump, payer=payer, space = 8 + Tree::INIT_SPACE)]
+    pub tree: Account<'info, Tree>,
+
+    /// CHECK: Pda authority 
+     #[account(seeds=[b"fruitmintauthority"], bump,)]
+    pub fruit_mint_authority: UncheckedAccount<'info>,  
+
+    #[account(seeds=[b"fruitmint", cultivar.name.as_bytes().as_ref()],bump,mint::decimals=9, mint::authority=fruit_mint_authority)] // different fruits 
+    pub fruit_mint: Account<'info, Mint>, 
+
+    #[account(init, seeds=[b"fruit", tree.key().as_ref()],bump, payer=payer, token::mint=fruit_mint, token::authority=tree)]
+    pub fruit_balance: Account<'info,TokenAccount>, 
+
+    #[account(init,seeds=[b"nutrientbalance",tree.key().as_ref()],bump, payer=payer, space = 8 + InputBalance::INIT_SPACE)]
+    pub input_balance: Account<'info, InputBalance>,
+
+    #[account(init ,payer=payer, seeds=[b"requirednutrients", tree.key().as_ref()], bump, space= 8 + RequiredNutrients::INIT_SPACE)]
+    pub required_nutrients: Box<Account<'info,RequiredNutrients>>,
     
-    //   #[account(init_if_needed, payer= payer , seeds=[b"fruit",tree.cultivar_name.as_bytes()], bump,token::mint=fruit_mint,token::authority=fruit_vault_authority )] //token::authority=program. does that happen by default cultivar_name.as_bytes().as_ref()
-    // pub fruit_vault: Box<Account<'info,TokenAccount>>,    
-    
-    
-    pub system_program: Program<'info,System>,
     pub token_program: Program<'info,Token>,
-}
-
-#[account]
-#[derive(Default)]
-#[derive(InitSpace)]
-pub struct MarketEntry {
-  maker: Pubkey ,
-  count: u64 ,
-  next_maker: Option<Pubkey>,
-}
-
-#[account]
-#[derive(Default)]
-#[derive(InitSpace)]
-pub struct FruitMarket {
-   top_maker: Option<Pubkey> ,
-   bottom_maker: Option<Pubkey> ,
-   total_fruit_balance: u64 ,
-   price: u64 ,
+    pub system_program: Program<'info, System> ,
+    // pub tree_program: Program<'info, TreeProgram>,
+    pub farm_program: Program<'info, FarmProgram>,
+    // pub associated_token_program: Program<'info, AssociatedToken>,
 }
 
 #[derive(Accounts)]
 pub struct TreeUpdate<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
-    #[account(seeds=[b"farm"], bump)]
-    pub farm: Box<Account<'info,Farm>>,  
-    #[account(seeds=[b"farmer", payer.key().as_ref()], bump, )]
-    pub farmer: Box<Account<'info,Farmer>>,
-    #[account(mut,seeds=[b"watermint"], bump, mint::decimals=9, mint::authority=nutrient_mint_authority)]
-    pub water_mint: Box<Account<'info, Mint>> ,
-    #[account(mut,seeds=[b"nitrogenmint"], bump, mint::decimals=9, mint::authority=nutrient_mint_authority)]
+
+    #[account(seeds=[b"farm"], bump, 
+    seeds::program=farm_program)]
+    pub farm: Box<Account<'info,Farm>>, 
+
+    /// CHECK: famer 
+    pub farmer: UncheckedAccount<'info,> ,
+
+    #[account(init_if_needed, payer=payer,seeds=[b"watermint"], bump, mint::decimals=9, mint::authority=nutrient_mint_authority,)]
+    pub water_mint: Box<Account<'info, Mint>>,
+
+    #[account(init_if_needed, payer=payer,seeds=[b"nitrogenmint"], bump, mint::decimals=9, mint::authority=nutrient_mint_authority,)]
     pub nitrogen_mint: Box<Account<'info, Mint>> ,
-    #[account(mut,seeds=[b"potassiummint"], bump, mint::decimals=9,
-    mint::authority=nutrient_mint_authority)]
+
+    #[account(init_if_needed, payer=payer,seeds=[b"potassiummint"], bump, mint::decimals=9,
+    mint::authority=nutrient_mint_authority, )]
     pub potassium_mint: Box<Account<'info, Mint>> ,
-    #[account(mut,seeds=[b"phosphorusmint"], bump, mint::decimals=9, mint::authority=nutrient_mint_authority)]
+
+    #[account(init_if_needed, payer=payer,seeds=[b"phosphorusmint"], bump, mint::decimals=9, mint::authority=nutrient_mint_authority,)]
     pub phosphorus_mint: Box<Account<'info, Mint>> ,
+
     /// CHECK: mint authority pda
-    #[account(seeds=[b"nutrientmintauthority"], bump,)]
+    #[account(mut,seeds=[b"nutrientmintauthority"], bump,)]
     pub nutrient_mint_authority: UncheckedAccount<'info,>,
-    #[account(seeds=[b"landmeta", farm.key().as_ref()], bump)]
-    pub land_meta: Box<Account<'info,LandMeta>>,
-    #[account(seeds=[b"treesmeta",farm.key().as_ref()], bump, )]
+
+    #[account(mut,seeds=[b"landmeta", farm.key().as_ref()], bump, seeds::program=farm_program)]
+    pub land_meta: Account<'info,LandMeta>,
+
+    #[account(seeds=[b"treesmeta",farm.key().as_ref()], bump,seeds::program=farm_program)]
     pub trees_meta: Box<Account<'info, TreesMeta>>,
+
     #[account(mut,seeds=[b"tree",trees_meta.key().as_ref(),farmer.key().as_ref()], bump, )]
     pub tree: Box<Account<'info, Tree>>,
+    
+    /// CHECK: farmers' land
+    pub land_piece: UncheckedAccount<'info,>,
 
-    #[account(seeds=[b"landpiece",land_meta.key().as_ref(),farmer.key().as_ref()], bump,)]
-    pub land_piece:Box<Account<'info, LandPiece>>,
-
-    #[account(mut, seeds=[b"nutrientbalance",land_piece.key().as_ref(),tree.key().as_ref()], bump,)]
+    #[account(mut, seeds=[b"nutrientbalance",tree.key().as_ref()], bump,)]
     pub input_balance: Box<Account<'info,InputBalance>>,
 
-    #[account(init_if_needed, payer=payer , seeds=[b"water",input_balance.key().as_ref()], bump, token::mint=water_mint, token::authority=input_balance)]
+    #[account(init_if_needed, payer=payer , seeds=[b"water",input_balance.key().as_ref()], bump, token::mint=water_mint, 
+    token::authority=input_balance)]
     pub water_balance: Box<Account<'info,TokenAccount>>,
 
     #[account(init_if_needed, payer=payer , seeds=[b"nitrogen",input_balance.key().as_ref()], bump, token::mint=nitrogen_mint, token::authority=input_balance)]
@@ -646,64 +537,26 @@ pub struct TreeUpdate<'info> {
     pub potassium_balance: Box<Account<'info,TokenAccount>>,
 
     /// CHECK:  pda
-    #[account( seeds=[b"fruitmintauthority"], bump,)]
+    #[account(mut,seeds=[b"fruitmintauthority"], bump,)]
     pub fruit_mint_authority: UncheckedAccount<'info>,
 
-    #[account(mut,seeds=[b"fruitmint",tree.cultivar_name.as_ref()], bump, mint::decimals=9, mint::authority=fruit_mint_authority)]
-    pub fruit_mint: Box<Account<'info, Mint>> ,
+    #[account(init_if_needed, payer=payer, seeds=[b"fruitmint",tree.cultivar_name.as_bytes().as_ref()], bump, mint::decimals=9, mint::authority=fruit_mint_authority)]
+    pub fruit_mint: Box<Account<'info, Mint>>,
 
-    #[account(mut,seeds=[b"fruit",tree.key().as_ref()], bump, token::mint=fruit_mint, token::authority=farmer)]
+    #[account(mut,seeds=[b"fruit",tree.key().as_ref()], bump, token::mint=fruit_mint, token::authority=tree)]
     pub fruit_balance: Box<Account<'info,TokenAccount>>,
+
     #[account(mut, seeds=[b"requirednutrients", tree.key().as_ref()], bump,)]
     pub required_nutrients: Box<Account<'info,RequiredNutrients>>,
 
-    pub token_program: Program<'info,Token>,
-    pub system_program: Program<'info,System> 
-}
-
-#[derive(Accounts)]
-pub struct InitializeFarm <'info> {
-     #[account(mut)]
-    pub payer: Signer<'info>,
-
-    #[account(init, payer=payer, seeds=[b"farm"], bump, space = 8 + Farm::INIT_SPACE)]
-    pub farm: Account<'info,Farm>,
-
-    // #[account(init, payer=payer, seeds=[b"fruitmarket"], bump, space =  8 + FruitMarket::INIT_SPACE)]
-    // pub fruit_market: Account<'info,FruitMarket>,
-
-    #[account(init, payer=payer, seeds=[b"landmeta", farm.key().as_ref()], bump, space = 8 + LandMeta::INIT_SPACE)]
-    pub land_meta: Account<'info,LandMeta>,
-
-    #[account(init, payer=payer,seeds=[b"cultivarmeta",farm.key().as_ref()], bump, space = 8 + CultivarMeta::INIT_SPACE)]
-    pub cultivar_meta: Account<'info, CultivarMeta>,
-
-    #[account(init, payer=payer, seeds=[b"treesmeta",farm.key().as_ref()], bump, space = 8 + TreesMeta::INIT_SPACE)]
-    pub trees_meta: Account<'info, TreesMeta>,
-
-    #[account(init, payer=payer, seeds=[b"watermint"], bump, mint::decimals=9, mint::authority=nutrient_mint_authority)]
-    pub water_mint: Account<'info, Mint> ,
-    #[account(seeds=[b"nutrientmintauthority"], bump)]
-    /// CHECK: pda signer 
-    pub nutrient_mint_authority: UncheckedAccount<'info,>,
-    #[account(init, payer=payer, seeds=[b"nitrogenmint"], bump, mint::decimals=9, mint::authority=nutrient_mint_authority)]
-    pub nitrogen_mint: Box<Account<'info, Mint>> ,
-
-    #[account(init, payer=payer,seeds=[b"potassiummint"], bump, mint::decimals=9,
-    mint::authority=nutrient_mint_authority)]
-    pub potassium_mint: Box<Account<'info,Mint>> ,
-
-    #[account(init, payer=payer,seeds=[b"phosphorusmint"], bump, mint::decimals=9, mint::authority=nutrient_mint_authority)]
-    pub phosphorus_mint: Box<Account<'info,Mint>> ,
-
-    #[account(init, payer=payer, seeds=[b"carbonvault"], bump, space = 8 + Vault::INIT_SPACE)]
+    #[account(mut,seeds=[b"carbonvault"], 
+    bump,seeds::program=farm_program)]
     pub vault: Account<'info,Vault>,
 
+    pub farm_program: Program<'info,FarmProgram>,
     pub token_program: Program<'info,Token>,
-
-    pub system_program: Program<'info,System>,
-}    
-
+    pub system_program: Program<'info,System> 
+}  
 
 #[derive(Accounts)]
 #[instruction(cultivar_name:String)]
@@ -711,11 +564,11 @@ pub struct CreateCultivar <'info> {
     #[account(mut)]
     pub payer: Signer<'info>, 
 
-    #[account(seeds=[b"farm"], bump)]
-    pub farm: Account<'info,Farm>,
+    #[account(seeds=[b"farm"], bump, seeds::program=farm_program)]
+    pub farm: Box<Account<'info,Farm>>,   
 
-    #[account(seeds=[b"cultivarmeta",
-    farm.key().as_ref()], bump,)]
+    #[account(mut, seeds=[b"cultivarmeta",
+    farm.key().as_ref()], bump,seeds::program=farm_program)]
     pub cultivar_meta: Account<'info, CultivarMeta>,
 
     #[account(init, payer=payer, seeds=[b"cultivar", cultivar_meta.key().as_ref(), cultivar_name.as_bytes().as_ref()], bump, space = 8 + Cultivar::INIT_SPACE)]
@@ -729,107 +582,20 @@ pub struct CreateCultivar <'info> {
     cultivar_name.as_bytes().as_ref()],bump, mint::decimals=9, mint::authority=fruit_mint_authority)] // different fruits 
     pub fruit_mint: Account<'info, Mint>, 
     
-    #[account(init_if_needed, payer=payer, seeds=[b"fruitmarket", cultivar_name.as_bytes().as_ref()], bump, space =  8 + FruitMarket::INIT_SPACE)]
-    pub fruit_market: Account<'info,FruitMarket>,
+    // #[account(init_if_needed, payer=payer, seeds=[b"fruitmarket", cultivar_name.as_bytes().as_ref()], bump, space =  8 + FruitMarket::INIT_SPACE)]
+    // pub fruit_market: Account<'info,FruitMarket>,
 
-    #[account(init_if_needed, payer=payer, seeds=[b"marketentry", fruit_market.key().as_ref(),program_id.as_ref()],space =  8 + MarketEntry::INIT_SPACE,bump)]
-    pub market_entry: Account<'info,MarketEntry>,
+    // #[account(init_if_needed, payer=payer, seeds=[b"marketentry", fruit_market.key().as_ref(),program_id.as_ref()],space =  8 + MarketEntry::INIT_SPACE,bump)]
+    // pub market_entry: Account<'info,MarketEntry>,
 
-    // #[account(init_if_needed, payer=payer,seeds=[b"marketentry", fruit_market.key().as_ref(),program_id.as_ref()], space =  8 + MarketEntry::INIT_SPACE, bump)]
-    // pub current_top_market_entry: Box<Account<'info,MarketEntry>>,
-
+            // // #[account(init_if_needed, payer=payer,seeds=[b"marketentry", fruit_market.key().as_ref(),program_id.as_ref()], space =  8 + MarketEntry::INIT_SPACE, bump)]
+            // // pub current_top_market_entry: Box<Account<'info,MarketEntry>>,
+    // pub fruit_market_program: Program<'info, FruitMarketProgram>,
+    pub farm_program: Program<'info,FarmProgram>,
     pub token_program: Program<'info,Token>,
     pub system_program: Program<'info, System>,
 }
 
-
-#[derive(Accounts)]
-#[instruction(cultivar_name:String)]
-pub struct PlantTree <'info> {
-    #[account(mut)]
-    pub payer: Signer<'info>,
-    #[account(seeds=[b"farmer", payer.key().as_ref()], bump,)]
-    pub farmer: Box<Account<'info,Farmer>>,     
-    #[account(seeds=[b"farm"], bump)]
-    pub farm: Box<Account<'info,Farm>>,
-    #[account(mut, seeds=[b"cultivarmeta",farm.key().as_ref()], bump,)]
-    pub cultivar_meta: Account<'info, CultivarMeta>,
-    #[account(mut, seeds=[b"treesmeta",farm.key().as_ref()], bump,)]
-    pub trees_meta: Account<'info, TreesMeta>,
-    #[account(mut,seeds=[b"cultivar", cultivar_meta.key().as_ref(), cultivar_name.as_bytes().as_ref()], bump,)]
-    pub cultivar: Account<'info,Cultivar>,    
-    #[account(init, payer=payer, seeds=[b"tree",trees_meta.key().as_ref(),farmer.key().as_ref()], bump, space = 8 + Tree::INIT_SPACE)]
-    pub tree: Account<'info, Tree>,
-    /// CHECK: Pda authority 
-     #[account(seeds=[b"fruitmintauthority"], bump,)]
-    pub fruit_mint_authority: UncheckedAccount<'info>,        
-    #[account(seeds=[b"fruitmint", cultivar_name.as_bytes().as_ref()],bump, mint::decimals=9, mint::authority=fruit_mint_authority)] // different fruits 
-    pub fruit_mint: Account<'info, Mint>, 
-    #[account(init, seeds=[b"fruit", tree.key().as_ref()],bump, payer=payer, token::mint=fruit_mint, token::authority=farmer)]
-    pub fruit_balance: Account<'info,TokenAccount>,
-    #[account(seeds=[b"landmeta", farm.key().as_ref()], bump, )]
-    pub land_meta: Account<'info,LandMeta>,
-    #[account(mut,seeds=[b"landpiece",land_meta.key().as_ref(),farmer.key().as_ref()], bump,)]
-    pub land_piece: Account<'info, LandPiece>,
-    #[account(init, payer=payer, seeds=[b"nutrientbalance",land_piece.key().as_ref(),tree.key().as_ref()], bump, space = 8 + LandPiece::INIT_SPACE)]
-    pub input_balance: Account<'info, InputBalance>,
-    #[account(init ,payer=payer, seeds=[b"requirednutrients", tree.key().as_ref()], bump, space= 8 + RequiredNutrients::INIT_SPACE)]
-    pub required_nutrients: Box<Account<'info,RequiredNutrients>>,
-    pub token_program: Program<'info,Token>,
-    pub associated_token_program: Program<'info, AssociatedToken>,
-    pub system_program: Program<'info, System>
-}
-
-#[derive(Accounts)]
-pub struct BuyLand <'info> { 
-    #[account(mut)]
-    pub payer: Signer<'info>,      
-    #[account(seeds=[b"farm"], bump)]
-    pub farm: Account<'info,Farm>, 
-    #[account(seeds=[b"farmer", payer.key().as_ref()], bump)]
-    pub farmer: Account<'info,Farmer>, 
-    #[account(mut,seeds=[b"landmeta", farm.key().as_ref()], bump, )]
-    pub land_meta: Account<'info,LandMeta>,
-    #[account(init, payer=payer, seeds=[b"landpiece",land_meta.key().as_ref(),farmer.key().as_ref()], bump, space = 8 + LandPiece::INIT_SPACE)]
-    pub land_piece: Account<'info, LandPiece>,
-    #[account(mut, seeds=[b"carbonvault"], bump,)]
-    pub vault: Account<'info, Vault>,
-    pub system_program: Program<'info, System>
-}
-
-
-#[derive(Accounts)]
-pub struct InitializeFarmer <'info> {
-    #[account(mut)]
-    pub payer: Signer<'info>,
-    #[account(init, payer=payer, seeds=[b"farmer", payer.key().as_ref()], bump, space = 8 + Farmer::INIT_SPACE)]
-    pub farmer: Account<'info,Farmer>, 
-    pub token_program: Program<'info,Token>,
-    pub system_program: Program<'info, System>,
-}
-
-#[account]
-#[derive(InitSpace)]
-pub struct Farm {
-}
-
-#[account]
-#[derive(InitSpace)]
-pub struct CultivarMeta{
-    pub cultivars_count:u64,
-}
-
-#[account]
-#[derive(InitSpace)]
-pub struct LandMeta{
-    pub land_piece_count:u64,
-}
-
-#[account]
-#[derive(InitSpace)]
-pub struct TreesMeta{
-    pub tree_count:u64,
-}
 
 #[account]
 #[derive(InitSpace)]
@@ -843,39 +609,6 @@ pub struct Cultivar {
     pub is_initialized: bool , 
 }
 
-#[account]
-#[derive(Default)]
-#[derive(InitSpace)]
-pub struct LandPiece {
-    pub owner: Pubkey,
-    pub number: u64,
-    pub is_planted: bool,
-}
-
-
-
-#[account]
-#[derive(InitSpace)]
-pub struct Vault {
-    // pub authority: Pubkey 
-}
-
-#[account]
-#[derive(InitSpace)]
-pub struct SeedVault {
-    // pub authority: Pubkey 
-}
-
-#[account]
-#[derive(Default)]
-#[derive(InitSpace)]
-pub struct Farmer {
-    #[max_len(30)]
-    pub name: String,
-    pub address: Pubkey,
-    pub land_count: u64,
-    pub tree_count: u64,
-}
 #[account]
 #[derive(Default)]
 #[derive(InitSpace)] 
@@ -900,22 +633,6 @@ pub struct Tree {
     pub leaf_area: u64 ,
     pub root_area: u64 ,
 }
-
-
-#[account]
-#[derive(InitSpace)]
-pub struct RequiredNutrients  {
-    pub nitrogen: u64 ,
-    pub percent_available_nitrogen: u64,
-    pub phosphorus: u64,
-    pub percent_available_phosphorus: u64,
-    pub potassium: u64 ,
-    pub percent_available_potassium: u64,
-    pub water: u64 ,
-    pub percent_available_water: u64,
-    pub last_check_time: u64 
-}
-
 
 pub const SLOTS_PER_SECOND: u64=DEFAULT_TICKS_PER_SECOND /DEFAULT_TICKS_PER_SLOT ;
 
@@ -1042,6 +759,27 @@ pub fn set_new_harvest_season(&mut self) -> Result<()> {
 
 }
 
+#[account]
+#[derive(InitSpace)]
+pub struct RequiredNutrients  {
+    pub nitrogen: u64 ,
+    pub percent_available_nitrogen: u64,
+    pub phosphorus: u64,
+    pub percent_available_phosphorus: u64,
+    pub potassium: u64 ,
+    pub percent_available_potassium: u64,
+    pub water: u64 ,
+    pub percent_available_water: u64,
+    pub last_check_time: u64 
+}
+
+
+#[error_code]
+pub enum TreeError {
+    #[msg("The Cultivar account is not initialized!")]
+    CultivarNotInitialized
+}
+
 
 impl InputBalance {
 
@@ -1114,19 +852,3 @@ impl InputBalance {
     // }
 }
 
-
-// #[error_code]
-// pub enum TreeError{
-
-// }
-
-
-
-
-// Calculating critical root radius 
-//https://www.acompletetreecare.com/blog/how-to-measure-a-trees-critical-root-zone/
-// The general rule of thumb is that for every inch of tree trunk, the radius increases by 1.5 feet. 
-
-//1inch => 25400 micrometers 
-
-//1 foot => 304800 micromers

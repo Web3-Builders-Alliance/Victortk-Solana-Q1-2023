@@ -197,7 +197,7 @@ checksum = "75cc8066fbd45e0e03edf48342c79265aa34ca76cefeace48ef6c402b6946665"
 dependencies = [
  "anchor-lang",
  "mpl-token-metadata",
- "serum_dex 0.4.0",
+ "serum_dex",
  "solana-program",
  "spl-associated-token-account",
  "spl-token",
@@ -709,6 +709,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "farm"
+version = "0.1.0"
+dependencies = [
+ "anchor-lang",
+ "anchor-spl",
+ "solana-program",
+ "spl-token",
+]
+
+[[package]]
+name = "farmer"
+version = "0.1.0"
+dependencies = [
+ "anchor-lang",
+ "anchor-spl",
+ "farm",
+ "fruit_market",
+ "solana-program",
+ "spl-token",
+ "tree",
+]
+
+[[package]]
 name = "feature-probe"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -729,6 +752,18 @@ name = "fnv"
 version = "1.0.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3f9eec918d3f24069decb9af1554cad7c880e2da24a9afd88aca000531ab82c1"
+
+[[package]]
+name = "fruit_market"
+version = "0.1.0"
+dependencies = [
+ "anchor-lang",
+ "anchor-spl",
+ "farm",
+ "solana-program",
+ "spl-token",
+ "tree",
+]
 
 [[package]]
 name = "generic-array"
@@ -1584,30 +1619,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "serum_dex"
-version = "0.5.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c62b5450e2d875e269af76b80080126e2d8eeb10ac256f900dc7cbad1a8dc85e"
-dependencies = [
- "arrayref",
- "bincode",
- "bytemuck",
- "byteorder",
- "enumflags2",
- "field-offset",
- "itertools 0.9.0",
- "num-traits",
- "num_enum",
- "safe-transmute",
- "serde",
- "solana-program",
- "spl-token",
- "static_assertions",
- "thiserror",
- "without-alloc",
-]
-
-[[package]]
 name = "sha2"
 version = "0.9.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1969,18 +1980,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "starter"
-version = "0.1.0"
-dependencies = [
- "anchor-lang",
- "anchor-spl",
- "num_enum",
- "serum_dex 0.5.4",
- "solana-program",
- "spl-token",
-]
-
-[[package]]
 name = "static_assertions"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2102,6 +2101,17 @@ dependencies = [
  "indexmap",
  "toml_datetime",
  "winnow",
+]
+
+[[package]]
+name = "tree"
+version = "0.1.0"
+dependencies = [
+ "anchor-lang",
+ "anchor-spl",
+ "farm",
+ "solana-program",
+ "spl-token",
 ]
 
 [[package]]

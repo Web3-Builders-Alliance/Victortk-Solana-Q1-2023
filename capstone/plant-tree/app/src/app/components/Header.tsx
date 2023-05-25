@@ -11,6 +11,7 @@ import {
 	WalletModalProvider,
 } from './adapter';
 import Image from 'next/image';
+
 const Header = () => {
 	const {select, wallets, publicKey, disconnect ,} = useWallet();
 	

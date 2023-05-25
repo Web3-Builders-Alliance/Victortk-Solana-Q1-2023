@@ -2,7 +2,10 @@
 seeds = false
 skip-lint = false
 [programs.localnet]
-starter = "E77dkm2gqBYsPeJzdbvFWDrMP2zvKhnKg4J8uP9UV164"
+farmer = "5LJq1WKXV2bdgsosp6wk2pgvk1Rhc75ffRLRXGZvPQWU"
+farm = "6DDP3hohHprxPNUWVtwpK89QAzcB27Fk4NSCgcq368P6"
+tree = "EfYywm823JAajvTAHFv7wnKGi8M4R7BwqufaUEECxUxG"
+fruit_market = "9CkBCJW4mrYE7qpAgnnmWggeCYtyyKnfzJNZXY2mhpUU"
 
 # Metaplex
 # [[test.validator.clone]]
@@ -16,7 +19,7 @@ starter = "E77dkm2gqBYsPeJzdbvFWDrMP2zvKhnKg4J8uP9UV164"
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "Localnet"
+cluster = "localnet"
 wallet = "/home/professorcodegeek/.config/solana/id.json"
 
 [scripts]
