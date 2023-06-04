@@ -1,2 +1,2 @@
 "use client";
-export * from '@solana/wallet-adapter-react-ui';
+export * from '@solana/wallet-adapter-material-ui';

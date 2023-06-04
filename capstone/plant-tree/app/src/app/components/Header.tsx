@@ -8,7 +8,7 @@ import Stack from '@mui/material/Stack';
 import { useWallet} from '@solana/wallet-adapter-react';
 import {
 	WalletMultiButton,
-	WalletModalProvider,
+	WalletDialogProvider,
 } from './adapter';
 import Image from 'next/image';
 
@@ -17,19 +17,21 @@ const Header = () => {
 	
 	return (
 		<>
-			<AppBar position='static' color='transparent' className={styles.appbar}>
-				<Toolbar className={styles.toolbar}>
+			<AppBar position='static' color='transparent' sx={{border:"none", boxShadow:"none"}}className={styles.appbar}>
+				<Toolbar className={styles.toolbar} >
 					<Stack className={styles.stack} direction='row' spacing={8}>
-						<Link className={styles.link} href='/'>
+						<Link className={styles.link} href='/'>							
 							Home
 						</Link>
-						<Link className={styles.link} href='/create-farmer'>
-							Create farmer
+						<Link className={styles.link} href='/actions'>
+							Actions
 						</Link>
 						<Link className={styles.link} href='/about'>
 							About
 						</Link>
-							<WalletModalProvider>	<WalletMultiButton /></WalletModalProvider>
+							<WalletDialogProvider>	
+								<WalletMultiButton
+								/></WalletDialogProvider>
 					</Stack>
 				</Toolbar>
 			</AppBar>

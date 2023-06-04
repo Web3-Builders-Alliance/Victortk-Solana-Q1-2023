@@ -9,29 +9,37 @@ import Container from '@mui/material/Container';
 
 declare module '@mui/material/styles' {
 	interface Theme {
-		background: {
-			bg: string;
+		tertiary: {
+			main: string;
 		};
 	}
 	// allow configuration using `createTheme`
 	interface ThemeOptions {
-		background?: {
-			bg?: string;
+		tertiary?: {
+			main?: string;
 		};
 	}
 }
 
 let theme = createTheme({
-	background: {
-		bg: '#00C9EE',
-	},
 	palette: {
+		mode: 'light',
 		primary: {
-			main: '#402E32',
+			main: '#08110F',
 		},
 		secondary: {
-			main: '#FED668',
+			main: '#79881D',
 		},
+		background: {
+			default: '#899BB0',
+			paper: '#899BB0',
+		},
+		text: {
+			primary: '#0D0D0D',
+		},
+	},
+	tertiary: {
+		main: '#e84855',
 	},
 });
 // "#F34213"
@@ -40,9 +48,9 @@ theme = responsiveFontSizes(theme);
 const Theme: FC<{ children: ReactNode }> = ({ children }) => {
 	return (
 		<ThemeProvider theme={theme}>
-			<Container maxWidth='xl' sx={{ 'overflowX': 'hidden' }}>
+
 				{children}
-			</Container>
+			
 		</ThemeProvider>
 	);
 };
