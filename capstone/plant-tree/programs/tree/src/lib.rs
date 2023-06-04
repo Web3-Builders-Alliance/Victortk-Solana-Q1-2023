@@ -18,17 +18,34 @@ use farm::{self,Farm,LandMeta,CultivarMeta,TreesMeta,Vault} ;
 
 declare_id!("EfYywm823JAajvTAHFv7wnKGi8M4R7BwqufaUEECxUxG");
 
+
+pub const SLOTS_PER_SECOND: u64=DEFAULT_TICKS_PER_SECOND /DEFAULT_TICKS_PER_SLOT ;
+
+pub const SLOTS_PER_DAY: u64 =SLOTS_PER_SECOND*SECONDS_PER_DAY ;
+
+pub const SLOTS_PER_YEAR: u64 = 5 ;          // SLOTS_PER_DAY*365;
+
+pub const WIDTH_PER_YEAR: u64 = 25000 ; // 25000micrometers 
+pub const HEIGHT_PER_YEAR: u64 = 500000;
+pub const HEIGHT_PER_SLOT: u64  =  HEIGHT_PER_YEAR / SLOTS_PER_YEAR ;
+pub const WIDTH_PER_SLOT: u64  =  WIDTH_PER_YEAR / SLOTS_PER_YEAR ;
+
+pub const ROOT_AREA_GROWTH_RATE:u64  = 1 ;
+pub const LEAF_AREA_GROWTH_RATE: u64 = 1 ;
+
+pub const RATE_OF_NUTRIENT_UPTAKE: u64 = 1; 
+pub const RATE_OF_WATER_UPTAKE: u64 = 2; 
+pub const RATE_OF_FRUIT_INCREMENT: u64 = 1 ;
+
 #[program]
 pub mod tree {
     use super::*;
     
     pub fn create_tree(ctx: Context<CreateTree>)-> Result<()> {
-        msg!("Inside this function yeeyeyeyeyey lets plant some trees");  
+        let r_nutrients = &mut *ctx.accounts.required_nutrients;
+        r_nutrients.first_check = false; 
 
         let payer = ctx.accounts.payer.to_account_info();
-
-        let farmer = &mut  ctx.accounts.farmer ;    
-
         let trees_meta  = &mut ctx.accounts.trees_meta ;
         trees_meta.tree_count += 1 ;
 
@@ -37,31 +54,32 @@ pub mod tree {
 
         cultivar.count = cultivar.count + 1 ;
     //     //scacity points cultivar.scarcity_points = 
-
       
        let tree =  &mut ctx.accounts.tree ;
+        tree.authority = payer.key();
         tree.cultivar_name =  cultivar.name.clone() ; 
-        // tree.land_number = 1 ;
+        tree.land_number = 0 ;
         tree.height = cultivar.init_height;
         tree.girth = cultivar.init_width;
+        tree.leaf_area = cultivar.init_leaf_area;
+        tree.root_area = cultivar.init_root_area;
         tree.age = 1 ;
         let time =  Clock::get()?.slot ;
         tree.planted_time = time ;
         tree.last_check_time = time ;
         tree.health = 100 ;
         tree.is_alive = true ;
-    // // //ticks per second/ ticks per slot * 1 year in seconds should probably get the constants  + 5 * 30 * 60 * 24 * 365 
-        tree.next_fruit_maturaturation_time =  time + 1;  
-
+        tree.next_fruit_maturaturation_time =  time + SLOTS_PER_YEAR; 
         Ok(())
     }    
 
-    pub fn create_cultivar(ctx: Context<CreateCultivar>, name:String , height: u64, width: u64) -> Result<()>{
+    pub fn create_cultivar(ctx: Context<CreateCultivar>, cultivar_name:String , height: u64, width: u64) -> Result<()>{
+      
         let cultivar_meta =  &mut ctx.accounts.cultivar_meta ;
         cultivar_meta.cultivars_count = cultivar_meta.cultivars_count + 1 ;        
         let cultivar = &mut ctx.accounts.cultivar ;
             cultivar.count = 0 ;
-            cultivar.name = name ;    
+            cultivar.name = cultivar_name ;    
             cultivar.init_height= height ;
             cultivar.init_width= width ;
             cultivar.is_initialized = true ;
@@ -74,68 +92,55 @@ pub mod tree {
       
         let r_nutrients = &mut *ctx.accounts.required_nutrients;
 
+        let tree = &mut *ctx.accounts.tree ;
+
+
         let current_slot = Clock::get()?.slot;
 
-        if current_slot < 11 {
-            msg!("got me in herreee 1111111111111111111111111111111");  
+        if current_slot - tree.planted_time < 11 {
+            msg!("Tree too young,");  
             return Ok(())
         };
 
-        if r_nutrients.last_check_time < current_slot -10 {
-            msg!("got me in herreee 22222222222222222");  
+        if !r_nutrients.first_check{
+            msg!("no nutrients");  
             // Err
             return Ok(())
         } 
 
-        msg!("In=================================================>In");        
-
-        let nutrient_authority =  &mut ctx.accounts.nutrient_mint_authority ;
-        let n_mint = &mut *ctx.accounts.nitrogen_mint;
-        let p_mint = &mut *ctx.accounts.phosphorus_mint;
-        let k_mint = &mut *ctx.accounts.potassium_mint;
-        let w_mint = &mut *ctx.accounts.water_mint;
-      
-        let input_balance  = &mut ctx.accounts.input_balance ;
+        msg!("After all checks");        
 
         let tree = &mut *ctx.accounts.tree ;
         // let land_piece = &mut *ctx.accounts.land_piece ;
         
-        let nitrogen = &ctx.accounts.nitrogen_balance.to_account_info();
-        
-        let phosphorus = &ctx.accounts.phosphorus_balance.to_account_info() ;
-        let potassium = &ctx.accounts.potassium_balance.to_account_info() ;
-      
-        let water = &ctx.accounts.water_balance.to_account_info() ;
-
-        
-        let nitrogen_balance = token::accessor::amount(nitrogen)? ;
-        
-        let phosphorus_balance = token::accessor::amount(phosphorus)? ;
-        
-        let potassium_balance = token::accessor::amount(potassium)? ;
-
-        let water_balance = token::accessor::amount(water)? ;
-        let bump = *ctx.bumps.get("nutrient_mint_authority").unwrap() ;
-
-        let seeds = &[ "nutrientmintauthority".as_bytes(), &[bump]] ;
-
-        let tree_key = tree.key() ;
-        // let land_piece_key = land_piece.key() ;
-        // // seeds=[b"nutrientbalance",land_piece.key().as_ref(),tree.key().as_ref()], bump,      
-       
-        msg!("r_nutrients.percent_available_potassium: {} , r_nutrients.percent_available_water: {} ,r_nutrients.last_check_time: {}", r_nutrients.percent_available_potassium,r_nutrients.percent_available_water, r_nutrients.last_check_time) ;
-
+        match tree.update_age() {
+            Err(e) =>  return Err(e),
+            _ => () 
+         }            
+    
         tree.grow_expected_fruit_count(r_nutrients.percent_available_potassium,r_nutrients.percent_available_water, r_nutrients.last_check_time);
 
+
         tree.grow_leaf_area(r_nutrients.percent_available_nitrogen,r_nutrients.percent_available_water, r_nutrients.last_check_time);
+
+
         tree.grow_root_area(r_nutrients.percent_available_phosphorus,r_nutrients.percent_available_water, r_nutrients.last_check_time);
 
         let bump = *ctx.bumps.get("fruit_mint_authority").unwrap() ;
 
         let seeds = &[ "fruitmintauthority".as_bytes(),&[bump]] ;
         let fb = &mut ctx.accounts.fruit_balance;
-        
-        if tree.is_harvest_season()? {
+
+        let is_harvest = match tree.is_harvest_season() { 
+            Err(e) => return Err(e),
+            Ok(b) => b 
+        };  
+
+       
+        //here make it a const 1 year and bring const up
+        if is_harvest && tree.expected_fruit_count > 1 {
+            msg!("tree.expected_fruit_count: {} ", tree.expected_fruit_count) ;
+
             token::mint_to(
                 CpiContext::new_with_signer(
                   ctx.accounts.token_program.to_account_info().clone() ,
@@ -145,21 +150,26 @@ pub mod tree {
                     authority: ctx.accounts.fruit_mint_authority.to_account_info().clone(), 
                   } ,
                   &[&seeds[..]]
-                ) ,1000000000)? ;
-        //  tree.expected_fruit_count
-        // tree.set_new_harvest_season()?;
+                ) ,tree.expected_fruit_count)? ;
+         match  tree.set_new_harvest_season() {
+            Err(e) =>  return Err(e),
+            _ => () 
+         }
         } //if true   
-        // fb.reload()?;
+              
 
-        msg!("The new fb account is  {:?} ,", fb) ;    
-        msg!("The new fb balance is  {} ,", fb.amount) ; 
-        
+       match tree.update_size(r_nutrients.percent_available_nitrogen,r_nutrients.percent_available_phosphorus,r_nutrients.percent_available_potassium,r_nutrients.percent_available_water, r_nutrients.last_check_time){
+            Err(e) =>  return Err(e),
+            _ => () 
+         };
 
-        // tree.update_age()? ;
-        // tree.update_size(r_nutrients.percent_available_nitrogen,r_nutrients.percent_available_phosphorus,r_nutrients.percent_available_potassium,r_nutrients.percent_available_water, r_nutrients.last_check_time)? ;
-        // tree.set_last_check_time()? ; 
+        match  tree.set_last_check_time(){
+            Err(e) =>  return Err(e),
+            _ => () 
+        };
         Ok(())
     }  
+    
     pub fn harvest_fruit (ctx: Context<HarvestFruit>, amount: u64  )-> Result<()> {   
 
        let fruit_vault = &mut ctx.accounts.fruit_vault ;
@@ -171,7 +181,7 @@ pub mod tree {
        let farmer= &mut ctx.accounts.farmer.key() ;
        let bump  = *ctx.bumps.get("tree").unwrap();
 
-       let seeds=[b"tree",trees_meta.as_ref(),farmer.as_ref(),&[bump]] ;
+       let seeds=[b"tree",trees_meta.as_ref(),farmer.as_ref(), tree.cultivar_name.as_bytes().as_ref(),&[bump]] ;
        
 		// topEntryFruitBalance,  
         token::transfer(
@@ -370,6 +380,10 @@ pub mod tree {
         r_nutrients.water = r_w ; 
         r_nutrients.percent_available_water = w_percent ;
         r_nutrients.last_check_time = Clock::get()?.slot ;  
+        r_nutrients.first_check = true ;
+        msg!(
+            "What is happening?"
+        );
         Ok(())
     }  
 
@@ -415,7 +429,7 @@ pub struct HarvestFruit <'info> {
     #[account(mut, seeds=[b"treesmeta",farm.key().as_ref()], bump,seeds::program=farm_program)]
     pub trees_meta: Account<'info, TreesMeta>,
 
-    #[account(seeds=[b"tree",trees_meta.key().as_ref(),farmer.key().as_ref()], bump,)]
+    #[account(seeds=[b"tree",trees_meta.key().as_ref(),farmer.key().as_ref(),tree.cultivar_name.as_bytes().as_ref()], bump,)]
     pub tree: Account<'info, Tree>,
 
     #[account(seeds=[b"fruitmint", tree.cultivar_name.as_bytes().as_ref()],bump,mint::decimals=9, mint::authority=fruit_mint_authority)] // different fruits 
@@ -453,7 +467,7 @@ pub struct CreateTree <'info> {
     #[account(mut,seeds=[b"cultivar", cultivar_meta.key().as_ref(), cultivar.name.as_bytes().as_ref()],bump)]
     pub cultivar: Account<'info,Cultivar>, 
 
-    #[account(init,seeds=[b"tree",trees_meta.key().as_ref(),farmer.key().as_ref()], bump, payer=payer, space = 8 + Tree::INIT_SPACE)]
+    #[account(init,seeds=[b"tree",trees_meta.key().as_ref(),farmer.key().as_ref(),cultivar.name.as_bytes().as_ref()], bump, payer=payer, space = 8 + Tree::INIT_SPACE)]
     pub tree: Account<'info, Tree>,
 
     /// CHECK: Pda authority 
@@ -514,7 +528,7 @@ pub struct TreeUpdate<'info> {
     #[account(seeds=[b"treesmeta",farm.key().as_ref()], bump,seeds::program=farm_program)]
     pub trees_meta: Box<Account<'info, TreesMeta>>,
 
-    #[account(mut,seeds=[b"tree",trees_meta.key().as_ref(),farmer.key().as_ref()], bump, )]
+    #[account(mut,seeds=[b"tree",trees_meta.key().as_ref(),farmer.key().as_ref(), tree.cultivar_name.as_bytes().as_ref()], bump, )]
     pub tree: Box<Account<'info, Tree>>,
     
     /// CHECK: farmers' land
@@ -600,11 +614,14 @@ pub struct CreateCultivar <'info> {
 #[account]
 #[derive(InitSpace)]
 pub struct Cultivar {
+    pub creator: Pubkey,
     #[max_len(50)]
     pub name: String,
     pub count:u64,
     pub init_height: u64,
     pub init_width: u64,
+    pub init_root_area: u64,
+    pub init_leaf_area: u64,
     pub scarcity_points: u64,  
     pub is_initialized: bool , 
 }
@@ -618,6 +635,7 @@ pub struct InputBalance {
 #[account]
 #[derive(InitSpace)]
 pub struct Tree {
+    pub authority: Pubkey,
     #[max_len(50)]
     pub cultivar_name: String,
     pub land_number: u64,
@@ -634,34 +652,37 @@ pub struct Tree {
     pub root_area: u64 ,
 }
 
-pub const SLOTS_PER_SECOND: u64=DEFAULT_TICKS_PER_SECOND /DEFAULT_TICKS_PER_SLOT ;
 
-pub const SLOTS_PER_DAY: u64 =SLOTS_PER_SECOND*SECONDS_PER_DAY ;
+#[account]
+#[derive(InitSpace)]
+pub struct RequiredNutrients  {
+    pub first_check: bool,
+    pub nitrogen: u64 ,
+    pub percent_available_nitrogen: u64,
+    pub phosphorus: u64,
+    pub percent_available_phosphorus: u64,
+    pub potassium: u64 ,
+    pub percent_available_potassium: u64,
+    pub water: u64 ,
+    pub percent_available_water: u64,
+    pub last_check_time: u64 
+}
 
-pub const SLOTS_PER_YEAR: u64 = SLOTS_PER_DAY*365;
 
-pub const WIDTH_PER_YEAR: u64 = 25000 ; // 25000micrometers 
-pub const HEIGHT_PER_YEAR: u64 = 500000;
-pub const HEIGHT_PER_SLOT: u64  =  HEIGHT_PER_YEAR / SLOTS_PER_YEAR ;
-pub const WIDTH_PER_SLOT: u64  =  WIDTH_PER_YEAR / SLOTS_PER_YEAR ;
-
-pub const ROOT_AREA_GROWTH_RATE:u64  = 1 ;
-pub const LEAF_AREA_GROWTH_RATE: u64 = 1 ;
-
-pub const RATE_OF_NUTRIENT_UPTAKE: u64 = 1; 
-pub const RATE_OF_WATER_UPTAKE: u64 = 2; 
-pub const RATE_OF_FRUIT_INCREMENT: u64 = 1 ;
 
 
 impl Tree {
 
 pub fn update_size(&mut self, percent_nitrogen_intake: u64 , percent_phosphorus_intake: u64, percent_potassium_intake: u64, percent_water_intake: u64,recent_check_time: u64 ) -> Result<()>  {
     //calcuate food consumption
-    // return food consumption based on tree attributes     
+    // return food consumption based on tree attributes   
+
     let period =  recent_check_time - self.last_check_time ;
+
     let reduction = percent_nitrogen_intake* percent_phosphorus_intake*percent_potassium_intake *percent_water_intake ;
 
     let height =  self.height + period * HEIGHT_PER_SLOT * reduction /(100 * 100* 100* 100) ;
+
     let width =  self.girth + period * WIDTH_PER_SLOT * reduction /(100 * 100* 100 * 100) ;
 
     // should include age 
@@ -700,27 +721,30 @@ pub fn set_last_check_time(&mut self) -> Result<()>{
     Ok(())
 }
 
-pub fn grow_leaf_area(&mut self, percent_nitrogen_intake: u64, percent_water_intake: u64, recent_check_time: u64) -> Result<()> {    
+pub fn grow_leaf_area(&mut self, percent_nitrogen_intake: u64, percent_water_intake: u64, recent_check_time: u64){    
  //use some nitrogen 
    let period =  recent_check_time - self.last_check_time ;
   self.leaf_area += LEAF_AREA_GROWTH_RATE * period * percent_nitrogen_intake* percent_water_intake/ 100 * 100 ;
-  Ok(())
 }
 
-pub fn grow_root_area(&mut self, percent_phosphorus_intake: u64, percent_water_intake: u64, recent_check_time: u64) -> Result<()> { 
+pub fn grow_root_area(&mut self, percent_phosphorus_intake: u64, percent_water_intake: u64, recent_check_time: u64){ 
     let inc = 25400.0 ;
     let ft = 304800.0 * 1.5 ;
+
     let root_area = ((self.girth as f64 / inc) * ft) as u64 ;
+
     self.root_area += root_area * percent_phosphorus_intake * percent_water_intake/ 100 * 100 ;
-    Ok(())
 }
 
-pub fn grow_expected_fruit_count(&mut self, percent_potassium_intake: u64, percent_water_intake: u64, recent_check_time: u64) -> Result<()> {  
+pub fn grow_expected_fruit_count(&mut self, percent_potassium_intake: u64, percent_water_intake: u64, recent_check_time: u64) {  
  //use some nitrogen 
+
   let period =  recent_check_time - self.last_check_time ;
   let too_young = SLOTS_PER_YEAR ;
   let young  = SLOTS_PER_YEAR* 10 ;
   let mut age_factor =  0 ; 
+
+
   if self.age > too_young && self.age < young {   
      age_factor = 50 ;
   };
@@ -729,15 +753,26 @@ pub fn grow_expected_fruit_count(&mut self, percent_potassium_intake: u64, perce
   }; 
 
   msg!("age factor :{}", age_factor) ;
+
   self.expected_fruit_count +=  RATE_OF_FRUIT_INCREMENT * period * percent_potassium_intake * percent_water_intake * age_factor / 100 *100 * 100  ;
-  Ok(())
 }
 
 pub fn is_harvest_season(&mut self) -> Result<bool>{
-    if Clock::get()?.slot >= self.next_fruit_maturaturation_time{
-        return Ok(true)
-    }
-     Ok(false)
+
+    
+    match Clock::get() {
+        Ok(c) => {
+            let s = c.slot ;
+            if s>= self.next_fruit_maturaturation_time{
+               Ok(true)
+            }else{
+             Ok(false)
+            }
+        },
+        Err(_e) => {
+            err!(TreeError::ClockError)
+        }
+    }    
 }
 
 pub fn set_new_harvest_season(&mut self) -> Result<()> {
@@ -759,26 +794,8 @@ pub fn set_new_harvest_season(&mut self) -> Result<()> {
 
 }
 
-#[account]
-#[derive(InitSpace)]
-pub struct RequiredNutrients  {
-    pub nitrogen: u64 ,
-    pub percent_available_nitrogen: u64,
-    pub phosphorus: u64,
-    pub percent_available_phosphorus: u64,
-    pub potassium: u64 ,
-    pub percent_available_potassium: u64,
-    pub water: u64 ,
-    pub percent_available_water: u64,
-    pub last_check_time: u64 
-}
 
 
-#[error_code]
-pub enum TreeError {
-    #[msg("The Cultivar account is not initialized!")]
-    CultivarNotInitialized
-}
 
 
 impl InputBalance {
@@ -852,3 +869,18 @@ impl InputBalance {
     // }
 }
 
+#[error_code]
+pub enum TreeError {
+    #[msg("The Cultivar account is not initialized!")]
+    CultivarNotInitialized,
+    ClockError
+}
+
+
+// Calculating critical root radius 
+//https://www.acompletetreecare.com/blog/how-to-measure-a-trees-critical-root-zone/
+// The general rule of thumb is that for every inch of tree trunk, the radius increases by 1.5 feet. 
+
+//1inch => 25400 micrometers 
+
+//1 foot => 304800 micromers

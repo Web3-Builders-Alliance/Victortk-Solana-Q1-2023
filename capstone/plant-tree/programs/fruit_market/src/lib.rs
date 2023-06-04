@@ -206,7 +206,7 @@ pub struct InitializeFruitMarket<'info> {
     #[account( seeds=[b"treesmeta",farm.key().as_ref()], bump,seeds::program=farm_program )]
     pub trees_meta: Box<Account<'info, TreesMeta>>,
 
-     #[account(seeds=[b"tree",trees_meta.key().as_ref(),farmer.key().as_ref()], bump, seeds::program=tree_program )]
+     #[account(seeds=[b"tree",trees_meta.key().as_ref(),farmer.key().as_ref(),tree.cultivar_name.as_bytes().as_ref()], bump, seeds::program=tree_program )]
     pub tree: Box<Account<'info, Tree>>,
 
      #[account(init, payer=payer, seeds=[b"fruitmarket", tree.cultivar_name.as_bytes().as_ref()], bump , space =  8 + FruitMarket::INIT_SPACE)]

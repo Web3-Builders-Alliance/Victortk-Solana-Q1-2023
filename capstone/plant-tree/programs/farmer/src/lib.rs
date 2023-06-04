@@ -22,7 +22,7 @@ use anchor_lang::system_program;
 use solana_program::clock::{DEFAULT_TICKS_PER_SLOT,DEFAULT_TICKS_PER_SECOND, SECONDS_PER_DAY} ;
 
 
-declare_id!("5LJq1WKXV2bdgsosp6wk2pgvk1Rhc75ffRLRXGZvPQWU");
+declare_id!("FEa3hjWEQEmuUgZtDQ1btp1Y2EKVhChqCzADTenewCsF");
 
 #[program]
 pub mod farmer {
@@ -211,7 +211,7 @@ pub struct Plant <'info> {
     #[account(mut,seeds=[b"cultivar", cultivar_meta.key().as_ref(), cultivar.name.as_bytes().as_ref()], bump,seeds::program=tree_program)]
     pub cultivar: Account<'info,Cultivar>, 
 
-    #[account(mut,seeds=[b"tree",trees_meta.key().as_ref(),farmer.key().as_ref()], bump, seeds::program=tree_program)]
+    #[account(mut,seeds=[b"tree",trees_meta.key().as_ref(),farmer.key().as_ref(),cultivar.name.as_bytes().as_ref()], bump, seeds::program=tree_program)]
     pub tree:Account<'info,Tree>,
    
     #[account(mut,seeds=[b"landmeta", farm.key().as_ref()], bump, seeds::program=farm_program)]

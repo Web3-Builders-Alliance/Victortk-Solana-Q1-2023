@@ -63,7 +63,7 @@ export let [treesMeta] = anchor.web3.PublicKey.findProgramAddressSync(
 
 //tree
 export let [tree] = anchor.web3.PublicKey.findProgramAddressSync(
-	[Buffer.from('tree'), treesMeta.toBuffer(), farmer.toBuffer()],
+	[Buffer.from('tree'), treesMeta.toBuffer(), farmer.toBuffer(),Buffer.from(cultivarName) ],
 	treeProgram.programId
 );
 

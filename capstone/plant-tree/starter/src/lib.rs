@@ -165,11 +165,3 @@ pub struct RequiredNutrients  {
 
 
 
-
-// Calculating critical root radius 
-//https://www.acompletetreecare.com/blog/how-to-measure-a-trees-critical-root-zone/
-// The general rule of thumb is that for every inch of tree trunk, the radius increases by 1.5 feet. 
-
-//1inch => 25400 micrometers 
-
-//1 foot => 304800 micromers
