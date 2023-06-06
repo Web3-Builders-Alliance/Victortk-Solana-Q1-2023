@@ -369,22 +369,18 @@ pub mod tree {
         let input_balance = &mut ctx.accounts.input_balance ;      
         let bump = *ctx.bumps.get("input_balance").unwrap() ;
         let seeds = &[ "nutrientbalance".as_bytes(),tree.as_ref(), &[bump]] ;
-
-
-        // token::burn(
-        //     CpiContext::new_with_signer(
-        //         ctx.accounts.token_program.to_account_info(),
-        //        token::Burn{
-        //            mint: potassium_mint.to_account_info().clone(),
-        //            from: potassium_balance.to_account_info().clone(),
-        //            authority: input_balance.to_account_info().clone(), 
-        //         },
-        //         &[&seeds[..]]
-        //     ),
-        //     amount
-        // )
-
-        Ok(())
+        token::burn(
+            CpiContext::new_with_signer(
+                ctx.accounts.token_program.to_account_info(),
+               token::Burn{
+                   mint: potassium_mint.to_account_info().clone(),
+                   from: potassium_balance.to_account_info().clone(),
+                   authority: input_balance.to_account_info().clone(), 
+                },
+                &[&seeds[..]]
+            ),
+            amount
+        )
     }
     pub fn calculate_required( ctx: Context<TreeUpdate>)-> Result<()>{
         let input_balance  = &mut ctx.accounts.input_balance ;
@@ -509,7 +505,7 @@ pub struct CreateTree <'info> {
     #[account(seeds=[b"seedsauthority", payer.key().as_ref()], bump,)]
     pub seeds_authority: UncheckedAccount<'info>, 
 
-    #[account(seeds=[b"seedsbalance", seeds_authority.key().as_ref(),cultivar.name.as_bytes().as_ref()],bump,token::mint=fruit_mint, token::authority=seeds_authority)]
+    #[account(mut,seeds=[b"seedsbalance", seeds_authority.key().as_ref(),cultivar.name.as_bytes().as_ref()],bump,token::mint=fruit_mint, token::authority=seeds_authority)]
     pub seeds_balance: Box<Account<'info,TokenAccount>>,
 
     #[account(init,seeds=[b"tree",trees_meta.key().as_ref(),farmer.key().as_ref(),cultivar.name.as_bytes().as_ref()], bump, payer=payer, space = 8 + Tree::INIT_SPACE)]
