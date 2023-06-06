@@ -152,7 +152,6 @@ pub struct ListFruits <'info> {
     #[account(mut, seeds=[b"farmer", payer.key().as_ref()], bump, )]
     pub farmer: Account<'info,Farmer>,
 
-
     // #[account(seeds=[b"fruitvaultauthority"], bump)]
     // /// CHECK: this is  a PDA authrity acc
     // pub fruit_vault_authority: UncheckedAccount<'info>, 

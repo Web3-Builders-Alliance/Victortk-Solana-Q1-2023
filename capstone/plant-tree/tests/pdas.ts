@@ -194,8 +194,17 @@ export let [entryFruitBalance] = anchor.web3.PublicKey.findProgramAddressSync(
 	fruitMarketProgram.programId
 );
 
+export 	let [seedsAuthority] = anchor.web3.PublicKey.findProgramAddressSync(
+	[Buffer.from('seedsauthority'), payer.publicKey.toBuffer()],
+	treeProgram.programId
+);
+
 export 	let [seedsBalance] = anchor.web3.PublicKey.findProgramAddressSync(
-	[Buffer.from('seedsbalance'), farmer.toBuffer(), Buffer.from(cultivarName)],
+	[
+		Buffer.from('seedsbalance'),
+		seedsAuthority.toBuffer(),
+		Buffer.from(cultivarName),
+	],
 	treeProgram.programId
 );
 

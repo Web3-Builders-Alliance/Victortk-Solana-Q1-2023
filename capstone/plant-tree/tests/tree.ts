@@ -30,6 +30,8 @@ import {
 	requiredNutrients,
 	inputBalance,
 	vault,
+	seedsBalance,
+	seedsAuthority,
 	marketAuthority,
 } from './pdas';
 
@@ -112,16 +114,19 @@ describe('Creates a cultivar', () => {
 
 			
 				let tx = await program.methods
-				.createCultivar(cultivarName, initHeight, initWidth)
-				.accounts({
-					farm,
-					cultivarMeta,
-					cultivar,
-					fruitMint,
-					fruitMintAuthority,
-					farmProgram: farmProgram.programId,
-				})
-				.rpc();
+					.createCultivar(cultivarName, initHeight, initWidth)
+					.accounts({
+						farm,
+						farmer,
+						cultivarMeta,
+						cultivar,
+						fruitMint,
+						fruitMintAuthority,
+						seedsBalance,
+						seedsAuthority,
+						farmProgram: farmProgram.programId,
+					})
+					.rpc();
 			console.log('create cultivar transaction', tx);	
 			
 			let c = await program.account.cultivar.fetch(cultivar);
@@ -144,11 +149,13 @@ describe('Creates A tree', () => {
 				cultivar,
 				treesMeta,
 				tree,
-        fruitBalance,
-        fruitMint,
-        fruitMintAuthority,
-        inputBalance,
-        requiredNutrients,
+				fruitBalance,
+				seedsAuthority,
+				seedsBalance,
+				fruitMint,
+				fruitMintAuthority,
+				inputBalance,
+				requiredNutrients,
 				farmProgram: farmProgram.programId,
 			})
 			.rpc();

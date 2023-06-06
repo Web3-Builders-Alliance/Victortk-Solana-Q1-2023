@@ -36,6 +36,7 @@ import {
 	vault,
 	seedsBalance,
 	marketAuthority,
+	seedsAuthority,
 	// fruitVaultAuthority,
 } from './pdas';
 
@@ -349,12 +350,13 @@ describe('Buys fruits', () => {
 		const tx = await program.methods
 			.buyFruits(cultivarName)
 			.accounts({
-				farmer,
+	
 				farm,
 				cultivarMeta,
 				cultivar,
 				fruitMintAuthority,
 				fruitMint,
+				seedsAuthority,
 				seedsBalance,
 				fruitMarket,
 				currentTopMarketEntry,
@@ -362,7 +364,6 @@ describe('Buys fruits', () => {
 				farmProgram: farmProgram.programId,
 				treeProgram: treeProgram.programId,
 				marketAuthority,
-				
 			})
 			.rpc();
 

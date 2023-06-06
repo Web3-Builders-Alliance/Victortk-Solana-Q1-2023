@@ -143,8 +143,8 @@ pub struct BuyFruit<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
 
-     /// CHECK: famer 
-    pub farmer: UncheckedAccount<'info,>,
+    //  /// CHECK: famer 
+    // pub farmer: UncheckedAccount<'info,>,
 
     #[account(seeds=[b"farm"], bump, seeds::program=farm_program)]
     pub farm: Box<Account<'info,Farm>>,
@@ -172,8 +172,11 @@ pub struct BuyFruit<'info> {
 
     // #[account(init_if_needed, payer=payer , seeds=[b"seedvault",farmer.key().as_ref()], bump,space=8 + SeedVault::INIT_SPACE )] //token::authority=program. does that happen by default 
     // pub seed_vault: Box<Account<'info,SeedVault>>, 
+     /// CHECK: It is used to derive other accounts which are checked
+    #[account(seeds=[b"seedsauthority", payer.key().as_ref()], bump,seeds::program=tree_program)]
+    pub seeds_authority: UncheckedAccount<'info>, 
 
-    #[account(mut, seeds=[b"seedsbalance", farmer.key().as_ref(),cultivar_name.as_bytes().as_ref()],bump, token::mint=fruit_mint, token::authority=farmer,seeds::program=tree_program)]
+    #[account(mut ,seeds=[b"seedsbalance", seeds_authority.key().as_ref(),cultivar_name.as_bytes().as_ref()],bump,token::mint=fruit_mint, token::authority=seeds_authority,seeds::program=tree_program)]
     pub seeds_balance: Box<Account<'info,TokenAccount>>,
     
     #[account(mut,seeds=[b"fruitmarket", cultivar_name.as_bytes().as_ref()], bump)]
