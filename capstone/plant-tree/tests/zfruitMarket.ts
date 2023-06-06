@@ -282,8 +282,8 @@ describe('Lists fruits', () => {
 });
 
 
-describe('Creates Seed balnce Account', () => {
-	it('Creates Seed balnce Account', async () => {
+describe('Creates Seed balance Account', () => {
+	it('Creates Seed balance Account', async () => {
 		const tx = await treeProgram.methods
 			.createSeed(cultivarName)
 			.accounts({
@@ -291,6 +291,7 @@ describe('Creates Seed balnce Account', () => {
 				farm,
 				fruitMintAuthority,
 				fruitMint,
+				seedsAuthority,
 				seedsBalance,
 				farmProgram: farmProgram.programId,
 			})

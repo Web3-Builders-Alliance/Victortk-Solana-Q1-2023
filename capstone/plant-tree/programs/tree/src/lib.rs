@@ -76,6 +76,7 @@ pub mod tree {
         let seeds = &[ "seedsauthority".as_bytes(), p.as_ref() ,&[bump]] ;
 
         let sb = &mut ctx.accounts.seeds_balance; 
+
         let authority = &mut ctx.accounts.seeds_authority; 
 
          token::burn(
@@ -439,7 +440,11 @@ pub struct CreateSeed <'info> {
     #[account(seeds=[b"fruitmint",cultivar_name.as_bytes().as_ref()], bump, mint::decimals=9, mint::authority=fruit_mint_authority,)]
     pub fruit_mint: Account<'info, Mint>,
 
-    #[account(init_if_needed, payer=payer ,seeds=[b"seedsbalance", farmer.key().as_ref(),cultivar_name.as_bytes().as_ref()],bump,token::mint=fruit_mint, token::authority=farmer)]
+      /// CHECK:authority for seeds balance
+    #[account(mut,seeds=[b"seedsauthority", payer.key().as_ref()], bump,)]
+    pub seeds_authority: UncheckedAccount<'info>, 
+
+    #[account(init_if_needed, payer=payer ,seeds=[b"seedsbalance", seeds_authority.key().as_ref(),cultivar_name.as_bytes().as_ref()],bump,token::mint=fruit_mint, token::authority=seeds_authority)]
     pub seeds_balance: Box<Account<'info,TokenAccount>>,
     
     pub token_program: Program<'info,Token>,
@@ -502,7 +507,7 @@ pub struct CreateTree <'info> {
 
     
     /// CHECK: It is used to derive other accounts which are checked
-    #[account(seeds=[b"seedsauthority", payer.key().as_ref()], bump,)]
+    #[account(mut,seeds=[b"seedsauthority", payer.key().as_ref()], bump,)]
     pub seeds_authority: UncheckedAccount<'info>, 
 
     #[account(mut,seeds=[b"seedsbalance", seeds_authority.key().as_ref(),cultivar.name.as_bytes().as_ref()],bump,token::mint=fruit_mint, token::authority=seeds_authority)]
@@ -515,7 +520,7 @@ pub struct CreateTree <'info> {
      #[account(seeds=[b"fruitmintauthority"], bump,)]
     pub fruit_mint_authority: UncheckedAccount<'info>,  
 
-    #[account(seeds=[b"fruitmint", cultivar.name.as_bytes().as_ref()],bump,mint::decimals=9, mint::authority=fruit_mint_authority)] // different fruits 
+    #[account(mut, seeds=[b"fruitmint", cultivar.name.as_bytes().as_ref()],bump,mint::decimals=9, mint::authority=fruit_mint_authority)] // different fruits 
     pub fruit_mint: Account<'info, Mint>, 
 
     #[account(init, seeds=[b"fruit", tree.key().as_ref()],bump, payer=payer, token::mint=fruit_mint, token::authority=tree)]

@@ -149,8 +149,6 @@ pub struct BuyFruit<'info> {
     #[account(seeds=[b"farm"], bump, seeds::program=farm_program)]
     pub farm: Box<Account<'info,Farm>>,
 
-
-
     #[account(mut,seeds=[b"cultivarmeta",
     farm.key().as_ref()], bump,seeds::program=farm_program)]
     pub cultivar_meta: Box<Account<'info, CultivarMeta>>,
@@ -172,7 +170,8 @@ pub struct BuyFruit<'info> {
 
     // #[account(init_if_needed, payer=payer , seeds=[b"seedvault",farmer.key().as_ref()], bump,space=8 + SeedVault::INIT_SPACE )] //token::authority=program. does that happen by default 
     // pub seed_vault: Box<Account<'info,SeedVault>>, 
-     /// CHECK: It is used to derive other accounts which are checked
+
+    /// CHECK: It is used to derive other accounts which are checked
     #[account(seeds=[b"seedsauthority", payer.key().as_ref()], bump,seeds::program=tree_program)]
     pub seeds_authority: UncheckedAccount<'info>, 
 
