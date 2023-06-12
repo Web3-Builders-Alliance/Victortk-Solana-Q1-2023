@@ -1,12 +1,12 @@
 [package]
-name = "tree"
+name = "farm_program"
 version = "0.1.0"
 description = "Created with Anchor"
 edition = "2021"
 
 [lib]
 crate-type = ["cdylib", "lib"]
-name = "tree"
+name = "farm_program"
 
 [features]
 no-entrypoint = []
@@ -20,7 +20,5 @@ anchor-lang = {version = "0.27.0", features = ["init-if-needed"]}
 spl-token =  "3.5.0"
 anchor-spl = {version= "0.27.0", features=["metadata", "token", "dex"]}
 solana-program = "=1.14.16"
-# farmer = {path = "../farmer", features = ["cpi"]}
-farm = {path = "../farm", features = ["cpi"]}
-# fruit_market = {path = "../fruit_market", features = ["cpi"]}
+
 

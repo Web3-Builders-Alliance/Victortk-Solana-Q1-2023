@@ -4,17 +4,17 @@ use anchor_spl::{
     mint, token::{self,Mint,TokenAccount,Token, },
     associated_token::{AssociatedToken,Create,},   
 };
-use farm::cpi::accounts::{UpdateFarm};
+use farm_program::cpi::accounts::{UpdateFarm};
 // use fruit_market::cpi::accounts::{ListFruit};
-use tree::cpi::accounts::CreateTree;
+use tree_program::cpi::accounts::CreateTree;
 // use solana_sdk::account_info::AccountInfo ;
-use farm::program::Farm as FarmProgram;
-use tree::program::Tree as TreeProgram;
-use fruit_market::program::FruitMarket as FruitMarketProgram;
+use farm_program::program::FarmProgram;
+use tree_program::program::TreeProgram;
+use fruit_market_program::program::FruitMarketProgram;
 
-use fruit_market::{self,MarketEntry,FruitMarket,} ;
-use farm::{self,Farm,LandMeta,CultivarMeta,TreesMeta,Vault} ;
-use tree::{self,Cultivar,Tree,RequiredNutrients,InputBalance} ;
+use fruit_market_program::{self,MarketEntry,FruitMarket,} ;
+use farm_program::{self,Farm,LandMeta,CultivarMeta,TreesMeta,Vault} ;
+use tree_program::{self,Cultivar,Tree,RequiredNutrients,InputBalance} ;
 
 
 use solana_program::{native_token::LAMPORTS_PER_SOL};
@@ -25,7 +25,7 @@ use solana_program::clock::{DEFAULT_TICKS_PER_SLOT,DEFAULT_TICKS_PER_SECOND, SEC
 declare_id!("FEa3hjWEQEmuUgZtDQ1btp1Y2EKVhChqCzADTenewCsF");
 
 #[program]
-pub mod farmer {
+pub mod farmer_program {
     use super::*;
     pub fn initialize_farmer(ctx: Context<InitializeFarmer>, user_name: String) -> Result<()> {        
         let payer = &mut ctx.accounts.payer ; 

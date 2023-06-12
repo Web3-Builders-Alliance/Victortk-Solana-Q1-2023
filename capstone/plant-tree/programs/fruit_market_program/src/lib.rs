@@ -11,16 +11,16 @@ use solana_program::clock::{DEFAULT_TICKS_PER_SLOT,DEFAULT_TICKS_PER_SECOND, SEC
 // use farmer::cpi::accounts::InitializeFarmer;
 // use tree::cpi::accounts::InitializeFarmer;
 // use farmer::program::Farmer as FarmerProgram;
-use farm::program::Farm as FarmProgram;
-use tree::program::Tree as TreeProgram;
+use farm_program::program::FarmProgram;
+use tree_program::program::TreeProgram;
 // use farmer::{self,Farmer} ;
-use farm::{self,Farm,TreesMeta,CultivarMeta} ;
-use tree::{self,Cultivar,Tree} ;
+use farm_program::{self,Farm,TreesMeta,CultivarMeta} ;
+use tree_program::{self,Cultivar,Tree} ;
 
 declare_id!("9CkBCJW4mrYE7qpAgnnmWggeCYtyyKnfzJNZXY2mhpUU");
 
 #[program]
-pub mod fruit_market {
+pub mod fruit_market_program {
     use super::*;
 
      pub fn initialize_market(ctx:Context<InitializeFruitMarket>) ->Result<()>{

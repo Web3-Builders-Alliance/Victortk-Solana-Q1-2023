@@ -383,5 +383,26 @@ describe('Buys fruits', () => {
 	});
 });
 
+describe('Searches for trees', () => {
+	it('Searches for trees', async () => {
+
+		let trees = await treeProgram.account.tree.all([
+			{
+				memcmp:{
+				  offset:8,
+					bytes: payer.publicKey.toBase58().toString()
+				}  
+				
+			}
+		])
+
+		console.log("The trees", trees) ;
+		console.log("The payer key v1 ", payer.publicKey.toBase58().toString()) ;
+		console.log("The payer key v2 ", payer.publicKey.toString()) ;
+	
+  })
+})
+
+
 
 

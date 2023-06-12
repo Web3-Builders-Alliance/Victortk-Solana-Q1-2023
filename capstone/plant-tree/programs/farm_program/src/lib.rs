@@ -16,7 +16,7 @@ use solana_program::clock::{DEFAULT_TICKS_PER_SLOT,DEFAULT_TICKS_PER_SECOND, SEC
 declare_id!("6DDP3hohHprxPNUWVtwpK89QAzcB27Fk4NSCgcq368P6");
 
 #[program]
-pub mod farm {
+pub mod farm_program {
     use super::*;
 
   pub fn initialize_farm(ctx: Context<InitializeFarm>) -> Result<()>{

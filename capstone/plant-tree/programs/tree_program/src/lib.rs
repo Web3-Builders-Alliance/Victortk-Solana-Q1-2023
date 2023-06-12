@@ -7,15 +7,15 @@ use anchor_lang::solana_program::{pubkey,} ;
 use solana_program::{native_token::LAMPORTS_PER_SOL};
 use anchor_lang::system_program;
 use solana_program::clock::{DEFAULT_TICKS_PER_SLOT,DEFAULT_TICKS_PER_SECOND, SECONDS_PER_DAY} ;
-use farm::cpi::accounts::{UpdateFarm};
+use farm_program::cpi::accounts::{UpdateFarm};
 // use tree::cpi::accounts::InitializeFarmer;
 // use farmer::program::Farmer as FarmerProgram;
-use farm::program::Farm as FarmProgram;
+use farm_program::program::FarmProgram;
 // use fruit_market::program::FruitMarket as FruitMarketProgram;
 // use farmer::{self,Farmer} ;
-use farm::{self,Farm,LandMeta,CultivarMeta,TreesMeta,Vault} ;
+use farm_program::{self,Farm,LandMeta,CultivarMeta,TreesMeta,Vault} ;
 // use fruit_market::{self, FruitMarket, MarketEntry} ;
-
+// mod instructions ;
 declare_id!("EfYywm823JAajvTAHFv7wnKGi8M4R7BwqufaUEECxUxG");
 
 
@@ -38,7 +38,7 @@ pub const RATE_OF_WATER_UPTAKE: u64 = 2;
 pub const RATE_OF_FRUIT_INCREMENT: u64 = 1 ;
 
 #[program]
-pub mod tree {
+pub mod tree_program {
     use super::*;
     
     pub fn create_tree(ctx: Context<CreateTree>)-> Result<()> {
@@ -726,8 +726,6 @@ pub struct RequiredNutrients  {
 }
 
 
-
-
 impl Tree {
 
 pub fn update_size(&mut self, percent_nitrogen_intake: u64 , percent_phosphorus_intake: u64, percent_potassium_intake: u64, percent_water_intake: u64,recent_check_time: u64 ) -> Result<()>  {
@@ -850,10 +848,6 @@ pub fn set_new_harvest_season(&mut self) -> Result<()> {
 
 
 }
-
-
-
-
 
 impl InputBalance {
 

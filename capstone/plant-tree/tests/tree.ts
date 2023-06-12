@@ -253,6 +253,7 @@ describe('Updates a tree', () => {
 
 		console.log('fruit Account initiailized with free fruitus ', fb);
 		console.log('the fruit balance is now ', fb.amount);
+		
 	});
 });
 
