@@ -13,7 +13,7 @@ use solana_program::clock::{DEFAULT_TICKS_PER_SLOT,DEFAULT_TICKS_PER_SECOND, SEC
 // use farmer::program::Farmer as FarmerProgram;
 // use farmer::{self,Farmer} ;
 
-declare_id!("6DDP3hohHprxPNUWVtwpK89QAzcB27Fk4NSCgcq368P6");
+declare_id!("6ENVuGLwmXzs3vTtrnELHTA1y3Q1s2NKZMu4zDo3nPUd");
 
 #[program]
 pub mod farm_program {

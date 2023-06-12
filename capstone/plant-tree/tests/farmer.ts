@@ -1,10 +1,10 @@
 import * as anchor from '@project-serum/anchor';
 import { Program } from '@project-serum/anchor';
 // import { Starter } from '../target/types/starter';
-import { Farmer } from '../target/types/farmer';
-import { Farm } from '../target/types/farm';
-import { FruitMarket} from '../target/types/fruit_market';
-import {Tree} from '../target/types/tree';
+import { FarmerProgram } from '../target/types/farmer_program';
+import { FarmProgram } from '../target/types/farm_program';
+import { FruitMarketProgram} from '../target/types/fruit_market_program';
+import {TreeProgram} from '../target/types/tree_program';
 import * as token from '@solana/spl-token';
 
 // import { assert } from 'chai';
@@ -25,10 +25,10 @@ let provider = anchor.AnchorProvider.env();
 anchor.setProvider(provider);
 
 
-const program = anchor.workspace.Farmer as Program<Farmer>;
-const farmProgram = anchor.workspace.Farm as Program<Farm>;
-const marketProgram = anchor.workspace.FruitMarket as Program<FruitMarket>;
-const treeProgram = anchor.workspace.Tree as Program<Tree>;
+const program = anchor.workspace.FarmerProgram as Program<FarmerProgram>;
+const farmProgram = anchor.workspace.FarmProgram as Program<FarmProgram>;
+const marketProgram = anchor.workspace.FruitMarketProgram as Program<FruitMarketProgram>;
+const treeProgram = anchor.workspace.TreeProgram as Program<TreeProgram>;
 
 	// payer
 let payer = provider.wallet as anchor.Wallet;

@@ -16,7 +16,7 @@ use farm_program::program::FarmProgram;
 use farm_program::{self,Farm,LandMeta,CultivarMeta,TreesMeta,Vault} ;
 // use fruit_market::{self, FruitMarket, MarketEntry} ;
 // mod instructions ;
-declare_id!("EfYywm823JAajvTAHFv7wnKGi8M4R7BwqufaUEECxUxG");
+declare_id!("GKUYrzV8pu6ZNvKG4KmEMMbMeqeSJGH1vQYgk9RuoYSR");
 
 
 pub const SLOTS_PER_SECOND: u64=DEFAULT_TICKS_PER_SECOND /DEFAULT_TICKS_PER_SLOT ;

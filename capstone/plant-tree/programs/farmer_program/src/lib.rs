@@ -22,7 +22,7 @@ use anchor_lang::system_program;
 use solana_program::clock::{DEFAULT_TICKS_PER_SLOT,DEFAULT_TICKS_PER_SECOND, SECONDS_PER_DAY} ;
 
 
-declare_id!("FEa3hjWEQEmuUgZtDQ1btp1Y2EKVhChqCzADTenewCsF");
+declare_id!("5TNiwQX4cLvYtRp4vwhukHTrNt6MsK8URs6P98vsznQX");
 
 #[program]
 pub mod farmer_program {

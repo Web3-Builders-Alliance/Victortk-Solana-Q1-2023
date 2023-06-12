@@ -1,7 +1,7 @@
 import * as anchor from '@project-serum/anchor';
 import { Program } from '@project-serum/anchor';
 import { ConfirmOptions, PublicKey } from '@solana/web3.js';
-import { Farm } from '../target/types/farm';
+import { FarmProgram } from '../target/types/farm_program';
 // import { Farmer } from '../target/types/farmer';
 import { Tree } from '../target/types/tree';
 import * as token from '@solana/spl-token';
@@ -21,7 +21,7 @@ let cultivarName = 'Muti';
 let provider = anchor.AnchorProvider.env();
 anchor.setProvider(provider);
 
-const program = anchor.workspace.Farm as Program<Farm>;
+const program = anchor.workspace.FarmProgram as Program<FarmProgram>;
 
 // payer
 let payer = provider.wallet as anchor.Wallet;
