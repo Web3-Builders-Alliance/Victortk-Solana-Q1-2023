@@ -405,4 +405,96 @@ describe('Searches for trees', () => {
 
 
 
+describe('calculations', () => {
+	it('calculates the required nutrients for the period', async () => {
+		const tx = await treeProgram.methods
+			.calculateRequired()
+			.accounts({
+				farm,
+				farmer,
+				waterMint,
+				nitrogenMint,
+				potassiumMint,
+				phosphorusMint,
+				nutrientMintAuthority,
+				landMeta,
+				treesMeta,
+				tree,
+				landPiece,
+				inputBalance,
+				waterBalance,
+				nitrogenBalance,
+				phosphorusBalance,
+				potassiumBalance,
+				fruitMintAuthority,
+				fruitMint,
+				fruitBalance,
+				requiredNutrients,
+				vault,
+				farmProgram: farmProgram.programId,
+			})
+			.rpc();
+		const rn = await treeProgram.account.requiredNutrients.fetch(requiredNutrients);
+		console.log(
+			'The nutrient required since last apply has been calculated: ',
+			tx.toString()
+		);
+		console.log(
+			`required Nitrogen: ${rn.nitrogen} Required phosphorus: ${rn.phosphorus} Required potassium: ${rn.potassium} Required water: ${rn.water}`
+		);
+
+		console.log(
+			`Available Nitrogen: ${rn.percentAvailableNitrogen} Available phosphorus: ${rn.percentAvailablePhosphorus} Available potassium: ${rn.percentAvailablePotassium} Available water: ${rn.percentAvailableWater}`
+		);
+	});
+})
+
+describe('Consumes required nutrients', () => {
+	it('Consumes required nutrients', async () => {
+
+			// let wm = await token.getMint(, waterMint);
+
+			let pb = await token.getAccount(provider.connection, potassiumBalance);
+
+			console.log(
+				'The Potassium balance before the transaction is ,',
+				pb.amount
+			);
+			const tx = await treeProgram.methods
+				.consumePotassium(new anchor.BN(201))
+				.accounts({
+				farm,
+				farmer,
+				waterMint,
+				nitrogenMint,
+				potassiumMint,
+				phosphorusMint,
+				nutrientMintAuthority,
+				landMeta,
+				treesMeta,
+				tree,
+				landPiece,
+				inputBalance,
+				waterBalance,
+				nitrogenBalance,
+				phosphorusBalance,
+				potassiumBalance,
+				fruitMintAuthority,
+				fruitMint,
+				fruitBalance,
+				requiredNutrients,
+				vault,
+				farmProgram: farmProgram.programId,
+			})
+				.rpc();
+			let pb2 = await token.getAccount(provider.connection, potassiumBalance);
+			console.log('The nutrient has been consumed: ', tx.toString());
+			let potassium = pb2.amount;
+			console.log('The phosphorus balance is now: {} ', potassium);
+	
+  })
+})
+
+
+
 
