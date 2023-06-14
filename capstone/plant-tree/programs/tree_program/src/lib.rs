@@ -121,9 +121,16 @@ pub mod tree_program {
                   &[&seeds[..]]
             ) ,20)
     }
-    pub fn create_seed(ctx: Context<CreateSeed>, name:String) -> Result<()>{
+    pub fn create_seed(_ctx: Context<CreateSeed>, name:String) -> Result<()>{
         Ok(())
     } 
+
+    pub fn init_tree_accounts(ctx: Context<InitTreeUpdateAccounts>) -> Result<()>{
+        Ok(())
+    } 
+
+
+
     pub fn check_and_update(ctx: Context<TreeUpdate>)-> Result<()>{
       
         let r_nutrients = &mut *ctx.accounts.required_nutrients;
@@ -595,6 +602,65 @@ pub struct CreateTree <'info> {
 }
 
 #[derive(Accounts)]
+pub struct InitTreeUpdateAccounts<'info> {
+    #[account(mut)]
+    pub payer: Signer<'info>,
+
+    #[account(seeds=[b"farm"], bump, 
+    seeds::program=farm_program)]
+    pub farm: Box<Account<'info,Farm>>, 
+
+    /// CHECK: famer 
+    pub farmer: UncheckedAccount<'info,> ,
+
+    #[account(init, payer=payer,seeds=[b"watermint"], bump, mint::decimals=9, mint::authority=nutrient_mint_authority,)]
+    pub water_mint: Box<Account<'info, Mint>>,
+
+    #[account(init, payer=payer,seeds=[b"nitrogenmint"], bump, mint::decimals=9, mint::authority=nutrient_mint_authority,)]
+    pub nitrogen_mint: Box<Account<'info, Mint>> ,
+
+    #[account(init, payer=payer,seeds=[b"potassiummint"], bump, mint::decimals=9,
+    mint::authority=nutrient_mint_authority, )]
+    pub potassium_mint: Box<Account<'info, Mint>> ,
+
+    #[account(init, payer=payer,seeds=[b"phosphorusmint"], bump, mint::decimals=9, mint::authority=nutrient_mint_authority,)]
+    pub phosphorus_mint: Box<Account<'info, Mint>> ,
+
+    /// CHECK: mint authority pda
+    #[account(mut,seeds=[b"nutrientmintauthority"], bump,)]
+    pub nutrient_mint_authority: UncheckedAccount<'info,>,
+
+    // #[account(mut,seeds=[b"landmeta", farm.key().as_ref()], bump, seeds::program=farm_program)]
+    // pub land_meta: Box<Account<'info,LandMeta>>,
+
+    #[account(seeds=[b"treesmeta",farm.key().as_ref()], bump,seeds::program=farm_program)]
+    pub trees_meta: Box<Account<'info, TreesMeta>>,
+
+    #[account(mut,seeds=[b"tree",trees_meta.key().as_ref(),farmer.key().as_ref(), tree.cultivar_name.as_bytes().as_ref()], bump, )]
+    pub tree: Box<Account<'info, Tree>>,
+
+    #[account(mut, seeds=[b"nutrientbalance",tree.key().as_ref()], bump,)]
+    pub input_balance: Box<Account<'info,InputBalance>>,
+
+    #[account(init, payer=payer , seeds=[b"water",input_balance.key().as_ref()], bump, token::mint=water_mint, 
+    token::authority=input_balance)]
+    pub water_balance: Box<Account<'info,TokenAccount>>,
+
+    #[account(init, payer=payer , seeds=[b"nitrogen",input_balance.key().as_ref()], bump, token::mint=nitrogen_mint, token::authority=input_balance)]
+    pub nitrogen_balance: Box<Account<'info,TokenAccount>>,
+
+    #[account(init, payer=payer , seeds=[b"phosphorus",input_balance.key().as_ref()], bump, token::mint=phosphorus_mint, token::authority=input_balance)]
+    pub phosphorus_balance: Box<Account<'info,TokenAccount>>,
+
+    #[account(init, payer=payer , seeds=[b"potassium",input_balance.key().as_ref()], bump, token::mint=potassium_mint, token::authority=input_balance)]
+    pub potassium_balance: Box<Account<'info,TokenAccount>>,
+
+    pub farm_program: Program<'info,FarmProgram>,
+    pub token_program: Program<'info,Token>,
+    pub system_program: Program<'info,System> 
+} 
+
+#[derive(Accounts)]
 pub struct TreeUpdate<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
@@ -606,17 +672,17 @@ pub struct TreeUpdate<'info> {
     /// CHECK: famer 
     pub farmer: UncheckedAccount<'info,> ,
 
-    #[account(init_if_needed, payer=payer,seeds=[b"watermint"], bump, mint::decimals=9, mint::authority=nutrient_mint_authority,)]
+    #[account(mut,seeds=[b"watermint"], bump, mint::decimals=9, mint::authority=nutrient_mint_authority,)]
     pub water_mint: Box<Account<'info, Mint>>,
 
-    #[account(init_if_needed, payer=payer,seeds=[b"nitrogenmint"], bump, mint::decimals=9, mint::authority=nutrient_mint_authority,)]
+    #[account(mut,seeds=[b"nitrogenmint"], bump, mint::decimals=9, mint::authority=nutrient_mint_authority,)]
     pub nitrogen_mint: Box<Account<'info, Mint>> ,
 
-    #[account(init_if_needed, payer=payer,seeds=[b"potassiummint"], bump, mint::decimals=9,
+    #[account(mut,seeds=[b"potassiummint"], bump, mint::decimals=9,
     mint::authority=nutrient_mint_authority, )]
     pub potassium_mint: Box<Account<'info, Mint>> ,
 
-    #[account(init_if_needed, payer=payer,seeds=[b"phosphorusmint"], bump, mint::decimals=9, mint::authority=nutrient_mint_authority,)]
+    #[account(mut,seeds=[b"phosphorusmint"], bump, mint::decimals=9, mint::authority=nutrient_mint_authority,)]
     pub phosphorus_mint: Box<Account<'info, Mint>> ,
 
     /// CHECK: mint authority pda
@@ -638,24 +704,24 @@ pub struct TreeUpdate<'info> {
     #[account(mut, seeds=[b"nutrientbalance",tree.key().as_ref()], bump,)]
     pub input_balance: Box<Account<'info,InputBalance>>,
 
-    #[account(init_if_needed, payer=payer , seeds=[b"water",input_balance.key().as_ref()], bump, token::mint=water_mint, 
+    #[account(mut, seeds=[b"water",input_balance.key().as_ref()], bump, token::mint=water_mint, 
     token::authority=input_balance)]
     pub water_balance: Box<Account<'info,TokenAccount>>,
 
-    #[account(init_if_needed, payer=payer , seeds=[b"nitrogen",input_balance.key().as_ref()], bump, token::mint=nitrogen_mint, token::authority=input_balance)]
+    #[account(mut, seeds=[b"nitrogen",input_balance.key().as_ref()], bump, token::mint=nitrogen_mint, token::authority=input_balance)]
     pub nitrogen_balance: Box<Account<'info,TokenAccount>>,
 
-    #[account(init_if_needed, payer=payer , seeds=[b"phosphorus",input_balance.key().as_ref()], bump, token::mint=phosphorus_mint, token::authority=input_balance)]
+    #[account(mut, seeds=[b"phosphorus",input_balance.key().as_ref()], bump, token::mint=phosphorus_mint, token::authority=input_balance)]
     pub phosphorus_balance: Box<Account<'info,TokenAccount>>,
 
-    #[account(init_if_needed, payer=payer , seeds=[b"potassium",input_balance.key().as_ref()], bump, token::mint=potassium_mint, token::authority=input_balance)]
+    #[account(mut,seeds=[b"potassium",input_balance.key().as_ref()], bump, token::mint=potassium_mint, token::authority=input_balance)]
     pub potassium_balance: Box<Account<'info,TokenAccount>>,
 
     /// CHECK:  pda
     #[account(mut,seeds=[b"fruitmintauthority"], bump,)]
     pub fruit_mint_authority: UncheckedAccount<'info>,
 
-    #[account(init_if_needed, payer=payer, seeds=[b"fruitmint",tree.cultivar_name.as_bytes().as_ref()], bump, mint::decimals=9, mint::authority=fruit_mint_authority)]
+    #[account(mut,seeds=[b"fruitmint",tree.cultivar_name.as_bytes().as_ref()], bump, mint::decimals=9, mint::authority=fruit_mint_authority)]
     pub fruit_mint: Box<Account<'info, Mint>>,
 
     #[account(mut,seeds=[b"fruit",tree.key().as_ref()], bump, token::mint=fruit_mint, token::authority=tree)]
@@ -670,7 +736,7 @@ pub struct TreeUpdate<'info> {
 
     pub farm_program: Program<'info,FarmProgram>,
     pub token_program: Program<'info,Token>,
-    pub system_program: Program<'info,System> 
+    // pub system_program: Program<'info,System> 
 }  
 
 #[derive(Accounts)]

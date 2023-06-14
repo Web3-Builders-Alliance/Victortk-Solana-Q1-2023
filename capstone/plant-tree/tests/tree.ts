@@ -203,8 +203,8 @@ describe('plants the tree ', () => {
 });
 
 
-describe('Updates a tree', () => {
-	it('Updates the tree', async () => {
+describe('Initializes tree token accounts', () => {
+	it('Initializes tree token accounts', async () => {
 		// let fm = await token.getMint(provider.connection, fruitMint);
 
 		// let fruitBalance = await token.getOrCreateAssociatedTokenAccount(
@@ -217,7 +217,7 @@ describe('Updates a tree', () => {
 		console.log("the tree metadata account address is,", treesMeta.toString())
 		console.log("the Owner of the program, ", farmProgram.programId)
 		const tx = await program.methods
-			.checkAndUpdate()
+			.initTreeAccounts()
 			.accounts({
 				farm,
 				farmer,
@@ -226,20 +226,13 @@ describe('Updates a tree', () => {
 				potassiumMint,
 				phosphorusMint,
 				nutrientMintAuthority,
-				landMeta,
 				treesMeta,
 				tree,
-				landPiece,
 				inputBalance,
 				waterBalance,
 				nitrogenBalance,
 				phosphorusBalance,
-				potassiumBalance,
-				fruitMintAuthority,
-				fruitMint,
-				fruitBalance,
-				requiredNutrients,
-				vault,
+				potassiumBalance,			
 				farmProgram: farmProgram.programId,
 			})
 			.rpc();
