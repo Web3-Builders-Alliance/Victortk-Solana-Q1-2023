@@ -1,9 +1,46 @@
 .box{
   width: 100%;
-  height: auto;
+  min-height:98vh;
   /* background-color: bisque; */
+  /* display: flex ;
+  align-items: center;
+  justify-content: center;
+  padding-top: 0; */
 }
 
 .name {
   width: 70% ;
+}
+
+.stack {
+  border: 1px solid #3C6A48 ;
+}
+
+ .display {
+  /* display: flex ;
+  flex-direction: column; */
+  /* background-color: blueviolet; */
+  /* width: 100%;
+  height: auto; */
+} 
+
+.grid{
+  /* margin-top: -95px; */
+}
+
+.ingrid{
+  margin-top: 35px;
+}
+
+.label {                                
+  color: #08110F;
+}
+
+.farmer {
+  height: 300px;
+  background-image: radial-gradient(circle, #f1f085, #d2d376, #b4b768, #989c5a, #7d814c);
+}
+
+.footer {
+  margin-top: -150px ;
 }
