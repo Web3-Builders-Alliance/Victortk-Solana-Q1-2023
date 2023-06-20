@@ -35,6 +35,15 @@ import {
 	marketAuthority,
 } from './pdas';
 
+import {
+	Metaplex,
+	keypairIdentity,
+	bundlrStorage,
+	toMetaplexFile,
+} from '@metaplex-foundation/js';
+import { readFile } from 'fs/promises';
+import { Keypair } from '@solana/web3.js';
+
 
 // Configure the client to use the local cluster.
 let provider = anchor.AnchorProvider.env();
@@ -111,10 +120,46 @@ describe('Creates a cultivar', () => {
 			// 		],
 			// 		program.programId
 			// 	);
+       
+			/// create nft 
 
 			
+			const metaplex = Metaplex.make(provider.connection)
+			                   .use(keypairIdentity(payer.payer))
+												 .use(bundlrStorage({
+															address: 'https://devnet.bundlr.network',
+															providerUrl: "https://api.devnet.solana.com",
+															timeout: 60_000 
+                  				}));
+       let url ;
+				try {
+					const image = await readFile('./tests/1.png');
+					const metaplex_image = toMetaplexFile(image, "1.png");
+					url = await metaplex.storage().upload(metaplex_image)
+					console.log(`${url}`)
+
+				const { uri } = await metaplex.nfts().uploadMetadata({
+					name: cultivarName,
+					description: "My description",
+					image: url,
+			   });
+
+        console.log(uri) 
+
+				const { nft } = await metaplex.nfts().create({
+						uri: uri,
+						name: cultivarName,
+						sellerFeeBasisPoints: 500, // Represents 5.00%.
+				});
+
+				 console.log("nft")
+
+				}catch(e){
+					console.log("error ", e) ;
+				}
+
 				let tx = await program.methods
-					.createCultivar(cultivarName, initHeight, initWidth)
+					.createCultivar(cultivarName, initHeight, initWidth, url)
 					.accounts({
 						farm,
 						farmer,
@@ -422,7 +467,7 @@ describe('Adds nutriens', () => {
 		});
 });
 
-describe('Consumes nutrients ', () => {	
+describe('Consumes nutrients 1 ', () => {	
 	
 	it('Burns Nitrogen', async () => {
 		// let wm = await token.getMint(, waterMint);
@@ -551,8 +596,8 @@ describe('Consumes nutrients ', () => {
 	
 });
 
-describe('calculations', () => {
-	it('calculates the required nutrients for the period', async () => {
+describe('calculations 1', () => {
+	it('calculates the required nutrients for the period 1', async () => {
 		const tx = await program.methods
 			.calculateRequired()
 			.accounts({
@@ -593,4 +638,50 @@ describe('calculations', () => {
 			`Available Nitrogen: ${rn.percentAvailableNitrogen} Available phosphorus: ${rn.percentAvailablePhosphorus} Available potassium: ${rn.percentAvailablePotassium} Available water: ${rn.percentAvailableWater}`
 		);
 	});
+})
+
+describe('Consumes required nutrients 1', () => {
+	it('Consumes required nutrients 1', async () => {
+
+			// let wm = await token.getMint(, waterMint);
+
+			let pb = await token.getAccount(provider.connection, potassiumBalance);
+
+			console.log(
+				'The Potassium balance before the transaction is ,',
+				pb.amount
+			);
+			const tx = await program.methods
+				.consumeNutrients()
+				.accounts({
+				farm,
+				farmer,
+				waterMint,
+				nitrogenMint,
+				potassiumMint,
+				phosphorusMint,
+				nutrientMintAuthority,
+				landMeta,
+				treesMeta,
+				tree,
+				landPiece,
+				inputBalance,
+				waterBalance,
+				nitrogenBalance,
+				phosphorusBalance,
+				potassiumBalance,
+				fruitMintAuthority,
+				fruitMint,
+				fruitBalance,
+				requiredNutrients,
+				vault,
+				farmProgram: farmProgram.programId,
+			})
+				.rpc();
+			let pb2 = await token.getAccount(provider.connection, potassiumBalance);
+			console.log('The nutrient has been consumed: ', tx.toString());
+			let potassium = pb2.amount;
+			console.log('The phosphorus balance is now: {} ', potassium);
+	
+  })
 })

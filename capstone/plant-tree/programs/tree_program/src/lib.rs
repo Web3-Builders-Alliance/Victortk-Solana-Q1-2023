@@ -70,7 +70,7 @@ pub mod tree_program {
         tree.health = 100 ;
         tree.is_alive = true ;
         tree.next_fruit_maturaturation_time =  time + SLOTS_PER_YEAR;
-
+        tree.nft_uri = cultivar.image_uri.clone() ;
         let bump = *ctx.bumps.get("seeds_authority").unwrap() ;
         let p = payer.key();
         let seeds = &[ "seedsauthority".as_bytes(), p.as_ref() ,&[bump]] ;
@@ -94,7 +94,7 @@ pub mod tree_program {
         
     }    
 
-    pub fn create_cultivar(ctx: Context<CreateCultivar>, cultivar_name:String , height: u64, width: u64) -> Result<()>{
+    pub fn create_cultivar(ctx: Context<CreateCultivar>, cultivar_name:String , height: u64, width: u64, uri: String) -> Result<()>{
       
         let cultivar_meta =  &mut ctx.accounts.cultivar_meta ;
         cultivar_meta.cultivars_count = cultivar_meta.cultivars_count + 1 ;        
@@ -104,6 +104,7 @@ pub mod tree_program {
             cultivar.init_height= height ;
             cultivar.init_width= width ;
             cultivar.is_initialized = true ;
+            cultivar.image_uri = uri ;
       
         let bump = *ctx.bumps.get("fruit_mint_authority").unwrap() ;
 
@@ -124,12 +125,9 @@ pub mod tree_program {
     pub fn create_seed(_ctx: Context<CreateSeed>, name:String) -> Result<()>{
         Ok(())
     } 
-
     pub fn init_tree_accounts(ctx: Context<InitTreeUpdateAccounts>) -> Result<()>{
         Ok(())
     } 
-
-
 
     pub fn check_and_update(ctx: Context<TreeUpdate>)-> Result<()>{
       
@@ -150,6 +148,13 @@ pub mod tree_program {
             // Err
             return Ok(())
         } 
+
+
+        if tree.last_consumed_used  {
+            msg!("consume nutrients first");  
+            // Err
+            return err!(TreeError::ConsumeNutrients)
+        }
 
         msg!("After all checks");        
 
@@ -182,8 +187,6 @@ pub mod tree_program {
        
         //here make it a const 1 year and bring const up
         if is_harvest && tree.expected_fruit_count > 1 {
-            msg!("tree.expected_fruit_count: {} ", tree.expected_fruit_count) ;
-
             token::mint_to(
                 CpiContext::new_with_signer(
                   ctx.accounts.token_program.to_account_info().clone() ,
@@ -210,6 +213,8 @@ pub mod tree_program {
             Err(e) =>  return Err(e),
             _ => () 
         };
+
+        tree.last_consumed_used = true ;
         Ok(())
     }  
     
@@ -349,6 +354,7 @@ pub mod tree_program {
         )
     }
     pub fn consume_nutrients(ctx: Context<TreeUpdate>)-> Result<()> {
+        
         let phosphorus_mint = &mut ctx.accounts.phosphorus_mint ;
         let phosphorus_balance = &mut ctx.accounts.phosphorus_balance ;
         let land_piece = &mut ctx.accounts.land_piece.key() ;
@@ -360,7 +366,14 @@ pub mod tree_program {
         let potassium_balance = &mut ctx.accounts.potassium_balance ;
         let nitrogen_mint = &mut ctx.accounts.nitrogen_mint ;
         let nitrogen_balance = &mut ctx.accounts.nitrogen_balance ;
-         let r_nutrients =  &mut *ctx.accounts.required_nutrients ;            
+        let r_nutrients =  &mut *ctx.accounts.required_nutrients ;
+
+        let slot = Clock::get()?.slot ;  
+
+        if slot - r_nutrients.last_check_time > 10 {
+           msg!("calculate Required!!");
+           return err!(TreeError::CalculateRequired)
+        }          
 
         token::burn(
             CpiContext::new_with_signer(
@@ -373,9 +386,7 @@ pub mod tree_program {
                 &[&seeds[..]]
             ),
             r_nutrients.nitrogen
-        )?;
-        
-       
+        )?;              
        token::burn(
             CpiContext::new_with_signer(
                 ctx.accounts.token_program.to_account_info(),
@@ -400,7 +411,9 @@ pub mod tree_program {
                 &[&seeds[..]]
             ),
           r_nutrients.phosphorus
-        )
+        )?;
+        ctx.accounts.tree.last_consumed_used = false ;
+        Ok(())
         
     }
     pub fn consume_phosphorus(ctx: Context<TreeUpdate>, amount: u64 )-> Result<()> {
@@ -446,38 +459,36 @@ pub mod tree_program {
         )
     }
     pub fn calculate_required( ctx: Context<TreeUpdate>)-> Result<()>{
-        let input_balance  = &mut ctx.accounts.input_balance ;
-        let tree = &mut *ctx.accounts.tree ;    
-        let r_nutrients = &mut *ctx.accounts.required_nutrients ;
+        let input_balance  = &mut ctx.accounts.input_balance ;    
 
+        let tree = &mut *ctx.accounts.tree ;  
+
+        let r_nutrients = &mut *ctx.accounts.required_nutrients ;
+       
+        let slot = Clock::get()?.slot ;
+        r_nutrients.period = slot - r_nutrients.last_check_time ;
+   
         let nitrogen = &ctx.accounts.nitrogen_balance.to_account_info();
+
         let phosphorus = &ctx.accounts.phosphorus_balance.to_account_info() ;
         let potassium = &ctx.accounts.potassium_balance.to_account_info() ;      
         let water = &ctx.accounts.water_balance.to_account_info() ;        
         let nitrogen_balance = token::accessor::amount(nitrogen)? ;        
         let phosphorus_balance = token::accessor::amount(phosphorus)? ;        
-        let potassium_balance = token::accessor::amount(potassium)? ;        
+        let potassium_balance = token::accessor::amount(potassium)? ;  
+
         let water_balance = token::accessor::amount(water)? ;
 
-        let (n_percent, r_n) = input_balance.percentage_intake(tree.root_area,  nitrogen_balance.clone() , tree.last_check_time, tree.age,false)? ;
-        r_nutrients.nitrogen = r_n ;
-        r_nutrients.percent_available_nitrogen = n_percent ;
+       r_nutrients.percentage_intake(tree.root_area,  nitrogen_balance.clone() , tree.last_check_time, tree.age,"nitrogen".to_string())? ;
+       r_nutrients.percentage_intake(tree.root_area, phosphorus_balance.clone() , tree.last_check_time, tree.age,"phosphorus".to_string())? ;
 
-        let (p_percent, r_p) =input_balance.percentage_intake(tree.root_area, phosphorus_balance.clone() , tree.last_check_time, tree.age,false)? ;
-        r_nutrients.phosphorus = r_p ;
-        r_nutrients.percent_available_phosphorus = p_percent ;
+       r_nutrients.percentage_intake(tree.root_area, potassium_balance.clone() , tree.last_check_time, tree.age,"potassium".to_string())? ;    
 
-        let (k_percent, r_k) =input_balance.percentage_intake(tree.root_area, potassium_balance.clone() , tree.last_check_time, tree.age,false)? ;
-        r_nutrients.potassium = r_k ;
-         r_nutrients.percent_available_potassium = k_percent ;
-
-        let (w_percent, r_w) =input_balance.percentage_intake(tree.root_area, water_balance.clone() , tree.last_check_time, tree.age,true)? ;
-
-        r_nutrients.water = r_w ; 
-        r_nutrients.percent_available_water = w_percent ;
-        r_nutrients.last_check_time = Clock::get()?.slot ;  
-        r_nutrients.first_check = true ;
-        msg!(
+       r_nutrients.percentage_intake(tree.root_area, water_balance.clone() , tree.last_check_time, tree.age,"water".to_string())? ;
+       r_nutrients.last_check_time = slot ;  
+       r_nutrients.first_check = true ;
+       
+       msg!(
             "What is happening?"
         );
         Ok(())
@@ -613,17 +624,17 @@ pub struct InitTreeUpdateAccounts<'info> {
     /// CHECK: famer 
     pub farmer: UncheckedAccount<'info,> ,
 
-    #[account(init, payer=payer,seeds=[b"watermint"], bump, mint::decimals=9, mint::authority=nutrient_mint_authority,)]
+    #[account(init_if_needed, payer=payer,seeds=[b"watermint"], bump, mint::decimals=9, mint::authority=nutrient_mint_authority,)]
     pub water_mint: Box<Account<'info, Mint>>,
 
-    #[account(init, payer=payer,seeds=[b"nitrogenmint"], bump, mint::decimals=9, mint::authority=nutrient_mint_authority,)]
+    #[account(init_if_needed, payer=payer,seeds=[b"nitrogenmint"], bump, mint::decimals=9, mint::authority=nutrient_mint_authority,)]
     pub nitrogen_mint: Box<Account<'info, Mint>> ,
 
-    #[account(init, payer=payer,seeds=[b"potassiummint"], bump, mint::decimals=9,
+    #[account(init_if_needed, payer=payer,seeds=[b"potassiummint"], bump, mint::decimals=9,
     mint::authority=nutrient_mint_authority, )]
     pub potassium_mint: Box<Account<'info, Mint>> ,
 
-    #[account(init, payer=payer,seeds=[b"phosphorusmint"], bump, mint::decimals=9, mint::authority=nutrient_mint_authority,)]
+    #[account(init_if_needed, payer=payer,seeds=[b"phosphorusmint"], bump, mint::decimals=9, mint::authority=nutrient_mint_authority,)]
     pub phosphorus_mint: Box<Account<'info, Mint>> ,
 
     /// CHECK: mint authority pda
@@ -795,6 +806,8 @@ pub struct Cultivar {
     pub creator: Pubkey,
     #[max_len(50)]
     pub name: String,
+    #[max_len(200)]
+    pub image_uri: String,
     pub count:u64,
     pub init_height: u64,
     pub init_width: u64,
@@ -816,6 +829,8 @@ pub struct Tree {
     pub authority: Pubkey,
     #[max_len(50)]
     pub cultivar_name: String,
+    #[max_len(200)]
+    pub nft_uri: String,
     pub land_number: u64,
     pub height: u64,
     pub girth: u64,
@@ -823,11 +838,13 @@ pub struct Tree {
     pub planted_time: u64,
     pub health: u8 ,
     pub last_check_time: u64 ,
+    pub last_fruit_update: u64,
     pub next_fruit_maturaturation_time: u64 ,
     pub expected_fruit_count: u64,
     pub is_alive: bool ,
     pub leaf_area: u64 ,
     pub root_area: u64 ,
+    pub last_consumed_used: bool,
 }
 
 
@@ -843,9 +860,9 @@ pub struct RequiredNutrients  {
     pub percent_available_potassium: u64,
     pub water: u64 ,
     pub percent_available_water: u64,
-    pub last_check_time: u64 
+    pub last_check_time: u64 ,
+    pub period: u64
 }
-
 
 impl Tree {
 
@@ -887,7 +904,7 @@ pub fn update_age(&mut self)-> Result<()> {
     let slot = Clock::get()?.slot ;   
     let period =  slot - self.planted_time ;
     // let year_time_slots = DEFAULT_TICKS_PER_SECOND / DEFAULT_TICKS_PER_SLOT * SECONDS_PER_DAY * 365 ;
-    self.age += period;
+    self.age = period;
 
     Ok(())
 }
@@ -915,11 +932,11 @@ pub fn grow_root_area(&mut self, percent_phosphorus_intake: u64, percent_water_i
 pub fn grow_expected_fruit_count(&mut self, percent_potassium_intake: u64, percent_water_intake: u64, recent_check_time: u64) {  
  //use some nitrogen 
 
-  let period =  recent_check_time - self.last_check_time ;
+  let period =  recent_check_time - self.last_fruit_update ;
   let too_young = SLOTS_PER_YEAR ;
+
   let young  = SLOTS_PER_YEAR* 10 ;
   let mut age_factor =  0 ; 
-
 
   if self.age > too_young && self.age < young {   
      age_factor = 50 ;
@@ -927,15 +944,19 @@ pub fn grow_expected_fruit_count(&mut self, percent_potassium_intake: u64, perce
   if self.age > young {
      age_factor = 100 ;
   }; 
+  
+  let fc: u64 = RATE_OF_FRUIT_INCREMENT * period * percent_potassium_intake * percent_water_intake * age_factor / 100 *100 * 100;
+   msg!("The fruit count is:{} ", fc) ;
 
-  msg!("age factor :{}", age_factor) ;
+  if fc > 0 {
+    self.expected_fruit_count += fc ; 
+    self.last_fruit_update = recent_check_time ;
+  }
+  
 
-  self.expected_fruit_count +=  RATE_OF_FRUIT_INCREMENT * period * percent_potassium_intake * percent_water_intake * age_factor / 100 *100 * 100  ;
 }
 
-pub fn is_harvest_season(&mut self) -> Result<bool>{
-
-    
+pub fn is_harvest_season(&mut self) -> Result<bool>{    
     match Clock::get() {
         Ok(c) => {
             let s = c.slot ;
@@ -970,7 +991,7 @@ pub fn set_new_harvest_season(&mut self) -> Result<()> {
 
 }
 
-impl InputBalance {
+impl RequiredNutrients {
 
     pub fn required_uptake (root_area: u64, last_checked_time: u64, age_factor: u64)-> Result<u64> {
         let current_slot = Clock::get()?.slot ;
@@ -985,13 +1006,13 @@ impl InputBalance {
         Ok(RATE_OF_WATER_UPTAKE * period * age_factor / 100)  // * root_area / age    
     }
 
-    pub fn percentage_intake(&self ,root_area: u64, balance: u64 , last_checked_time: u64, age: u64, water: bool)-> Result<(u64,u64)> {
-         // , balance: {}
-        msg!("root area: {}, last_checked_time: {} , age: {} , water: {} ",root_area , last_checked_time, age, water );
-        let required:u64 ;
+    pub fn percentage_intake(&mut self ,root_area: u64, balance: u64 , last_checked_time: u64, age: u64, nutrient: String)-> Result<()> { 
 
         let too_young = SLOTS_PER_YEAR ;
         let young  = SLOTS_PER_YEAR* 10 ;
+
+        //Older trees require less nutrients for growth 
+
         let age_factor = match age {
         x if x < too_young => {
               100
@@ -1001,25 +1022,48 @@ impl InputBalance {
            },
         _  => {50}
         } ;
+  
+      match nutrient.as_str() {
+            "water" => {                 
+                let required = Self::required_water_uptake(root_area,last_checked_time, age_factor)?;
+                let (percentage, uptake) = Self::compare(required, balance)? ;
+                self.percent_available_water = percentage ;
+                self.water = uptake ;
+            
+             },
+            "nitrogen" => {                 
+                let required = Self::required_uptake(root_area, last_checked_time, age_factor)? ;
+                let (percentage, uptake) = Self::compare(required, balance)? ;
+                self.percent_available_nitrogen = percentage ;
+                self.nitrogen = uptake ;
+            
+            } ,
+            "potassium" => {                
+                 let required = Self::required_uptake(root_area, last_checked_time, age_factor)?;
+                 let (percentage, uptake) = Self::compare(required, balance)? ;
+                 self.percent_available_potassium = percentage ;
+                 self.potassium = uptake ;                        
 
-    // let root_factor = match root_area {
+            } ,
+            "phosphorus" => {                 
+               let required = Self::required_uptake(root_area, last_checked_time, age_factor)? ;
+               let (percentage, uptake) = Self::compare(required, balance)? ;
+               self.percent_available_phosphorus = percentage ;
+               self.phosphorus = uptake ;             
+            } ,
+            _ => ()
+        };
 
+        Ok(())      
 
-    // }
-        required =  match water {
-            true => { Self::required_water_uptake(root_area,last_checked_time, age_factor)?},
-            false =>{ Self::required_uptake(root_area, last_checked_time, age_factor)?}  
-        } ;
-     
-        msg!("the required: {} , ",required) ;
-        msg!("Howmay slots per second: {} , ",SLOTS_PER_SECOND);
+    }
 
+    fn compare (required: u64 , balance: u64) -> Result<(u64,u64)> {
         if required >  balance {
-            Ok(((balance * 100/required),balance))            
+            Ok(((balance * 100/required),balance))                             
         }else {
             Ok((100, required) )
         }
-
     }
 
     // pub fn potassium_uptake  (root_area: u64, balance: u64 , last_checked_time: u64, age: u64)-> Result<i64> {
@@ -1039,13 +1083,16 @@ impl InputBalance {
 
     //     Ok(balance as i64 -  (period as i64* RATE_OF_WATER_UPTAKE as i64* root_area as i64/ age as i64 ))       
     // }
+
 }
 
 #[error_code]
 pub enum TreeError {
     #[msg("The Cultivar account is not initialized!")]
     CultivarNotInitialized,
-    ClockError
+    ClockError,
+    CalculateRequired,
+    ConsumeNutrients
 }
 
 
@@ -1053,6 +1100,6 @@ pub enum TreeError {
 //https://www.acompletetreecare.com/blog/how-to-measure-a-trees-critical-root-zone/
 // The general rule of thumb is that for every inch of tree trunk, the radius increases by 1.5 feet. 
 
-//1inch => 25400 micrometers 
+//1 inch => 25400 micrometers 
 
 //1 foot => 304800 micromers

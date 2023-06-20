@@ -405,8 +405,8 @@ describe('Searches for trees', () => {
 
 
 
-describe('calculations', () => {
-	it('calculates the required nutrients for the period', async () => {
+describe('calculations 2', () => {
+	it('calculates the required nutrients for the period 2', async () => {
 		const tx = await treeProgram.methods
 			.calculateRequired()
 			.accounts({
@@ -449,8 +449,8 @@ describe('calculations', () => {
 	});
 })
 
-describe('Consumes required nutrients', () => {
-	it('Consumes required nutrients', async () => {
+describe('Consumes required nutrients 2', () => {
+	it('Consumes required nutrients 2', async () => {
 
 			// let wm = await token.getMint(, waterMint);
 
@@ -461,7 +461,7 @@ describe('Consumes required nutrients', () => {
 				pb.amount
 			);
 			const tx = await treeProgram.methods
-				.consumePotassium(new anchor.BN(201))
+				.consumeNutrients()
 				.accounts({
 				farm,
 				farmer,
@@ -494,6 +494,61 @@ describe('Consumes required nutrients', () => {
 	
   })
 })
+
+
+describe('Updates a tree 2', () => {
+	it('Updates the tree 2', async () => {
+		// let fm = await token.getMint(provider.connection, fruitMint);
+
+		// let fruitBalance = await token.getOrCreateAssociatedTokenAccount(
+		// 	provider.connection,
+		// 	payer.payer,
+		// 	fruitMint,
+		// 	payer.publicKey
+		// );
+
+		console.log('the tree metadata account address is,', treesMeta.toString());
+		console.log('the Owner of the program, ', farmProgram.programId);
+		
+		const tx = await treeProgram.methods
+			.checkAndUpdate()
+			.accounts({
+				farm,
+				farmer,
+				waterMint,
+				nitrogenMint,
+				potassiumMint,
+				phosphorusMint,
+				nutrientMintAuthority,
+				landMeta,
+				treesMeta,
+				tree,
+				landPiece,
+				inputBalance,
+				waterBalance,
+				nitrogenBalance,
+				phosphorusBalance,
+				potassiumBalance,
+				fruitMintAuthority,
+				fruitMint,
+				fruitBalance,
+				requiredNutrients,
+				vault,
+				farmProgram: farmProgram.programId,
+			})
+			.rpc();
+		let t = await treeProgram.account.tree.fetch(tree);
+
+		console.log('Checks and updates the tree data: ', tx.toString());
+
+		console.log('lets see what tree state is like ', t);
+
+		let fb = await token.getAccount(provider.connection, fruitBalance);
+
+		console.log('fruit Account initiailized with free fruitus ', fb);
+		console.log('the fruit balance is now ', fb.amount);
+	});
+});
 
 
 
