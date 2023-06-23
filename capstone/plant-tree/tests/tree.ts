@@ -33,6 +33,7 @@ import {
 	seedsBalance,
 	seedsAuthority,
 	marketAuthority,
+	date
 } from './pdas';
 
 import {
@@ -124,42 +125,42 @@ describe('Creates a cultivar', () => {
 			/// create nft 
 
 			
-			const metaplex = Metaplex.make(provider.connection)
-			                   .use(keypairIdentity(payer.payer))
-												 .use(bundlrStorage({
-															address: 'https://devnet.bundlr.network',
-															providerUrl: "https://api.devnet.solana.com",
-															timeout: 60_000 
-                  				}));
-       let url ;
-				try {
-					const image = await readFile('./tests/1.png');
-					const metaplex_image = toMetaplexFile(image, "1.png");
-					url = await metaplex.storage().upload(metaplex_image)
-					console.log(`${url}`)
+			// const metaplex = Metaplex.make(provider.connection)
+			//                    .use(keypairIdentity(payer.payer))
+			// 									 .use(bundlrStorage({
+			// 												address: 'https://devnet.bundlr.network',
+			// 												providerUrl: "https://api.devnet.solana.com",
+			// 												timeout: 60_000 
+      //             				}));
+      //  let url ;
+			// 	try {
+			// 		const image = await readFile('./tests/1.png');
+			// 		const metaplex_image = toMetaplexFile(image, "1.png");
+			// 		url = await metaplex.storage().upload(metaplex_image)
+			// 		console.log(`${url}`)
 
-				const { uri } = await metaplex.nfts().uploadMetadata({
-					name: cultivarName,
-					description: "My description",
-					image: url,
-			   });
+			// 	const { uri } = await metaplex.nfts().uploadMetadata({
+			// 		name: cultivarName,
+			// 		description: "My description",
+			// 		image: url,
+			//    });
 
-        console.log(uri) 
+      //   console.log(uri) 
 
-				const { nft } = await metaplex.nfts().create({
-						uri: uri,
-						name: cultivarName,
-						sellerFeeBasisPoints: 500, // Represents 5.00%.
-				});
+			// 	const { nft } = await metaplex.nfts().create({
+			// 			uri: uri,
+			// 			name: cultivarName,
+			// 			sellerFeeBasisPoints: 500, // Represents 5.00%.
+			// 	});
 
-				 console.log("nft")
+			// 	 console.log("nft")
 
-				}catch(e){
-					console.log("error ", e) ;
-				}
+			// 	}catch(e){
+			// 		console.log("error ", e) ;
+			// 	}
 
 				let tx = await program.methods
-					.createCultivar(cultivarName, initHeight, initWidth, url)
+					.createCultivar(cultivarName, initHeight, initWidth, "url")
 					.accounts({
 						farm,
 						farmer,
@@ -183,10 +184,10 @@ describe('Creates a cultivar', () => {
 });
 
 describe('Creates A tree', () => {
-	it('Creates a tree', async () => {		
+	it('Creates a tree????', async () => {		
 
 		const tx = await program.methods
-			.createTree()
+			.createTree(date)
 			.accounts({
 				farmer,
 				farm,
@@ -206,14 +207,14 @@ describe('Creates A tree', () => {
 			.rpc();
 		console.log(`The transaction signature is ${tx.toString()}`);
 
-		let t = await program.account.tree.fetch(tree);
-		let tMeta = await farmProgram.account.treesMeta.fetch(treesMeta);
+		// let t = await program.account.tree.fetch(tree);
+		// let tMeta = await farmProgram.account.treesMeta.fetch(treesMeta);
 
-		console.log('the tree cultivar name is,', t.cultivarName);
-		console.log('the tree health is,', t.health.toString());
-		console.log('the height is ,', t.height.toString());
-		console.log('The tree count in meta,', tMeta.treeCount.toString());
-    console.log('the tree land number is,', t.landNumber);
+		// console.log('the tree cultivar name is,', t.cultivarName);
+		// console.log('the tree health is,', t.health.toString());
+		// console.log('the height is ,', t.height.toString());
+		// console.log('The tree count in meta,', tMeta.treeCount.toString());
+    // console.log('the tree land number is,', t.landNumber);
 	});
 });
 

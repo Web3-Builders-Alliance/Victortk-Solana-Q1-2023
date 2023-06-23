@@ -8,6 +8,8 @@ import { FruitMarketProgram } from '../target/types/fruit_market_program';
 let provider = anchor.AnchorProvider.env();
 anchor.setProvider(provider);
 
+export let date = new Date().toISOString() ;
+
 let payer = provider.wallet as anchor.Wallet;
 
 const farmerProgram = anchor.workspace.FarmerProgram as Program<FarmerProgram>;
@@ -39,9 +41,10 @@ export let [landMeta] = anchor.web3.PublicKey.findProgramAddressSync(
 
 //land_piece
 export let [landPiece] = anchor.web3.PublicKey.findProgramAddressSync(
-	[Buffer.from('landpiece'), landMeta.toBuffer(), farmer.toBuffer()],
+	[Buffer.from('landpiece'), landMeta.toBuffer(), farmer.toBuffer(), Buffer.from([0,0])],
 	farmerProgram.programId
 );
+
 // cultivar_meta
 export let [cultivarMeta] = anchor.web3.PublicKey.findProgramAddressSync(
 	[Buffer.from('cultivarmeta'), farm.toBuffer()],
@@ -63,7 +66,13 @@ export let [treesMeta] = anchor.web3.PublicKey.findProgramAddressSync(
 
 //tree
 export let [tree] = anchor.web3.PublicKey.findProgramAddressSync(
-	[Buffer.from('tree'), treesMeta.toBuffer(), farmer.toBuffer(),Buffer.from(cultivarName) ],
+	[
+		Buffer.from('tree'),
+		treesMeta.toBuffer(),
+		farmer.toBuffer(),
+		Buffer.from(cultivarName),
+		Buffer.from(date),
+	],
 	treeProgram.programId
 );
 

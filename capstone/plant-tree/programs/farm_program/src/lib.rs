@@ -27,6 +27,8 @@ pub mod farm_program {
         trees_meta.tree_count = 0; //to check for initialization
         let cultivar_meta = &mut ctx.accounts.cultivar_meta;
         cultivar_meta.cultivars_count = 0;
+        land_meta.x_coord = 0 ;
+        land_meta.y_coord = 0 ;
         Ok(())
     }
 
@@ -82,7 +84,6 @@ pub struct UpdateFarm<'info> {
     // pub land_piece: Account<'info, LandPiece>,
     #[account(mut, seeds=[b"carbonvault"], bump,)]
     pub vault: Account<'info, Vault>,
-
     pub system_program: Program<'info, System>,
 }
 
@@ -100,12 +101,15 @@ pub struct CultivarMeta {
 #[derive(InitSpace)]
 pub struct LandMeta {
     pub land_piece_count: u64,
+    pub x_coord: u8 ,
+    pub y_coord: u8 ,
 }
 
 #[account]
 #[derive(InitSpace)]
 pub struct TreesMeta {
     pub tree_count: u64,
+
 }
 
 #[account]
@@ -119,3 +123,12 @@ pub struct Vault {
 // pub struct SeedVault {
 //     // pub authority: Pubkey
 // }
+
+
+impl LandMeta {
+
+    pub fn next_location(&mut self ){        
+        self.x_coord += 1 ;
+        self.y_coord += 1 ;
+    }
+}

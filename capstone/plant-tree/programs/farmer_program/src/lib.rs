@@ -83,6 +83,9 @@ pub mod farmer_program {
         ctx.accounts.farmer.land_count += 1;
 
         land_meta.land_piece_count += 1;
+        land_piece.location = [land_meta.x_coord,land_meta.y_coord];
+
+        land_meta.next_location() ;
 
         land_piece.owner = ctx.accounts.farmer.to_account_info().key();
         land_piece.number = land_meta.land_piece_count;
@@ -108,6 +111,7 @@ pub mod farmer_program {
         farmer.tree_count += 1;
         tree.land_number += 1;
         land_piece.is_planted = true;
+        tree.location = land_piece.location ;
 
         Ok(())
     }
@@ -206,13 +210,13 @@ pub struct Plant<'info> {
     #[account(mut,seeds=[b"cultivar", cultivar_meta.key().as_ref(), cultivar.name.as_bytes().as_ref()], bump,seeds::program=tree_program)]
     pub cultivar: Account<'info, Cultivar>,
 
-    #[account(mut,seeds=[b"tree",trees_meta.key().as_ref(),farmer.key().as_ref(),cultivar.name.as_bytes().as_ref()], bump, seeds::program=tree_program)]
+    #[account(mut,seeds=[b"tree",trees_meta.key().as_ref(),farmer.key().as_ref(),cultivar.name.as_bytes().as_ref(),tree.created_date.as_bytes()], bump, seeds::program=tree_program)]
     pub tree: Account<'info, Tree>,
 
     #[account(mut,seeds=[b"landmeta", farm.key().as_ref()], bump, seeds::program=farm_program)]
     pub land_meta: Account<'info, LandMeta>,
 
-    #[account(mut,seeds=[b"landpiece",land_meta.key().as_ref(),farmer.key().as_ref()], bump,)]
+    #[account(mut,seeds=[b"landpiece",land_meta.key().as_ref(),farmer.key().as_ref(),&[land_meta.x_coord,land_meta.y_coord]], bump,)]
     pub land_piece: Account<'info, LandPiece>,
     pub farm_program: Program<'info, FarmProgram>,
     pub tree_program: Program<'info, TreeProgram>,
@@ -239,7 +243,7 @@ pub struct BuyLand<'info> {
     #[account(mut,seeds=[b"landmeta", farm.key().as_ref()], bump,seeds::program=farm_program )]
     pub land_meta: Account<'info, LandMeta>,
 
-    #[account(init, payer=payer, seeds=[b"landpiece",land_meta.key().as_ref(),farmer.key().as_ref()], bump, space = 8 + LandPiece::INIT_SPACE)]
+    #[account(init, payer=payer, seeds=[b"landpiece",land_meta.key().as_ref(),farmer.key().as_ref(),&[land_meta.x_coord,land_meta.y_coord]], bump, space = 8 + LandPiece::INIT_SPACE)]
     pub land_piece: Account<'info, LandPiece>,
 
     #[account(mut, seeds=[b"carbonvault"], bump,seeds::program=farm_program)]
@@ -256,6 +260,8 @@ pub struct Farmer {
     pub address: Pubkey,
     pub land_count: u64,
     pub tree_count: u64,
+    #[max_len(150)]
+    pub profile_nft: String ,
 }
 
 #[account]
@@ -264,6 +270,7 @@ pub struct LandPiece {
     pub owner: Pubkey,
     pub number: u64,
     pub is_planted: bool,
+    pub location: [u8;2],
 }
 
 // #[error_code]
