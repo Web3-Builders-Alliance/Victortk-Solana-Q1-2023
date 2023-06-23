@@ -1,7 +1,7 @@
 [features]
 seeds = false
 skip-lint = false
-[programs.localnet]
+[programs.devnet]
 farmer_program = "5TNiwQX4cLvYtRp4vwhukHTrNt6MsK8URs6P98vsznQX"
 farm_program = "6ENVuGLwmXzs3vTtrnELHTA1y3Q1s2NKZMu4zDo3nPUd"
 tree_program = "GKUYrzV8pu6ZNvKG4KmEMMbMeqeSJGH1vQYgk9RuoYSR"
@@ -19,7 +19,7 @@ fruit_market_program = "8VQ8dQTWFFziNpFWgpuirGNji6Xp2jMbxnWYzfZmj8sP"
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "localnet"
+cluster = "devnet"
 wallet = "/home/professorcodegeek/.config/solana/id.json"
 
 [scripts]
