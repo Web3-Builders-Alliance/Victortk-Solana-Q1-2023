@@ -89,6 +89,10 @@ pub mod fruit_market_program {
         Ok(())
     }
 
+    pub fn close_market(ctx: Context<CloseMarket>, cultivar_name: String)->  Result<()> {
+        Ok(())
+    }
+
     pub fn buy_fruits(ctx: Context<BuyFruit>, cultivar_name: String) -> Result<()> {
         // // seedVault,
         // let seed_vault: &mut Box<Account<SeedVault>> = &mut ctx.accounts.seed_vault ;
@@ -241,6 +245,37 @@ pub struct CreateMarket<'info> {
 
     pub system_program: Program<'info, System>,
     pub token_program: Program<'info, Token>,
+}
+
+#[derive(Accounts)]
+#[instruction(cultivar_name:String)]
+pub struct CloseMarket<'info> {
+    #[account(mut)]
+    pub payer: Signer<'info>,
+
+    #[account(mut, seeds=[b"fruitmarket", cultivar_name.as_bytes()], bump)]
+    pub fruit_market: Account<'info, FruitMarket>,
+    /// CHECK: fruit mint authourity pda  
+    pub fruit_mint_authority: UncheckedAccount<'info>,
+
+    #[account(mut, seeds=[b"marketauthority"], bump,)]
+    /// CHECK: fruit mint authourity pda  
+    pub market_authority: UncheckedAccount<'info>,
+
+    #[account(mint::decimals=9, mint::authority=fruit_mint_authority,)] // different fruits
+    pub fruit_mint: Box<Account<'info, Mint>>,
+
+    #[account(mut, close=payer, seeds=[b"marketentry", fruit_market.key().as_ref(),payer.key().as_ref()],bump,)]
+    pub market_entry: Account<'info, MarketEntry>,
+
+    // #[account(seeds=[b"marketentry", fruit_market.key().as_ref(),fruit_market.top_maker.unwrap().as_ref()], bump,)]
+    // pub current_top_market_entry: Box<Account<'info, MarketEntry>>,
+
+    #[account(mut, close=payer, seeds=[b"fruit",market_entry.key().as_ref(),], bump, token::mint=fruit_mint, token::authority=market_authority)]
+    pub entry_fruit_balance: Account<'info, TokenAccount>,
+
+    pub system_program: Program<'info, System>,
+    // pub token_program: Program<'info, Token>,
 }
 
 #[account]

@@ -44,6 +44,10 @@ pub mod farm_program {
         ctx.accounts.cultivar_meta.cultivars_count += 1;
         Ok(())
     }
+
+    pub fn close_farm(ctx: Context<CloseFarm>) -> Result<()> {
+        Ok(())
+    }
 }
 
 #[derive(Accounts)]
@@ -62,6 +66,26 @@ pub struct InitializeFarm<'info> {
     pub trees_meta: Account<'info, TreesMeta>,
     #[account(init, payer=payer, seeds=[b"carbonvault"], bump, space = 8 + Vault::INIT_SPACE)]
     pub vault: Account<'info, Vault>,
+    pub token_program: Program<'info, Token>,
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct CloseFarm<'info> {
+    #[account(mut)]
+    pub payer: Signer<'info>,
+    #[account(mut, close=payer, seeds=[b"farm"], bump, constraint= payer.key== &farm.initializer)]
+    pub farm: Account<'info, Farm>,
+    // #[account(init, payer=payer, seeds=[b"fruitmarket"], bump, space =  8 + FruitMarket::INIT_SPACE)]
+    // pub fruit_market: Account<'info,FruitMarket>,
+    #[account(mut, close=payer, seeds=[b"landmeta", farm.key().as_ref()], bump,)]
+    pub land_meta: Account<'info, LandMeta>,
+    #[account(mut, close=payer,seeds=[b"cultivarmeta",farm.key().as_ref()], bump, )]
+    pub cultivar_meta: Account<'info, CultivarMeta>,
+    #[account(mut, close=payer, seeds=[b"treesmeta",farm.key().as_ref()], bump, )]
+    pub trees_meta: Account<'info, TreesMeta>,
+    // #[account(mut, close=payer, seeds=[b"carbonvault"], bump, )]
+    // pub vault: Account<'info, Vault>,
     pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
 }
@@ -89,7 +113,9 @@ pub struct UpdateFarm<'info> {
 
 #[account]
 #[derive(InitSpace)]
-pub struct Farm {}
+pub struct Farm {
+    pub initializer : Pubkey,
+}
 
 #[account]
 #[derive(InitSpace)]
@@ -127,8 +153,26 @@ pub struct Vault {
 
 impl LandMeta {
 
-    pub fn next_location(&mut self ){        
-        self.x_coord += 1 ;
-        self.y_coord += 1 ;
+    pub fn next_location(&mut self ) -> Result<()>{  
+        let x = self.x_coord ;     
+        let y = self.y_coord ;   
+
+        if x < 255  {
+           self.x_coord += 1 ;
+        }
+        else if y < 255 {
+           self.x_coord = 0 ;
+           self.y_coord += 1 ;
+           
+        }else {
+           return  err!(FarmError::FarmFullError)             
+        }    
+        Ok(())         
     }
+}
+
+#[error_code]
+pub enum FarmError {
+    #[msg("The Farm is full")]
+    FarmFullError,
 }

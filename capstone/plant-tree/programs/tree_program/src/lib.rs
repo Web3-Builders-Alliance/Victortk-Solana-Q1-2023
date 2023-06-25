@@ -502,6 +502,13 @@ pub mod tree_program {
         Ok(())
     }  
 
+    pub fn close_cultivar( ctx: Context<CloseCultivar>) -> Result<()>{
+        Ok(())
+    }
+
+    pub fn close_tree( ctx: Context<CloseCultivar>) -> Result<()>{
+        Ok(())
+    }
 }
 
 
@@ -617,6 +624,43 @@ pub struct CreateTree <'info> {
     // pub tree_program: Program<'info, TreeProgram>,
     pub farm_program: Program<'info, FarmProgram>,
     // // pub associated_token_program: Program<'info, AssociatedToken>,
+}
+
+
+#[derive(Accounts)]
+#[instruction(date: String)]
+pub struct CloseTree <'info> {
+    #[account(mut)]
+    pub payer: Signer<'info>,
+    #[account(seeds=[b"farm"], bump, seeds::program=farm_program)]
+    pub farm: Box<Account<'info,Farm>>,
+    /// CHECK: It is used to derive other accounts which are checked
+    pub farmer: UncheckedAccount<'info>, 
+    #[account(mut, seeds=[b"cultivarmeta",farm.key().as_ref()], bump, seeds::program=farm_program)]
+    pub cultivar_meta: Account<'info, CultivarMeta>,
+    #[account(mut, seeds=[b"treesmeta",farm.key().as_ref()], bump,seeds::program=farm_program)]
+    pub trees_meta: Account<'info, TreesMeta>,
+    #[account(mut,seeds=[b"cultivar", cultivar_meta.key().as_ref(), cultivar.name.as_bytes().as_ref()],bump)]
+    pub cultivar: Box<Account<'info,Cultivar>>,    
+    /// CHECK: It is used to derive other accounts which are checked
+    #[account(mut,seeds=[b"seedsauthority", payer.key().as_ref()], bump,)]
+    pub seeds_authority: UncheckedAccount<'info>, 
+    #[account(mut,seeds=[b"seedsbalance", seeds_authority.key().as_ref(),cultivar.name.as_bytes().as_ref()],bump,token::mint=fruit_mint, token::authority=seeds_authority)]
+    pub seeds_balance: Box<Account<'info,TokenAccount>>,
+    #[account(mut,close=payer ,seeds=[b"tree",trees_meta.key().as_ref(),farmer.key().as_ref(),cultivar.name.as_bytes().as_ref(), date.as_bytes().as_ref()], bump,)]
+    pub tree: Box<Account<'info, Tree>>,
+    /// CHECK: Pda authority 
+     #[account(seeds=[b"fruitmintauthority"], bump,)]
+    pub fruit_mint_authority: UncheckedAccount<'info>,  
+    #[account(mut, seeds=[b"fruitmint", cultivar.name.as_bytes().as_ref()],bump,mint::decimals=9, mint::authority=fruit_mint_authority)] // different fruits 
+    pub fruit_mint: Account<'info, Mint>, 
+    #[account(mut,close=payer , seeds=[b"fruit", tree.key().as_ref()],bump,  token::mint=fruit_mint, token::authority=tree)]
+    pub fruit_balance: Box<Account<'info,TokenAccount>>, 
+    #[account(mut,close=payer ,seeds=[b"nutrientbalance",tree.key().as_ref()],bump,)]
+    pub input_balance: Box<Account<'info, InputBalance>>,
+    #[account(mut,close=payer, seeds=[b"requirednutrients", tree.key().as_ref()], bump)]
+    pub required_nutrients: Box<Account<'info,RequiredNutrients>>, 
+    pub farm_program: Program<'info, FarmProgram>,
 }
 
 #[derive(Accounts)]
@@ -783,16 +827,7 @@ pub struct CreateCultivar <'info> {
     #[account(init, payer=payer , seeds=[b"fruitmint", 
     cultivar_name.as_bytes().as_ref()],bump, mint::decimals=9, mint::authority=fruit_mint_authority)] // different fruits 
     pub fruit_mint: Account<'info, Mint>, 
-    
-    // #[account(init_if_needed, payer=payer, seeds=[b"fruitmarket", cultivar_name.as_bytes().as_ref()], bump, space =  8 + FruitMarket::INIT_SPACE)]
-    // pub fruit_market: Account<'info,FruitMarket>,
-
-    // #[account(init_if_needed, payer=payer, seeds=[b"marketentry", fruit_market.key().as_ref(),program_id.as_ref()],space =  8 + MarketEntry::INIT_SPACE,bump)]
-    // pub market_entry: Account<'info,MarketEntry>,
-
-            // // #[account(init_if_needed, payer=payer,seeds=[b"marketentry", fruit_market.key().as_ref(),program_id.as_ref()], space =  8 + MarketEntry::INIT_SPACE, bump)]
-            // // pub current_top_market_entry: Box<Account<'info,MarketEntry>>,
-    // pub fruit_market_program: Program<'info, FruitMarketProgram>,
+   
 
     /// CHECK: It is used to derive other accounts which are checked
     #[account(mut,seeds=[b"seedsauthority", payer.key().as_ref()], bump,)]
@@ -804,6 +839,45 @@ pub struct CreateCultivar <'info> {
     pub farm_program: Program<'info,FarmProgram>,
     pub token_program: Program<'info,Token>,
     pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+#[instruction(cultivar_name:String)]
+pub struct CloseCultivar <'info> {
+    #[account(mut)]
+    pub payer: Signer<'info>, 
+
+    #[account(seeds=[b"farm"], bump, seeds::program=farm_program)]
+    pub farm: Box<Account<'info,Farm>>, 
+
+    /// CHECK: famer 
+    pub farmer: UncheckedAccount<'info,> ,
+
+    #[account(seeds=[b"cultivarmeta",
+    farm.key().as_ref()], bump,seeds::program=farm_program)]
+    pub cultivar_meta: Account<'info, CultivarMeta>,
+
+    #[account(mut,close=payer, seeds=[b"cultivar", cultivar_meta.key().as_ref(), cultivar_name.as_bytes().as_ref()], bump,)]
+    pub cultivar: Account<'info,Cultivar>,   
+
+    /// CHECK: Pda authority 
+     #[account(seeds=[b"fruitmintauthority"], bump,)]
+    pub fruit_mint_authority: UncheckedAccount<'info>,
+
+    #[account(mut, close=payer, seeds=[b"fruitmint", 
+    cultivar_name.as_bytes().as_ref()],bump, mint::decimals=9, mint::authority=fruit_mint_authority)] // different fruits 
+    pub fruit_mint: Account<'info, Mint>,
+     
+    /// CHECK: the authority
+    #[account(mut,seeds=[b"seedsauthority", payer.key().as_ref()], bump,)]
+    pub seeds_authority: UncheckedAccount<'info>, 
+
+    #[account(mut, close=payer ,seeds=[b"seedsbalance", seeds_authority.key().as_ref(),cultivar_name.as_bytes().as_ref()],bump,token::mint=fruit_mint, token::authority=seeds_authority)]
+    pub seeds_balance: Box<Account<'info,TokenAccount>>,
+    pub farm_program: Program<'info,FarmProgram>,
+
+    // pub token_program: Program<'info,Token>,
+    // pub system_program: Program<'info, System>,
 }
 
 

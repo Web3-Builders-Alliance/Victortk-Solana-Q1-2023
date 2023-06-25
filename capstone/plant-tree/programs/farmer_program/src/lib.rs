@@ -79,17 +79,12 @@ pub mod farmer_program {
         let land_meta = &mut ctx.accounts.land_meta;
         let payer = &mut ctx.accounts.payer;
         let vault = &mut ctx.accounts.vault;
-
         ctx.accounts.farmer.land_count += 1;
-
         land_meta.land_piece_count += 1;
         land_piece.location = [land_meta.x_coord,land_meta.y_coord];
-
-        land_meta.next_location() ;
-
+        land_meta.next_location()? ;
         land_piece.owner = ctx.accounts.farmer.to_account_info().key();
         land_piece.number = land_meta.land_piece_count;
-
         // transfer sol to vault
         let lamports = LAMPORTS_PER_SOL / 4;
         system_program::transfer(
@@ -112,7 +107,13 @@ pub mod farmer_program {
         tree.land_number += 1;
         land_piece.is_planted = true;
         tree.location = land_piece.location ;
+        Ok(())
+    }
 
+    pub fn close_farmer(ctx: Context<CloseFarmer>,) -> Result<()> {
+        Ok(())
+    }
+    pub fn close_land(ctx: Context<CloseLand>,coordinates: [u8;2]) -> Result<()> {
         Ok(())
     }
 }
@@ -125,6 +126,30 @@ pub struct InitializeFarmer<'info> {
     pub farmer: Account<'info, Farmer>,
     // pub token_program: Program<'info,Token>,
     pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct CloseFarmer<'info> {
+    #[account(mut)]
+    pub payer: Signer<'info>,
+    #[account(mut,close=payer,seeds=[b"farmer", payer.key().as_ref()], bump,)]
+    pub farmer: Account<'info, Farmer>,
+}
+
+#[derive(Accounts)]
+#[instruction(coordinates: [u8;2])]
+pub struct CloseLand<'info> {
+    #[account(mut)]
+    pub payer: Signer<'info>,
+    #[account(mut, seeds=[b"farm"], bump,seeds::program=farm_program)]
+    pub farm: Account<'info, Farm>,
+    #[account(mut, seeds=[b"farmer", payer.key().as_ref(),], bump,)]
+    pub farmer: Account<'info, Farmer>,
+    #[account(mut,seeds=[b"landmeta", farm.key().as_ref()], bump,seeds::program=farm_program )]
+    pub land_meta: Account<'info, LandMeta>,
+    #[account(mut, close=payer, seeds=[b"landpiece",land_meta.key().as_ref(),farmer.key().as_ref(),&coordinates], bump,)]
+    pub land_piece: Account<'info, LandPiece>,
+    pub farm_program: Program<'info, FarmProgram>,
 }
 
 #[derive(Accounts)]
