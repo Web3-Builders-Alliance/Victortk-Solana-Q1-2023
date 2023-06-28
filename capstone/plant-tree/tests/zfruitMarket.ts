@@ -550,6 +550,31 @@ describe('Updates a tree 2', () => {
 	});
 });
 
+describe('Close Farm', () => {
+	it('Close the Farm', async () => {
+		const fb = await farmProgram.account.farm.fetch(farm);
+		
+		console.log('The addresss to close ', farm);
+		console.log('farm before', fb);
+		// Add your test here.
+		const tx = await farmProgram.methods
+			.closeFarm()
+			.accounts({
+				farm,
+				landMeta,
+				cultivarMeta,
+				treesMeta,
+			})
+			.rpc();
+
+		console.log('The farm is closed', tx);
+
+		const f = await farmProgram.account.farm.fetch(farm);
+
+		console.log('farm after', f);
+	});
+});
+
 
 
 

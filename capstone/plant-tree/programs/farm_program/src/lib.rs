@@ -14,7 +14,7 @@ use solana_program::native_token::LAMPORTS_PER_SOL;
 // use farmer::program::Farmer as FarmerProgram;
 // use farmer::{self,Farmer} ;
 
-declare_id!("6ENVuGLwmXzs3vTtrnELHTA1y3Q1s2NKZMu4zDo3nPUd");
+declare_id!("94ceRzNSPEPDN2AA3ZQQ2KXAwzFtPxTcGkrqBZEf5syt");
 
 #[program]
 pub mod farm_program {
@@ -29,6 +29,7 @@ pub mod farm_program {
         cultivar_meta.cultivars_count = 0;
         land_meta.x_coord = 0 ;
         land_meta.y_coord = 0 ;
+        ctx.accounts.farm.initializer = *ctx.accounts.payer.key ;
         Ok(())
     }
 
@@ -73,8 +74,8 @@ pub struct InitializeFarm<'info> {
 #[derive(Accounts)]
 pub struct CloseFarm<'info> {
     #[account(mut)]
-    pub payer: Signer<'info>,
-    #[account(mut, close=payer, seeds=[b"farm"], bump, constraint= payer.key== &farm.initializer)]
+    pub payer: Signer<'info>, 
+    #[account(mut, close=payer, seeds=[b"farm"], bump,constraint=payer.key== &farm.initializer)]
     pub farm: Account<'info, Farm>,
     // #[account(init, payer=payer, seeds=[b"fruitmarket"], bump, space =  8 + FruitMarket::INIT_SPACE)]
     // pub fruit_market: Account<'info,FruitMarket>,
@@ -114,7 +115,7 @@ pub struct UpdateFarm<'info> {
 #[account]
 #[derive(InitSpace)]
 pub struct Farm {
-    pub initializer : Pubkey,
+    pub initializer: Pubkey,
 }
 
 #[account]
@@ -135,7 +136,6 @@ pub struct LandMeta {
 #[derive(InitSpace)]
 pub struct TreesMeta {
     pub tree_count: u64,
-
 }
 
 #[account]
@@ -152,18 +152,15 @@ pub struct Vault {
 
 
 impl LandMeta {
-
     pub fn next_location(&mut self ) -> Result<()>{  
         let x = self.x_coord ;     
         let y = self.y_coord ;   
-
         if x < 255  {
            self.x_coord += 1 ;
         }
         else if y < 255 {
            self.x_coord = 0 ;
-           self.y_coord += 1 ;
-           
+           self.y_coord += 1 ;           
         }else {
            return  err!(FarmError::FarmFullError)             
         }    

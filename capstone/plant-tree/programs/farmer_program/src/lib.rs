@@ -85,6 +85,7 @@ pub mod farmer_program {
         land_meta.next_location()? ;
         land_piece.owner = ctx.accounts.farmer.to_account_info().key();
         land_piece.number = land_meta.land_piece_count;
+        
         // transfer sol to vault
         let lamports = LAMPORTS_PER_SOL / 4;
         system_program::transfer(
@@ -103,10 +104,14 @@ pub mod farmer_program {
         let farmer = &mut ctx.accounts.farmer;
         let tree = &mut ctx.accounts.tree;
         let land_piece = &mut ctx.accounts.land_piece;
+        let slot = Clock::get()?.slot ;
         farmer.tree_count += 1;
-        tree.land_number += 1;
+        tree.land_number = land_piece.number;
         land_piece.is_planted = true;
         tree.location = land_piece.location ;
+        tree.is_planted = true ;
+        tree.planted_time = slot  ;
+        
         Ok(())
     }
 
@@ -116,6 +121,20 @@ pub mod farmer_program {
     pub fn close_land(ctx: Context<CloseLand>,coordinates: [u8;2]) -> Result<()> {
         Ok(())
     }
+
+    pub fn set_profile_image_uri(ctx: Context<SetUri>, uri: String ) -> Result<()>{
+        ctx.accounts.farmer.profile_nft = uri ;
+        Ok(())
+    }
+}
+
+#[derive(Accounts)]
+#[instruction(uri: String)]
+pub struct SetUri<'info> {
+    #[account(mut)]
+    pub payer: Signer<'info>,
+    #[account(mut,seeds=[b"farmer", payer.key().as_ref()], bump,)]
+    pub farmer: Account<'info, Farmer>,
 }
 
 #[derive(Accounts)]

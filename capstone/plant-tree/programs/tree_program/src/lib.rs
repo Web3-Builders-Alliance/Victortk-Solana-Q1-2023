@@ -928,7 +928,8 @@ pub struct Tree {
     pub last_consumed_used: bool,
     pub location: [u8;2],
     #[max_len(32)]
-    pub created_date: String 
+    pub created_date: String ,
+    pub is_planted: bool,
 }
 
 
