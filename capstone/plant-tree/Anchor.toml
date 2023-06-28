@@ -3,7 +3,7 @@ seeds = false
 skip-lint = false
 [programs.devnet]
 farmer_program = "5TNiwQX4cLvYtRp4vwhukHTrNt6MsK8URs6P98vsznQX"
-farm_program = "94ceRzNSPEPDN2AA3ZQQ2KXAwzFtPxTcGkrqBZEf5syt"
+farm_program = "JDAMcZJRfuXdNywQEdincd6ud5v8zfuEqeFeBmoHo3Tn"
 tree_program = "GKUYrzV8pu6ZNvKG4KmEMMbMeqeSJGH1vQYgk9RuoYSR"
 fruit_market_program = "8VQ8dQTWFFziNpFWgpuirGNji6Xp2jMbxnWYzfZmj8sP"
 
