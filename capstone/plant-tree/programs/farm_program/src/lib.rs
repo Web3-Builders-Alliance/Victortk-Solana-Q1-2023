@@ -14,7 +14,7 @@ use solana_program::native_token::LAMPORTS_PER_SOL;
 // use farmer::program::Farmer as FarmerProgram;
 // use farmer::{self,Farmer} ;
 
-declare_id!("JDAMcZJRfuXdNywQEdincd6ud5v8zfuEqeFeBmoHo3Tn");
+declare_id!("CrYtrU5xK6S98iGQVnyag1XKG9vSYzw2M3Mq4JNHLGSA");
 
 #[program]
 pub mod farm_program {

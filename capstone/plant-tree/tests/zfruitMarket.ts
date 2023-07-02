@@ -569,9 +569,9 @@ describe('Close Farm', () => {
 
 		console.log('The farm is closed', tx);
 
-		const f = await farmProgram.account.farm.fetch(farm);
+		// const f = await farmProgram.account.farm.fetch(farm);
 
-		console.log('farm after', f);
+		// console.log('farm after', f);
 	});
 });
 
