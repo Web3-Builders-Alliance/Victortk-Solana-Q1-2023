@@ -206,6 +206,9 @@ describe('Creates A tree', () => {
 			})
 			.rpc();
 		console.log(`The transaction signature is ${tx.toString()}`);
+		let t = await program.account.tree.fetch(tree);
+		console.log("the tree is planted field is set to => ", t);
+		console.log("the tree is planted field is set to => ", t.isPlanted);
 
 		// let t = await program.account.tree.fetch(tree);
 		// let tMeta = await farmProgram.account.treesMeta.fetch(treesMeta);
@@ -241,7 +244,9 @@ describe('plants the tree ', () => {
 		let f = await farmerProgram.account.farmer.fetch(farmer);
 		let tMeta = await farmProgram.account.treesMeta.fetch(treesMeta);
 
+		console.log("the tree  ", t);
 		console.log('the tree land number is,', t.landNumber);
+		console.log("the tree is planted field is set to => ", t.isPlanted);
 		
 		console.log('farmer tree count ,', f.treeCount.toString());
 		// console.log('The tree count in meta,', tMeta.treeCount.toString());

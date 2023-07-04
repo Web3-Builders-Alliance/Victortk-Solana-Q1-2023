@@ -7,7 +7,7 @@ use anchor_spl::{
 };
 use farm_program::cpi::accounts::UpdateFarm;
 // use fruit_market::cpi::accounts::{ListFruit};
-use tree_program::cpi::accounts::CreateTree;
+use tree_program::cpi::accounts::{CreateTree, Plant as PlantTree};
 // use solana_sdk::account_info::AccountInfo ;
 use farm_program::program::FarmProgram;
 use fruit_market_program::program::FruitMarketProgram;
@@ -77,14 +77,27 @@ pub mod farmer_program {
         let farmer = &mut ctx.accounts.farmer;
         let land_piece = &mut ctx.accounts.land_piece;
         let land_meta = &mut ctx.accounts.land_meta;
-        let payer = &mut ctx.accounts.payer;
+        // let payer = &mut ctx.accounts.payer;
         let vault = &mut ctx.accounts.vault;
         ctx.accounts.farmer.land_count += 1;
-        land_meta.land_piece_count += 1;
+        
         land_piece.location = [land_meta.x_coord,land_meta.y_coord];
         land_meta.next_location()? ;
         land_piece.owner = ctx.accounts.farmer.to_account_info().key();
         land_piece.number = land_meta.land_piece_count;
+
+        farm_program::cpi::buy_land(
+            CpiContext::new(
+               ctx.accounts.farm_program.to_account_info(),
+               UpdateFarm {
+                   payer: ctx.accounts.payer.to_account_info(),                  
+                   farm: ctx.accounts.farm.to_account_info(),                  
+                   cultivar_meta: ctx.accounts.cultivar_meta.to_account_info(),    
+                   land_meta: ctx.accounts.land_meta.to_account_info(),     
+                   trees_meta: ctx.accounts.trees_meta.to_account_info(),    
+                }
+            )
+           )?;
         
         // transfer sol to vault
         let lamports = LAMPORTS_PER_SOL / 4;
@@ -92,7 +105,7 @@ pub mod farmer_program {
             CpiContext::new(
                 ctx.accounts.system_program.to_account_info(),
                 system_program::Transfer {
-                    from: payer.to_account_info(),
+                    from: ctx.accounts.payer.to_account_info(),
                     to: vault.to_account_info(),
                 },
             ),
@@ -104,14 +117,25 @@ pub mod farmer_program {
         let farmer = &mut ctx.accounts.farmer;
         let tree = &mut ctx.accounts.tree;
         let land_piece = &mut ctx.accounts.land_piece;
-        let slot = Clock::get()?.slot ;
+        // let slot = Clock::get()?.slot ;
         farmer.tree_count += 1;
-        tree.land_number = land_piece.number;
-        land_piece.is_planted = true;
-        tree.location = land_piece.location ;
-        tree.is_planted = true ;
-        tree.planted_time = slot  ;
-        
+        let location = land_piece.location;
+
+        let cpi_program = ctx.accounts.tree_program.to_account_info() ;
+
+        let cpi_accounts = PlantTree {
+            payer: ctx.accounts.payer.to_account_info() ,
+            farm: ctx.accounts.farm.to_account_info(),
+            tree: ctx.accounts.tree.to_account_info(),
+            farmer: ctx.accounts.farmer.to_account_info(),
+            farm_program: ctx.accounts.farm_program.to_account_info(),
+            trees_meta: ctx.accounts.trees_meta.to_account_info(),
+        };
+
+        let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);
+
+         tree_program::cpi::plant(cpi_ctx, location)? ;
+     
         Ok(())
     }
 
@@ -238,29 +262,21 @@ pub struct ListFruits<'info> {
 pub struct Plant<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
-
     #[account(mut,seeds=[b"farmer", payer.key().as_ref()], bump,)]
     pub farmer: Account<'info, Farmer>,
-
     #[account(mut,seeds=[b"farm"], bump, seeds::program=farm_program)]
     pub farm: Box<Account<'info, Farm>>,
-
     #[account(mut, seeds=[b"cultivarmeta",farm.key().as_ref()], bump, seeds::program=farm_program)]
     pub cultivar_meta: Account<'info, CultivarMeta>,
-
     #[account(mut, seeds=[b"treesmeta",farm.key().as_ref()], bump,seeds::program=farm_program)]
     pub trees_meta: Account<'info, TreesMeta>,
-
     #[account(mut,seeds=[b"cultivar", cultivar_meta.key().as_ref(), cultivar.name.as_bytes().as_ref()], bump,seeds::program=tree_program)]
     pub cultivar: Account<'info, Cultivar>,
-
     #[account(mut,seeds=[b"tree",trees_meta.key().as_ref(),farmer.key().as_ref(),cultivar.name.as_bytes().as_ref(),tree.created_date.as_bytes()], bump, seeds::program=tree_program)]
     pub tree: Account<'info, Tree>,
-
     #[account(mut,seeds=[b"landmeta", farm.key().as_ref()], bump, seeds::program=farm_program)]
     pub land_meta: Account<'info, LandMeta>,
-
-    #[account(mut,seeds=[b"landpiece",land_meta.key().as_ref(),farmer.key().as_ref(),&[land_meta.x_coord,land_meta.y_coord]], bump,)]
+    #[account(mut,seeds=[b"landpiece",land_meta.key().as_ref(),farmer.key().as_ref(), land_piece.location.as_ref()], bump,)]
     pub land_piece: Account<'info, LandPiece>,
     pub farm_program: Program<'info, FarmProgram>,
     pub tree_program: Program<'info, TreeProgram>,
@@ -289,7 +305,10 @@ pub struct BuyLand<'info> {
 
     #[account(init, payer=payer, seeds=[b"landpiece",land_meta.key().as_ref(),farmer.key().as_ref(),&[land_meta.x_coord,land_meta.y_coord]], bump, space = 8 + LandPiece::INIT_SPACE)]
     pub land_piece: Account<'info, LandPiece>,
-
+    #[account(mut, seeds=[b"treesmeta",farm.key().as_ref()], bump,seeds::program=farm_program)]
+    pub trees_meta: Account<'info, TreesMeta>,
+    #[account(mut, seeds=[b"cultivarmeta",farm.key().as_ref()], bump, seeds::program=farm_program)]
+    pub cultivar_meta: Account<'info, CultivarMeta>,
     #[account(mut, seeds=[b"carbonvault"], bump,seeds::program=farm_program)]
     pub vault: Account<'info, Vault>,
     pub farm_program: Program<'info, FarmProgram>,

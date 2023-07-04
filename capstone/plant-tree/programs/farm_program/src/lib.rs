@@ -32,6 +32,7 @@ pub mod farm_program {
         ctx.accounts.farm.initializer = *ctx.accounts.payer.key ;
         Ok(())
     }
+    
 
     //   pub fn update_land(ctx: Context<UpdateFarm>) -> Result<()> {
     //         ctx.accounts.land_piece.is_planted = true ;
@@ -44,6 +45,9 @@ pub mod farm_program {
     pub fn update_cultivars(ctx: Context<UpdateFarm>) -> Result<()> {
         ctx.accounts.cultivar_meta.cultivars_count += 1;
         Ok(())
+    }
+    pub fn buy_land (ctx: Context<UpdateFarm>) -> Result<()> {       
+        ctx.accounts.land_meta.next_location()
     }
 
     pub fn close_farm(ctx: Context<CloseFarm>) -> Result<()> {
@@ -91,6 +95,8 @@ pub struct CloseFarm<'info> {
     pub system_program: Program<'info, System>,
 }
 
+
+
 #[derive(Accounts)]
 pub struct UpdateFarm<'info> {
     #[account(mut)]
@@ -107,10 +113,12 @@ pub struct UpdateFarm<'info> {
     pub trees_meta: Account<'info, TreesMeta>,
     // #[account(mut,seeds=[b"landpiece",land_meta.key().as_ref(),farmer.key().as_ref()], bump,)]
     // pub land_piece: Account<'info, LandPiece>,
-    #[account(mut, seeds=[b"carbonvault"], bump,)]
-    pub vault: Account<'info, Vault>,
-    pub system_program: Program<'info, System>,
+    // #[account(mut, seeds=[b"carbonvault"], bump,)]
+    // pub vault: Account<'info, Vault>,
+    // pub system_program: Program<'info, System>,
 }
+
+
 
 #[account]
 #[derive(InitSpace)]
@@ -152,7 +160,8 @@ pub struct Vault {
 
 
 impl LandMeta {
-    pub fn next_location(&mut self ) -> Result<()>{  
+    pub fn next_location(&mut self ) -> Result<()>{ 
+        self.land_piece_count += 1 ; 
         let x = self.x_coord ;     
         let y = self.y_coord ;   
         if x < 255  {

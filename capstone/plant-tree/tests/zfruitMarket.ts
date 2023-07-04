@@ -403,8 +403,6 @@ describe('Searches for trees', () => {
   })
 })
 
-
-
 describe('calculations 2', () => {
 	it('calculates the required nutrients for the period 2', async () => {
 		const tx = await treeProgram.methods

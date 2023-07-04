@@ -10,13 +10,12 @@ import * as token from '@solana/spl-token';
 // import { assert } from 'chai';
 import {
 	farmer,
-
 	vault,
 	farm,
 	landMeta,
 	landPiece,
-
-	
+	treesMeta,
+	cultivarMeta,
 } from './pdas';
 
 let cultivarName = 'Muti';
@@ -110,6 +109,8 @@ describe('Initializes the Farmer', () => {
 					farm,
 					farmer,
 					landMeta,
+					treesMeta,
+					cultivarMeta,
 					landPiece,
 					vault,
 					farmProgram: farmProgram.programId,
@@ -121,8 +122,12 @@ describe('Initializes the Farmer', () => {
 			let landPieceState2 = await program.account.landPiece.fetch(landPiece);
 			console.log(
 				'There are now ' +
-					landState2.landPieceCount.toString() +
-					' owned land pieces'
+				landState2.landPieceCount.toString() +
+				' owned land pieces'
+			);
+
+			console.log(
+				" Land Meta => ", landState2
 			);
 
 			console.log('Land piece authority: ', landPieceState2.owner.toString());
