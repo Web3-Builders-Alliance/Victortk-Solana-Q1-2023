@@ -339,6 +339,132 @@ export type TreeProgram = {
       "args": []
     },
     {
+      "name": "checkHarvest",
+      "accounts": [
+        {
+          "name": "payer",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "farm",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "farmer",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "waterMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "nitrogenMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "potassiumMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "phosphorusMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "nutrientMintAuthority",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "landMeta",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "treesMeta",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tree",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "landPiece",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "inputBalance",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "waterBalance",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "nitrogenBalance",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "phosphorusBalance",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "potassiumBalance",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "fruitMintAuthority",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "fruitMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "fruitBalance",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "requiredNutrients",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "vault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "farmProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "checkAndUpdate",
       "accounts": [
         {
@@ -1703,6 +1829,164 @@ export type TreeProgram = {
         }
       ],
       "args": []
+    },
+    {
+      "name": "closeCultivar",
+      "accounts": [
+        {
+          "name": "payer",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "farm",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "farmer",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "cultivarMeta",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "cultivar",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "fruitMintAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "fruitMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "seedsAuthority",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "seedsBalance",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "farmProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "closeTree",
+      "accounts": [
+        {
+          "name": "payer",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "farm",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "farmer",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "cultivarMeta",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "cultivar",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "fruitMintAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "fruitMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "seedsAuthority",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "seedsBalance",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "farmProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "plant",
+      "accounts": [
+        {
+          "name": "farm",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "payer",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "farmer",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tree",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "treesMeta",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "farmProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "location",
+          "type": {
+            "array": [
+              "u8",
+              2
+            ]
+          }
+        }
+      ]
     }
   ],
   "accounts": [
@@ -1846,6 +2130,10 @@ export type TreeProgram = {
           {
             "name": "createdDate",
             "type": "string"
+          },
+          {
+            "name": "isPlanted",
+            "type": "bool"
           }
         ]
       }
@@ -1911,15 +2199,34 @@ export type TreeProgram = {
     },
     {
       "code": 6001,
-      "name": "ClockError"
+      "name": "TreeSlotError",
+      "msg": "The Current Slot Is Less than the Planted Slot of the tree!"
     },
     {
       "code": 6002,
-      "name": "CalculateRequired"
+      "name": "FailedCalculatePeriod",
+      "msg": "failed to subtract when calculating the period"
     },
     {
       "code": 6003,
+      "name": "HealthAtZero",
+      "msg": "The tree is already dead"
+    },
+    {
+      "code": 6004,
+      "name": "ClockError"
+    },
+    {
+      "code": 6005,
+      "name": "CalculateRequired"
+    },
+    {
+      "code": 6006,
       "name": "ConsumeNutrients"
+    },
+    {
+      "code": 6007,
+      "name": "FailedToPlant"
     }
   ]
 };
@@ -2265,6 +2572,132 @@ export const IDL: TreeProgram = {
       "args": []
     },
     {
+      "name": "checkHarvest",
+      "accounts": [
+        {
+          "name": "payer",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "farm",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "farmer",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "waterMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "nitrogenMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "potassiumMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "phosphorusMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "nutrientMintAuthority",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "landMeta",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "treesMeta",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tree",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "landPiece",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "inputBalance",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "waterBalance",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "nitrogenBalance",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "phosphorusBalance",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "potassiumBalance",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "fruitMintAuthority",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "fruitMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "fruitBalance",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "requiredNutrients",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "vault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "farmProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "checkAndUpdate",
       "accounts": [
         {
@@ -3629,6 +4062,164 @@ export const IDL: TreeProgram = {
         }
       ],
       "args": []
+    },
+    {
+      "name": "closeCultivar",
+      "accounts": [
+        {
+          "name": "payer",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "farm",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "farmer",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "cultivarMeta",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "cultivar",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "fruitMintAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "fruitMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "seedsAuthority",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "seedsBalance",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "farmProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "closeTree",
+      "accounts": [
+        {
+          "name": "payer",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "farm",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "farmer",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "cultivarMeta",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "cultivar",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "fruitMintAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "fruitMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "seedsAuthority",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "seedsBalance",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "farmProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "plant",
+      "accounts": [
+        {
+          "name": "farm",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "payer",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "farmer",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tree",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "treesMeta",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "farmProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "location",
+          "type": {
+            "array": [
+              "u8",
+              2
+            ]
+          }
+        }
+      ]
     }
   ],
   "accounts": [
@@ -3772,6 +4363,10 @@ export const IDL: TreeProgram = {
           {
             "name": "createdDate",
             "type": "string"
+          },
+          {
+            "name": "isPlanted",
+            "type": "bool"
           }
         ]
       }
@@ -3837,15 +4432,34 @@ export const IDL: TreeProgram = {
     },
     {
       "code": 6001,
-      "name": "ClockError"
+      "name": "TreeSlotError",
+      "msg": "The Current Slot Is Less than the Planted Slot of the tree!"
     },
     {
       "code": 6002,
-      "name": "CalculateRequired"
+      "name": "FailedCalculatePeriod",
+      "msg": "failed to subtract when calculating the period"
     },
     {
       "code": 6003,
+      "name": "HealthAtZero",
+      "msg": "The tree is already dead"
+    },
+    {
+      "code": 6004,
+      "name": "ClockError"
+    },
+    {
+      "code": 6005,
+      "name": "CalculateRequired"
+    },
+    {
+      "code": 6006,
       "name": "ConsumeNutrients"
+    },
+    {
+      "code": 6007,
+      "name": "FailedToPlant"
     }
   ]
 };

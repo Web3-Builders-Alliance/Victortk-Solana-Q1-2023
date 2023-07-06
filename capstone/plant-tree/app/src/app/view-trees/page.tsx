@@ -10,6 +10,7 @@ import { Link } from '@mui/material';
 import NextLink from 'next/link';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image'
 import {
 	Button,
 	Box,
@@ -17,11 +18,13 @@ import {
 	CardActionArea,
 	Grid,
 	Card,
+	CardMedia,
 } from '@mui/material';
 
 type TreeType = {
 	authority: PublicKey;
 	cultivarName: String;
+	nftUri: string,
 	landNumber: anchor.BN;
 	height: anchor.BN;
 	girth: anchor.BN;
@@ -34,11 +37,17 @@ type TreeType = {
 	isAlive: Boolean;
 	leafArea: anchor.BN;
 	rootArea: anchor.BN;
+	lastConsumedUsed: boolean ;
+	location: number[] ;
+	createdDate: String;
+	isPlanted: boolean
 };
 
 const ViewTrees = () => {
 	const router = useRouter();
-	const [trees, setTrees] = useState<TreeType[]>([]);
+	const [trees, setTrees] = useState<
+		{ account: TreeType; publicKey: PublicKey }[]
+	>([]);
 	const [ready, setReady] = useState(false);
 	const w = useAnchorWallet();
 
@@ -48,15 +57,15 @@ const ViewTrees = () => {
 		commitment: 'confirmed',
 	});
 		const farmerProgram = new PublicKey(
-			'5TNiwQX4cLvYtRp4vwhukHTrNt6MsK8URs6P98vsznQX'
+			'3pEgxEH8RhxKtdx3qsvcmrZQUMxeyQisiiBAJ52FmtMx'
 		);
 
 		const farmProgram = new PublicKey(
-			'6ENVuGLwmXzs3vTtrnELHTA1y3Q1s2NKZMu4zDo3nPUd'
+			'CrYtrU5xK6S98iGQVnyag1XKG9vSYzw2M3Mq4JNHLGSA'
 		);
 
 		const programID = new PublicKey(
-			'GKUYrzV8pu6ZNvKG4KmEMMbMeqeSJGH1vQYgk9RuoYSR'
+			'CUJ8TCeGSKKhqYtZYiBZRghTJvRRRpm9qR2ykX91N1ns'
 		);
 
 	const program = new Program(IDL, programID, provider);
@@ -72,7 +81,7 @@ const ViewTrees = () => {
 				);
 				console.log('farmer bytes ', farmer.toBase58());
 
-				let t: any= await program.account.tree.all([
+				let t = await program.account.tree.all([
 					{
 						memcmp:{
 							offset: 8,
@@ -80,16 +89,20 @@ const ViewTrees = () => {
 						}
 					}
 				]);
+			
+				let planted = t.filter((v) =>{
+					console.log("is true =>", v);
+					return v.account.isPlanted == true
+				});
+				console.log('Trees', t);
+	      console.log('plantes Trees', planted);
 
-				console.log('Treees');
-				console.log('Treees', t);
-
-				if (t.length !== 0) {
-					t.map((tr: any) => {
-						let tree = tr.account;
-						console.log('tree is ', tree);
-						let tree2: TreeType[] = trees;
-						tree2.push(tree);
+				if (planted.length !== 0) {
+					planted.map((tr: any) => {
+						// let tree = tr.account;
+						console.log('tree is ', tr);
+						let tree2 = trees;
+						tree2.push(tr);
 						setTrees(tree2);
 					});
 					console.log('Trees is now', trees);
@@ -104,15 +117,59 @@ const ViewTrees = () => {
 			<Grid container spacing={2}>
 				{ready ? (
 					trees.map((t, i) => (
-						<Grid item xs={12} md={6} key={`${i} + ${t.cultivarName}`}>
+						<Grid item xs={12} md={6} key={`${i} + ${t.account.cultivarName}`}>
 							<Card sx={{ backgroundColor: '#F9F871' }} className={styles.card}>
 								<Link
-									href={`/tree?name=${t.cultivarName}`}
+									href={`/tree?name=${t.account.cultivarName}&tree=${t.publicKey.toString()}`}
 									component={NextLink}
 									underline='none'
+									className={styles.link}
 								>
-									<CardActionArea sx={{ width: '100%', height: '100%' }}>
-										{t.cultivarName}
+									<CardMedia>
+										<Image
+											alt='cultivar nft'
+											src={t.account.nftUri}
+											width='350'
+											height='100'
+										/>
+									</CardMedia>
+									<CardActionArea
+										sx={{ width: '100%', height: '100%' }}
+										className={styles.action}
+									>
+										<Typography
+											variant='h5'
+											className={styles.name}
+											fontWeight='600'
+										>
+											{t.account.cultivarName}
+										</Typography>
+										<Grid container className={styles.gcontainer}>
+											<Grid item sx={{ width: '60px' }}>
+												<Typography variant='body1' className={styles.health}>
+													Health
+												</Typography>
+											</Grid>
+											<Grid item sx={{ width: '60px' }}>
+												<Typography variant='body1' className={styles.health}>
+													{t.account.health.toString()}
+												</Typography>
+											</Grid>
+											<Grid
+												item
+												sx={{ width: `calc(${t.account.health }* 2px + 1px)` }}
+											>
+												<div
+													className={styles.div}
+													style={{
+														backgroundColor:
+															(t.account.health as number) > 50
+																? 'green'
+																: 'red',
+													}}
+												></div>
+											</Grid>
+										</Grid>
 									</CardActionArea>
 								</Link>
 							</Card>

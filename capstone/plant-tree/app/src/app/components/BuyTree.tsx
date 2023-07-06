@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import * as anchor from '@project-serum/anchor';
 import { TreeProgram, IDL } from '../../../public/programs/tree_program';
 import { Connection, PublicKey } from '@solana/web3.js';
@@ -16,8 +16,19 @@ import styles from './styles/buytree.module.css';
 import NextLink from 'next/link';
 import { useAnchorWallet } from '@solana/wallet-adapter-react';
 import { Program, Wallet, AnchorProvider } from '@project-serum/anchor';
+import * as token from '@solana/spl-token';
+import { motion } from 'framer-motion';
 
-const BuyTree = (props: { cultivarName: String }) => {
+const BuyTree = (props: {
+	cultivarName: String;
+	setSeeds: (amount: anchor.BN) => void;
+	setKey: (tree: anchor.web3.PublicKey) => void;
+	land: anchor.web3.PublicKey
+}) => {
+	// const [seeds, setSeeds] = useState<anchor.BN>(new anchor.BN(0)) ;
+	const [trees, setTrees] = useState<number>(0);
+	const [address, setAddress] = useState<anchor.web3.PublicKey | null>(null);
+
 	const w = useAnchorWallet();
 	// const { connection } = useConnection();
 
@@ -28,25 +39,50 @@ const BuyTree = (props: { cultivarName: String }) => {
 	});
 
 	const farmerProgram = new PublicKey(
-		'5TNiwQX4cLvYtRp4vwhukHTrNt6MsK8URs6P98vsznQX'
+		'3pEgxEH8RhxKtdx3qsvcmrZQUMxeyQisiiBAJ52FmtMx'
 	);
 
 	const farmProgram = new PublicKey(
-		'6ENVuGLwmXzs3vTtrnELHTA1y3Q1s2NKZMu4zDo3nPUd'
+		'CrYtrU5xK6S98iGQVnyag1XKG9vSYzw2M3Mq4JNHLGSA'
 	);
 
 	const programID = new PublicKey(
-		'GKUYrzV8pu6ZNvKG4KmEMMbMeqeSJGH1vQYgk9RuoYSR'
+		'CUJ8TCeGSKKhqYtZYiBZRghTJvRRRpm9qR2ykX91N1ns'
 	);
 
 	const program = new Program(IDL, programID, provider);
 	let payer = program.provider;
 
+	useEffect(() => {
+		(async () => {
+			if (payer.publicKey != null) {
+				let t = await program.account.tree.all([
+					{
+						memcmp: {
+							offset: 8,
+							bytes: payer.publicKey.toBase58(),
+						},
+					},
+				]);
+
+				console.log('the trees you own ==> ', t);
+				let unplanted = t.filter((t) => t.account.isPlanted == false && t.account.name == props.cultivarName);
+
+				console.log('Unplanted trees! ', unplanted);
+
+				let n = unplanted.length;
+				setTrees(n);
+				props.setKey(unplanted[0].publicKey);
+			}
+		})();
+
+	}, [payer.publicKey]);
+
 	const handleClick = async () => {
 		if (payer.publicKey) {
 			console.log('Inside if satement');
 			let date = new Date().toISOString();
-			
+
 			let [farm] = anchor.web3.PublicKey.findProgramAddressSync(
 				[Buffer.from('farm')],
 				farmProgram
@@ -62,10 +98,12 @@ const BuyTree = (props: { cultivarName: String }) => {
 				farmProgram
 			);
 
-			let [landPiece] = anchor.web3.PublicKey.findProgramAddressSync(
-				[Buffer.from('landpiece'), landMeta.toBuffer(), farmer.toBuffer()],
-				farmerProgram
-			);
+			// let [landPiece] = anchor.web3.PublicKey.findProgramAddressSync(
+			// 	[Buffer.from('landpiece'), landMeta.toBuffer(), farmer.toBuffer()],
+			// 	farmerProgram
+			// );
+
+			 let landPiece = new anchor.web3.PublicKey(props.land);
 
 			let [vault] = anchor.web3.PublicKey.findProgramAddressSync(
 				[Buffer.from('carbonvault')],
@@ -151,7 +189,6 @@ const BuyTree = (props: { cultivarName: String }) => {
 				[Buffer.from('requirednutrients'), tree.toBuffer()],
 				program.programId
 			);
-			
 
 			const tx = await program.methods
 				.createTree(date)
@@ -174,26 +211,39 @@ const BuyTree = (props: { cultivarName: String }) => {
 				.rpc();
 			console.log(`The transaction signature is ${tx.toString()}`);
 			alert('success ' + tx);
-			// setData({
-			// 	farmer: farmer,
-			// 	payer: payer.publicKey,
-			// 	landPieces: landP.length,
-			// });
+			setTrees(1);
+			props.setKey(tree);
+			// try {
+			// 	let sb = await token.getAccount(connection, seedsBalance);
+			// 	let amount = sb.amount.toString();
+			// 	props.setSeeds(new anchor.BN(amount));
+			// } catch (e) {
+			// 	console.log('The error is ', e);
+			// 	props.setSeeds(new anchor.BN(0));
+			// }
 		}
 	};
 
 	return (
-		<Card className={styles.card}>
-			<CardActionArea
-				component={Button}
-				onClick={handleClick}
-				className={styles.cardArea}
-			>
-				<Typography variant='h5' className={styles.type}>
-					Buy Tree
-				</Typography>
-			</CardActionArea>
-		</Card>
+		<motion.div
+			className={styles.container}
+			animate={{
+				x: trees > 0 ? '102vw' : '0px',
+				transition: { duration: 2, delay: 1 },
+			}}
+			initial={{ x: '0px' }}
+		>
+			<Card className={styles.card}>
+				<CardActionArea
+					component={Button}
+					onClick={handleClick}
+					className={styles.cardArea}
+				><Typography variant='h5' className={styles.type}>
+						Buy Tree
+					</Typography>
+				</CardActionArea>
+			</Card>
+		</motion.div>
 	);
 };
 
