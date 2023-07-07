@@ -185,7 +185,9 @@ pub mod tree_program {
             // Err
             return err!(TreeError::ConsumeNutrients)
         }
+
         let tree = &mut *ctx.accounts.tree ;
+
         // let land_piece = &mut *ctx.accounts.land_piece ;
         let slot = Clock::get()?.slot ; 
         
@@ -367,7 +369,6 @@ pub mod tree_program {
         let slot = Clock::get()?.slot ;  
 
         if r_nutrients.consumed {
-           msg!("calculate Required!!");
            return err!(TreeError::CalculateRequired)
         }          
 
@@ -412,6 +413,7 @@ pub mod tree_program {
         r_nutrients.last_check_time = slot ; 
         r_nutrients.consumed = true ; 
         ctx.accounts.tree.last_consumed_used = false ;
+
         Ok(())
         
     }
@@ -459,8 +461,11 @@ pub mod tree_program {
     }    
     pub fn calculate_required( ctx: Context<TreeUpdate>)-> Result<()>{
       
+        let tree = &mut *ctx.accounts.tree ; 
 
-        let tree = &mut *ctx.accounts.tree ;  
+        if !tree.last_consumed_used {
+           return err!(TreeError::UseConsumed) 
+        } 
 
         let r_nutrients = &mut *ctx.accounts.required_nutrients ;
        
@@ -1006,7 +1011,6 @@ pub fn update_size(&mut self, percent_nitrogen_intake: u64 , percent_phosphorus_
 
 pub fn update_age(&mut self, slot: u64)-> Result<()> {
     let period =  slot - self.planted_time ;
-    // let year_time_slots = DEFAULT_TICKS_PER_SECOND / DEFAULT_TICKS_PER_SLOT * SECONDS_PER_DAY * 365 ;
     self.age = period;
     Ok(())
 }
@@ -1136,7 +1140,10 @@ pub fn decrease_life (&mut self,reduction: f64 ) -> Result<()>{
     if reduction >= 1.0 {
         return err!(TreeError::ReductoinGreaterThanOne)
     }
+    
     self.health = (self.health as f64 * reduction) as u8 ;   
+
+
     self.health = match  self.health.checked_sub(1) {
                   Some(v) => v ,
                   _ => 0
@@ -1255,11 +1262,12 @@ pub enum TreeError {
     FailedCalculatePeriod,
     #[msg("The tree is already dead")]
     HealthAtZero,
-
     #[msg("The Age factor is negetive value")]
     CalculateAgeError,
     #[msg("The reduction factor is greater than Zero")]
     ReductoinGreaterThanOne,
+    #[msg("Use the calculated nutrients for growth")]
+    UseConsumed,
     ClockError,
     CalculateRequired,
     ConsumeNutrients,
