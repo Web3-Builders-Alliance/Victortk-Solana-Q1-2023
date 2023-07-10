@@ -71,6 +71,7 @@ pub mod tree_program {
         tree.next_fruit_maturaturation_time =  time + SLOTS_PER_YEAR;
         tree.nft_uri = cultivar.image_uri.clone() ;
         tree.created_date = date ;
+        tree.last_consumed_used = true ;
         let bump = *ctx.bumps.get("seeds_authority").unwrap() ;
         let p = payer.key();
         let seeds = &[ "seedsauthority".as_bytes(), p.as_ref() ,&[bump]] ;
@@ -130,7 +131,6 @@ pub mod tree_program {
     pub fn init_tree_accounts(ctx: Context<InitTreeUpdateAccounts>) -> Result<()>{
         Ok(())
     } 
-
     pub fn check_harvest(ctx: Context<TreeUpdate>)-> Result<()>{
          let tree = &mut *ctx.accounts.tree ;
           let is_harvest = match tree.is_harvest_season() { 
@@ -141,8 +141,11 @@ pub mod tree_program {
         let seeds = &[ "fruitmintauthority".as_bytes(),&[bump]] ;
         let fb = &mut ctx.accounts.fruit_balance;
 
-         //here make it a const 1 year and bring const up
-        if is_harvest && tree.expected_fruit_count > 1 {
+        msg!("is it harvest season? {:?} ", is_harvest,  );
+        msg!("The expected fruit count? {:?} ", tree.expected_fruit_count);
+
+        //here make it a const 1 year and bring const up
+        if is_harvest && tree.expected_fruit_count >= 1 {
             token::mint_to(
                 CpiContext::new_with_signer(
                   ctx.accounts.token_program.to_account_info().clone() ,
@@ -172,13 +175,12 @@ pub mod tree_program {
 
         let young = current_slot.checked_sub(tree.planted_time).ok_or(TreeError::TreeSlotError)?;
 
-        if young < 11 {           
-            return Ok(())
+        if young < 6 {         
+            return  err!(TreeError::TreeYoung)    
         };
 
-        if !r_nutrients.first_check{         
-            // Err
-            return Ok(())
+        if !r_nutrients.first_check{  
+            return  err!(TreeError::CalculateRequired)         
         } 
 
         if tree.last_consumed_used  {           
@@ -194,11 +196,14 @@ pub mod tree_program {
         match tree.update_age(slot) {
             Err(e) =>  return Err(e),
             _ => () 
-        }  
+        }         
         
         
+
         tree.grow_expected_fruit_count(r_nutrients.percent_available_potassium,r_nutrients.percent_available_water,  r_nutrients.last_check_time);
         
+        msg!("The expected fruit counut is =>>> {:?} ", tree.expected_fruit_count);
+
         let period = tree.calc_period(r_nutrients.last_check_time)?; 
 
         tree.grow_leaf_area(r_nutrients.percent_available_nitrogen,r_nutrients.percent_available_water, r_nutrients.last_check_time, period);
@@ -210,12 +215,11 @@ pub mod tree_program {
             Err(e) =>  return Err(e),
             _ => () 
          };
-
         tree.last_check_time = slot ;
         tree.last_consumed_used = true ;
+        msg!("completed ======================>") ;
         Ok(())
-    }  
-    
+    }     
     pub fn harvest_fruit (ctx: Context<HarvestFruit>, amount: u64  )-> Result<()> {   
 
        let fruit_vault = &mut ctx.accounts.fruit_vault ;
@@ -330,29 +334,7 @@ pub mod tree_program {
             amount
         )
     }
-    pub fn consume_nitrogen(ctx: Context<TreeUpdate>, amount: u64 )-> Result<()> {
-        let nitrogen_mint = &mut ctx.accounts.nitrogen_mint ;
-        let nitrogen_balance = &mut ctx.accounts.nitrogen_balance ;
-        let land_piece = &mut ctx.accounts.land_piece.key() ;
-        let tree = &mut ctx.accounts.tree.key() ;
-        let input_balance = &mut ctx.accounts.input_balance ;      
-        let bump = *ctx.bumps.get("input_balance").unwrap() ;
-        let seeds = &[ "nutrientbalance".as_bytes(), tree.as_ref(), &[bump]] ;
-        token::burn(
-            CpiContext::new_with_signer(
-                ctx.accounts.token_program.to_account_info(),
-                token::Burn{
-                   mint: nitrogen_mint.to_account_info().clone(),
-                   from: nitrogen_balance.to_account_info().clone(),
-                   authority: input_balance.to_account_info().clone(), 
-                },
-                &[&seeds[..]]
-            ),
-            amount
-        )
-    }
-    pub fn consume_nutrients(ctx: Context<TreeUpdate>)-> Result<()> {
-        
+    pub fn consume_nutrients(ctx: Context<TreeUpdate>)-> Result<()> {  
         let phosphorus_mint = &mut ctx.accounts.phosphorus_mint ;
         let phosphorus_balance = &mut ctx.accounts.phosphorus_balance ;
         // let land_piece = &mut ctx.accounts.land_piece.key() ;
@@ -416,49 +398,7 @@ pub mod tree_program {
 
         Ok(())
         
-    }
-    pub fn consume_phosphorus(ctx: Context<TreeUpdate>, amount: u64 )-> Result<()> {
-        let phosphorus_mint = &mut ctx.accounts.phosphorus_mint ;
-        let phosphorus_balance = &mut ctx.accounts.phosphorus_balance ;
-        let land_piece = &mut ctx.accounts.land_piece.key() ;
-        let tree = &mut ctx.accounts.tree.key() ;
-        let input_balance = &mut ctx.accounts.input_balance ;      
-        let bump = *ctx.bumps.get("input_balance").unwrap() ;
-        let seeds = &[ "nutrientbalance".as_bytes(), tree.as_ref(), &[bump]] ;
-        token::burn(
-            CpiContext::new_with_signer(
-                ctx.accounts.token_program.to_account_info(),
-               token::Burn{
-                   mint: phosphorus_mint.to_account_info().clone(),
-                   from: phosphorus_balance.to_account_info().clone(),
-                   authority: input_balance.to_account_info().clone(), 
-                },
-                &[&seeds[..]]
-            ),
-            amount
-        )
-    }
-    pub fn consume_potassium(ctx: Context<TreeUpdate>, amount: u64 )-> Result<()> {
-        let potassium_mint = &mut ctx.accounts.potassium_mint ;
-        let potassium_balance = &mut ctx.accounts.potassium_balance ;
-        let land_piece = &mut ctx.accounts.land_piece.key() ;
-        let tree = &mut ctx.accounts.tree.key() ;
-        let input_balance = &mut ctx.accounts.input_balance ;      
-        let bump = *ctx.bumps.get("input_balance").unwrap() ;
-        let seeds = &[ "nutrientbalance".as_bytes(),tree.as_ref(), &[bump]] ;
-        token::burn(
-            CpiContext::new_with_signer(
-                ctx.accounts.token_program.to_account_info(),
-               token::Burn{
-                   mint: potassium_mint.to_account_info().clone(),
-                   from: potassium_balance.to_account_info().clone(),
-                   authority: input_balance.to_account_info().clone(), 
-                },
-                &[&seeds[..]]
-            ),
-            amount
-        )
-    }    
+    }  
     pub fn calculate_required( ctx: Context<TreeUpdate>)-> Result<()>{
       
         let tree = &mut *ctx.accounts.tree ; 
@@ -497,6 +437,8 @@ pub mod tree_program {
 
        r_nutrients.consumed = false ;  
        r_nutrients.first_check = true ;
+
+      
        
        Ok(())
     }  
@@ -1048,36 +990,43 @@ pub fn grow_root_area(&mut self, percent_phosphorus_intake: u64, percent_water_i
 }
 
 pub fn grow_expected_fruit_count(&mut self, percent_potassium_intake: u64, percent_water_intake: u64, recent_check_time: u64) {  
+
+
   //use some nitrogen 
   let age = self.age /SLOTS_PER_YEAR ; 
   let period =  recent_check_time - self.last_fruit_update ;
   let too_young = 1 ;
-
+  
   let young  =  10 ;
   let mut age_factor =  0 ; 
 
-  if age > too_young && age < young {   
+  if age >= too_young && age < young {   
      age_factor = 50 ;
   };
 
   if age > young {
      age_factor = 100 ;
-  }; 
+  };    
 
-  let reduction = (percent_potassium_intake as f64 * percent_water_intake as f64  )/(100.0 * 100.0) ;
-  
+  let reduction = (percent_potassium_intake as f64 * percent_water_intake as f64  )/(100.0 * 100.0) ;  
+
   let fc: u64 = (RATE_OF_FRUIT_INCREMENT as f64 * period  as f64 *  reduction  * (age_factor as f64/ 100.0)).ceil() as u64  ; 
  
-   if fc > 0 {
-      self.expected_fruit_count += fc ; 
-      self.last_fruit_update = recent_check_time ;
-   }
+  msg!("The fruit count is ----> {:?} ", fc);
+   
+  if fc > 0 {
+    self.expected_fruit_count += fc ; 
+    self.last_fruit_update = recent_check_time ;
+    msg!("update fc ===>>>> {:?}", self.expected_fruit_count);
+   }  
 
-   if reduction != 1.0 {
-      self.decrease_life(reduction);
-   }else {
-      self.increase_life() ;
-   } 
+  if reduction != 1.0 {
+    self.decrease_life(reduction);
+      
+  }else {
+    self.increase_life() ;
+    msg!("life is now {:?}", self.expected_fruit_count);
+  } 
  
 }
 
@@ -1154,7 +1103,6 @@ pub fn decrease_life (&mut self,reduction: f64 ) -> Result<()>{
 
     Ok(())       
 }
-
 
 }
 
@@ -1268,8 +1216,11 @@ pub enum TreeError {
     ReductoinGreaterThanOne,
     #[msg("Use the calculated nutrients for growth")]
     UseConsumed,
-    ClockError,
+    #[msg("The Tree Is  Young")]
+    TreeYoung,
+    #[msg("Calculate the required nutrients")]
     CalculateRequired,
+    ClockError,
     ConsumeNutrients,
     FailedToPlant,
 }

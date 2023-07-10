@@ -120,9 +120,7 @@ pub mod farmer_program {
         // let slot = Clock::get()?.slot ;
         farmer.tree_count += 1;
         let location = land_piece.location;
-
         let cpi_program = ctx.accounts.tree_program.to_account_info() ;
-
         let cpi_accounts = PlantTree {
             payer: ctx.accounts.payer.to_account_info() ,
             farm: ctx.accounts.farm.to_account_info(),
@@ -131,10 +129,9 @@ pub mod farmer_program {
             farm_program: ctx.accounts.farm_program.to_account_info(),
             trees_meta: ctx.accounts.trees_meta.to_account_info(),
         };
-
         let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);
-
-         tree_program::cpi::plant(cpi_ctx, location)? ;
+        tree_program::cpi::plant(cpi_ctx, location)? ;
+        land_piece.is_planted = true ;
      
         Ok(())
     }

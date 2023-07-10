@@ -146,12 +146,12 @@ describe('Checks Harvest', () => {
 
 		console.log('Checks and updates the tree data: ', tx.toString());
 
-		console.log('lets see what tree state is like ', t);
+		// console.log('lets see what tree state is like ', t);
 
-		let fb = await token.getAccount(provider.connection, fruitBalance);
+		// let fb = await token.getAccount(provider.connection, fruitBalance);
 
-		console.log('fruit Account initiailized with free fruitus ', fb);
-		console.log('the fruit balance is now ', fb.amount);
+		// console.log('fruit Account initiailized with free fruitus ', fb);
+		// console.log('the fruit balance is now ', fb.amount);
 	});
 });
 
@@ -591,6 +591,52 @@ describe('Updates a tree 2', () => {
 
 		console.log('fruit Account initiailized with free fruitus ', fb);
 		console.log('the fruit balance is now ', fb.amount);
+	});
+});
+
+describe('Checks Harvest', () => {
+	it('Checks Harvest', async () => {
+		
+		console.log('the tree metadata account address is,', treesMeta.toString());
+		console.log('the Owner of the program, ', farmProgram.programId);
+
+		const tx = await treeProgram.methods
+			.checkHarvest()
+			.accounts({
+				farm,
+				farmer,
+				waterMint,
+				nitrogenMint,
+				potassiumMint,
+				phosphorusMint,
+				nutrientMintAuthority,
+				landMeta,
+				treesMeta,
+				tree,
+				landPiece,
+				inputBalance,
+				waterBalance,
+				nitrogenBalance,
+				phosphorusBalance,
+				potassiumBalance,
+				fruitMintAuthority,
+				fruitMint,
+				fruitBalance,
+				requiredNutrients,
+				vault,
+				farmProgram: farmProgram.programId,
+			})
+			.rpc();
+		let t = await treeProgram.account.tree.fetch(tree);
+
+		console.log('Checks and updates the tree data: ', tx.toString());
+
+		// console.log('lets see what tree state is like ', t);
+
+		// let fb = await token.getAccount(provider.connection, fruitBalance);
+
+		// console.log('fruit Account initiailized with free fruitus ', fb);
+		// console.log('the fruit balance is now ', fb.amount);
 	});
 });
 
