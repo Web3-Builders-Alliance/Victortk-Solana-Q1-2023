@@ -21,7 +21,7 @@ declare_id!("CUJ8TCeGSKKhqYtZYiBZRghTJvRRRpm9qR2ykX91N1ns");
 
 pub const SLOTS_PER_SECOND: u64=DEFAULT_TICKS_PER_SECOND /DEFAULT_TICKS_PER_SLOT ;
 
-pub const SLOTS_PER_DAY: u64 =SLOTS_PER_SECOND*SECONDS_PER_DAY ;
+pub const SLOTS_PER_DAY: u64 = SLOTS_PER_SECOND*SECONDS_PER_DAY ;
 
 pub const SLOTS_PER_YEAR: u64 = 5 ;          // SLOTS_PER_DAY*365;
 
@@ -36,6 +36,8 @@ pub const LEAF_AREA_GROWTH_RATE: u64 = 1 ;
 pub const RATE_OF_NUTRIENT_UPTAKE: u64 = 1; 
 pub const RATE_OF_WATER_UPTAKE: u64 = 2; 
 pub const RATE_OF_FRUIT_INCREMENT: u64 = 1 ;
+pub const RATE_OF_ENERGY_LOSS_PER_DAY: u64 = 1 ;
+
 
 #[program]
 pub mod tree_program {
@@ -66,7 +68,7 @@ pub mod tree_program {
         tree.root_area = cultivar.init_root_area;
         tree.age = 1 ;
         let time =  Clock::get()?.slot ;
-        tree.health = 100 ;
+        tree.health = 100.0 ;
         tree.is_alive = true ;
         tree.next_fruit_maturaturation_time =  time + SLOTS_PER_YEAR;
         tree.nft_uri = cultivar.image_uri.clone() ;
@@ -96,7 +98,6 @@ pub mod tree_program {
     Ok(())  
         
     }    
-
     pub fn create_cultivar(ctx: Context<CreateCultivar>, cultivar_name:String , height: u64, width: u64, uri: String) -> Result<()>{
       
         let cultivar_meta =  &mut ctx.accounts.cultivar_meta ;
@@ -175,6 +176,12 @@ pub mod tree_program {
 
         let young = current_slot.checked_sub(tree.planted_time).ok_or(TreeError::TreeSlotError)?;
 
+
+        
+        if !tree.is_alive {         
+            return  err!(TreeError::TreeDead)    
+        };
+
         if young < 6 {         
             return  err!(TreeError::TreeYoung)    
         };
@@ -188,6 +195,8 @@ pub mod tree_program {
             return err!(TreeError::ConsumeNutrients)
         }
 
+
+
         let tree = &mut *ctx.accounts.tree ;
 
         // let land_piece = &mut *ctx.accounts.land_piece ;
@@ -196,9 +205,7 @@ pub mod tree_program {
         match tree.update_age(slot) {
             Err(e) =>  return Err(e),
             _ => () 
-        }         
-        
-        
+        }      
 
         tree.grow_expected_fruit_count(r_nutrients.percent_available_potassium,r_nutrients.percent_available_water,  r_nutrients.last_check_time);
         
@@ -217,6 +224,7 @@ pub mod tree_program {
          };
         tree.last_check_time = slot ;
         tree.last_consumed_used = true ;
+        tree.update_life(r_nutrients.energy)?;
         msg!("completed ======================>") ;
         Ok(())
     }     
@@ -435,10 +443,11 @@ pub mod tree_program {
 
        r_nutrients.percentage_intake(tree.root_area, water_balance.clone() , tree.last_check_time, tree.age,"water".to_string())? ;
 
-       r_nutrients.consumed = false ;  
-       r_nutrients.first_check = true ;
+       r_nutrients.calculate_energy() ;
+       msg!("the energy is now => >>> {:?} ", r_nutrients.energy) ;
 
-      
+       r_nutrients.consumed = false ;  
+       r_nutrients.first_check = true ;      
        
        Ok(())
     }  
@@ -879,7 +888,7 @@ pub struct Tree {
     pub girth: u64,
     pub age: u64 ,
     pub planted_time: u64,
-    pub health: u8 ,
+    pub health: f64 ,
     pub last_check_time: u64 ,
     pub last_fruit_update: u64,
     pub next_fruit_maturaturation_time: u64 ,
@@ -910,6 +919,7 @@ pub struct RequiredNutrients  {
     pub last_check_time: u64 ,
     pub period: u64,
     pub consumed: bool,
+    pub energy: f64 ,
 }
 
 impl Tree {
@@ -919,12 +929,8 @@ pub fn calc_period (&mut self,  recent_check_time: u64) -> Result<u64>  {
 }
 
 pub fn update_size(&mut self, percent_nitrogen_intake: u64 , percent_phosphorus_intake: u64, percent_potassium_intake: u64, percent_water_intake: u64,period: u64 ) -> Result<()>  {
-    //calcuate food consumption
-    // return food consumption based on tree attributes   
 
-    // let period: u64 =  recent_check_time.checked_sub(self.last_check_time).ok_or(TreeError::FailedCalculatePeriod)?;
-
-    let reduction = percent_nitrogen_intake* percent_phosphorus_intake*percent_potassium_intake *percent_water_intake ;
+     let reduction = percent_nitrogen_intake* percent_phosphorus_intake*percent_potassium_intake *percent_water_intake ;
 
     let height = self.height + (period * HEIGHT_PER_SLOT * reduction) /(100 * 100* 100* 100) ;
 
@@ -946,11 +952,6 @@ pub fn update_size(&mut self, percent_nitrogen_intake: u64 , percent_phosphorus_
     Ok(())
 }
 
-// pub fn update_girth(&mut self, value: u64){
-  
-//     self.girth += value;
-// }
-
 pub fn update_age(&mut self, slot: u64)-> Result<()> {
     let period =  slot - self.planted_time ;
     self.age = period;
@@ -962,15 +963,9 @@ pub fn grow_leaf_area(&mut self, percent_nitrogen_intake: u64, percent_water_int
  //use some nitrogen 
 //    let period =  recent_check_time - self.last_check_time ;
    
-   let reduction  = ( percent_nitrogen_intake  as f64* percent_water_intake  as f64)/ (100.0 * 100.0) ;
+   let reduction  = (percent_nitrogen_intake  as f64* percent_water_intake  as f64)/ (100.0 * 100.0) ;
 
    self.leaf_area += (LEAF_AREA_GROWTH_RATE  as f64 * period  as f64 * reduction) as u64  ; 
-
-   if reduction != 1.0 {
-      self.decrease_life(reduction);
-   }else {
-      self.increase_life() ;
-   }
   
 }
 
@@ -982,16 +977,10 @@ pub fn grow_root_area(&mut self, percent_phosphorus_intake: u64, percent_water_i
     let reduction  =( percent_phosphorus_intake as f64 * percent_water_intake  as f64)/ (100.0 * 100.0 );
    
     self.root_area += (root_area  as f64 * reduction) as u64  ;
-      if reduction != 1.0 {
-      self.decrease_life(reduction);
-   }else {
-      self.increase_life() ;
-   }
+   
 }
 
 pub fn grow_expected_fruit_count(&mut self, percent_potassium_intake: u64, percent_water_intake: u64, recent_check_time: u64) {  
-
-
   //use some nitrogen 
   let age = self.age /SLOTS_PER_YEAR ; 
   let period =  recent_check_time - self.last_fruit_update ;
@@ -1011,22 +1000,11 @@ pub fn grow_expected_fruit_count(&mut self, percent_potassium_intake: u64, perce
   let reduction = (percent_potassium_intake as f64 * percent_water_intake as f64  )/(100.0 * 100.0) ;  
 
   let fc: u64 = (RATE_OF_FRUIT_INCREMENT as f64 * period  as f64 *  reduction  * (age_factor as f64/ 100.0)).ceil() as u64  ; 
- 
-  msg!("The fruit count is ----> {:?} ", fc);
-   
+    
   if fc > 0 {
     self.expected_fruit_count += fc ; 
-    self.last_fruit_update = recent_check_time ;
-    msg!("update fc ===>>>> {:?}", self.expected_fruit_count);
+    self.last_fruit_update = recent_check_time ;   
    }  
-
-  if reduction != 1.0 {
-    self.decrease_life(reduction);
-      
-  }else {
-    self.increase_life() ;
-    msg!("life is now {:?}", self.expected_fruit_count);
-  } 
  
 }
 
@@ -1053,55 +1031,41 @@ pub fn set_new_harvest_season(&mut self) -> Result<()> {
     Ok(())
 }
 
-// fn nutrient_consumption(&mut self){
-
-//     // //Okay Imaginery stuff, 1 token water  1 token phosphorus for the root 
-//     // let root_growth = (1,1);
-//     // //More imaginary consumption  for leaf we 1
-//     // let leaf_growth = (1,1); 
-
-// } 
-
 pub fn plant (&mut self, location : [u8;2] ) -> Result<()> {
     self.location = location ;      
     self.planted_time = Clock::get()?.slot ; 
     self.is_planted = true ;
-
     Ok(())
 }
 
-pub fn increase_life (&mut self, ) {  
-    if self.health == 0 {
+pub fn update_life (&mut self, value: f64) -> Result<()> { 
+    if self.health == 0.0 {
         self.is_alive = false ;
+        return Ok(())
     } 
-    else if self.health < 95 {
-       self.health += 5 ;
-    }else if self.health > 95 && self.health < 100 {
-       self.health = 100 ; 
+    let abs_value = value.abs() ;
+
+    if abs_value > 100.0 {
+        return err!(TreeError::ValueOutOfRange)
     }
-}
-
-pub fn decrease_life (&mut self,reduction: f64 ) -> Result<()>{
-    if self.health == 0 {
-       self.is_alive = false ;
-       return Ok(())
-    } 
-    if reduction >= 1.0 {
-        return err!(TreeError::ReductoinGreaterThanOne)
-    }
-    
-    self.health = (self.health as f64 * reduction) as u8 ;   
-
-
-    self.health = match  self.health.checked_sub(1) {
-                  Some(v) => v ,
-                  _ => 0
-    };
-    if self.health == 0 {
-        self.is_alive = false; 
-    }   
-
-    Ok(())       
+    if value <  0.0 {
+        let h =  match self.health - abs_value {
+            x if x  > 0.0 => x ,
+            _  => 0.0
+        } ;
+        self.health = h ;
+        return Ok(())
+    }else if value >= 0.0 {
+        let default = 100.0 ;
+        let mut h  = match  self.health + abs_value {
+            x if x < default => x ,
+            _ => 100.0
+        };      
+        self.health = h ;
+        return Ok(())
+    } else {
+       return err!(TreeError::ValueOutOfRange)  
+    }  
 }
 
 }
@@ -1122,9 +1086,7 @@ impl RequiredNutrients {
       
        let age  = age/SLOTS_PER_YEAR ;
        let constant_age  = 10 ;
-
         //Older trees require less nutrients for growth 
-
        let age_factor = if age <= constant_age {
                 -6 * age as i64  + 106
         }else {
@@ -1167,8 +1129,7 @@ impl RequiredNutrients {
             } ,
             _ => ()
         };
-
-        Ok(())      
+        Ok(())    
 
     }
 
@@ -1180,23 +1141,20 @@ impl RequiredNutrients {
         }
     }
 
-    // pub fn potassium_uptake  (root_area: u64, balance: u64 , last_checked_time: u64, age: u64)-> Result<i64> {
-    //     let period =  Clock::get()?.slot - last_checked_time ;
+    pub fn calculate_energy (&mut self)  {
+        let days =  self.period as f64 / SLOTS_PER_DAY as f64 ;
+        let depletion = days * RATE_OF_ENERGY_LOSS_PER_DAY as f64 ;
+        let reduction = ((self.percent_available_nitrogen * self.percent_available_phosphorus * self.percent_available_potassium *  self.percent_available_water) as f64 /(100 * 100 * 100 * 100)as f64) ; 
+        msg!("The reduction is => >  > {:?}" , reduction);
+        if days <= 1.0 {
+            let life = reduction  * 2.0 ;
+            self.energy = life - depletion;
+        } else{
+            let life = reduction  * 1.0 ;
+            self.energy = life - depletion ; 
+        }
 
-    //     Ok(balance as i64 -  (period as i64* RATE_OF_NUTRIENT_UPTAKE as i64* root_area as i64/ age as i64 ))
-       
-    // }
-    // pub fn phosphorus_uptake  (root_area: u64, balance: u64 , last_checked_time: u64, age: u64)-> Result<i64> {
-    //     let period =  Clock::get()?.slot - last_checked_time ;
-
-    //     Ok(balance as i64 -  (period as i64* RATE_OF_NUTRIENT_UPTAKE as i64* root_area as i64/ age as i64 ))
-       
-    // }
-    // pub fn water_uptake  (root_area: u64, balance: u64 , last_checked_time: u64, age: u64)-> Result<i64> {
-    //     let period =  Clock::get()?.slot - last_checked_time ;
-
-    //     Ok(balance as i64 -  (period as i64* RATE_OF_WATER_UPTAKE as i64* root_area as i64/ age as i64 ))       
-    // }
+    }
 
 }
 
@@ -1216,10 +1174,14 @@ pub enum TreeError {
     ReductoinGreaterThanOne,
     #[msg("Use the calculated nutrients for growth")]
     UseConsumed,
-    #[msg("The Tree Is  Young")]
+    #[msg("The Tree Is Young")]
     TreeYoung,
     #[msg("Calculate the required nutrients")]
     CalculateRequired,
+    #[msg("Calculate the required nutrients")]
+    ValueOutOfRange,
+    #[msg("Attempt to update a dead tree")]
+    TreeDead,
     ClockError,
     ConsumeNutrients,
     FailedToPlant,

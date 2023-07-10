@@ -81,7 +81,6 @@ let initHeight = new anchor.BN(50000000); //micrometers => 50cm
 let initWidth = new anchor.BN(2000000); //2cm
 
 
-
 // // // fruitVaultAuthority,
 // // let [fruitVaultAuthority] = anchor.web3.PublicKey.findProgramAddressSync(
 // // 	[Buffer.from('fruitvaultauthority')],
@@ -253,7 +252,6 @@ describe('plants the tree ', () => {
 	});
 });
 
-
 describe('Initializes tree token accounts', () => {
 	it('Initializes tree token accounts', async () => {
 		// let fm = await token.getMint(provider.connection, fruitMint);
@@ -310,7 +308,7 @@ describe('Adds nutriens', () => {
 			// console.log('The water balance before the transaction is ,', wb.amount);
 
 			const tx = await program.methods
-				.waterTree(new anchor.BN(2000))
+				.waterTree(new anchor.BN(40))
 				.accounts({
 				farm,
 				farmer,
@@ -340,6 +338,7 @@ describe('Adds nutriens', () => {
 			console.log('The plant has been watered: ', tx.toString());
 			let water = wm2.amount;
 			console.log('The water balance is now: {} ', water);
+
 		});
 
 		it('Applies Nitrogen', async () => {
@@ -353,7 +352,7 @@ describe('Adds nutriens', () => {
 			);
 
 			const tx = await program.methods
-				.addNitrogen(new anchor.BN(2001))
+				.addNitrogen(new anchor.BN(10))
 				.accounts({
 				farm,
 				farmer,
@@ -396,7 +395,7 @@ describe('Adds nutriens', () => {
 			);
 
 			const tx = await program.methods
-				.addPhosphorus(new anchor.BN(2000))
+				.addPhosphorus(new anchor.BN(20))
 				.accounts({
 				farm,
 				farmer,
@@ -439,7 +438,7 @@ describe('Adds nutriens', () => {
 				);
 
 				const tx = await program.methods
-					.addPotassium(new anchor.BN(2000))
+					.addPotassium(new anchor.BN(45))
 					.accounts({
 						farm,
 						farmer,
