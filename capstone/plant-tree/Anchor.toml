@@ -1,11 +1,11 @@
 [features]
 seeds = false
 skip-lint = false
-[programs.localnet]
-farmer_program = "3pEgxEH8RhxKtdx3qsvcmrZQUMxeyQisiiBAJ52FmtMx"
-farm_program = "CrYtrU5xK6S98iGQVnyag1XKG9vSYzw2M3Mq4JNHLGSA"
-tree_program = "CUJ8TCeGSKKhqYtZYiBZRghTJvRRRpm9qR2ykX91N1ns"
-fruit_market_program = "27uvupdm8a5qZH6A2pxuSrXsjkPNtLi4J4686jEDj8jB"
+[programs.devnet]
+farmer_program = "9CWoSJWQZaNiZ83cqEer79u4MtZdfo8RRnspJcDnsZcu"
+farm_program = "xFUDB75wmPfzua8VgnSLrnNH18Ve4xztakzfBVyURob"
+tree_program = "8qxZgcFjdoJSwJYnvMMgR1ACyH24oFTBcaw8LSrAkiic"
+fruit_market_program = "BdyXR2oKTEyeV8FRmRA2F7dxHjtkWeBtMEHqZPSQVuVd"
 
 # Metaplex
 # [[test.validator.clone]]
@@ -19,7 +19,7 @@ fruit_market_program = "27uvupdm8a5qZH6A2pxuSrXsjkPNtLi4J4686jEDj8jB"
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "localnet"
+cluster = "devnet"
 wallet = "/home/professorcodegeek/.config/solana/id.json"
 
 [scripts]
