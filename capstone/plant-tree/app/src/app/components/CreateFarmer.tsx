@@ -43,12 +43,14 @@ const CreateFarmer = (props: {
 	});
 
 		const programID = new PublicKey(
-			'3pEgxEH8RhxKtdx3qsvcmrZQUMxeyQisiiBAJ52FmtMx'
+			'9CWoSJWQZaNiZ83cqEer79u4MtZdfo8RRnspJcDnsZcu'
 		);
 
 		const farmProgram = new PublicKey(
-			'CrYtrU5xK6S98iGQVnyag1XKG9vSYzw2M3Mq4JNHLGSA'
+			'xFUDB75wmPfzua8VgnSLrnNH18Ve4xztakzfBVyURob'
 		);
+
+	
 
 		// const programID = new PublicKey(
 		// 	'GKUYrzV8pu6ZNvKG4KmEMMbMeqeSJGH1vQYgk9RuoYSR'
@@ -76,11 +78,6 @@ const CreateFarmer = (props: {
 					farmProgram
 				);
 
-			let [landPiece] = anchor.web3.PublicKey.findProgramAddressSync(
-				[Buffer.from('landpiece'), landMeta.toBuffer(), farmer.toBuffer()],
-				program.programId
-			);		
-
 			let landP;
 	        landP = await program.account.landPiece.all([{					  
 						memcmp : {
@@ -90,13 +87,10 @@ const CreateFarmer = (props: {
 					}]);
 					console.log("Land Piece Account Is now: ", landP) ;		
 					let count = 0  ;
-					landP.map(x => {
+					let freeland = landP.filter((l) => !l.account.isPlanted);
+					console.log('freeland : ', freeland);	
 
-						if(x.account.isPlanted != true) {
-							 count ++
-						}
-
-					})				   
+					count = freeland.length					   
 
 					  // tree = await treeProgram.account.tree.all([
 						// 	{
@@ -112,6 +106,8 @@ const CreateFarmer = (props: {
 							payer: payer.publicKey,
 							landPieces: count,
 						});
+
+						console.log('landPieces', data?.landPieces);
 					}			
 			})() ;		
 		
@@ -128,7 +124,7 @@ const CreateFarmer = (props: {
 					props.searchFarmer({
 						name: farmerState.name,
 						address: farmerState.address,
-						landCount: farmerState.landCount,
+						landCount: new anchor.BN(data.landPieces),
 						treeCount: farmerState.treeCount,
 						profileNft: farmerState.profileNft,
 					});
@@ -178,22 +174,25 @@ const CreateFarmer = (props: {
 
 	return (
 		<>
-			{!isLoggedIn ? (<>			
+			{!isLoggedIn ? (
+				<>
 					<motion.div
-					animate={{
-						opacity: 0,
-						transition: { duration: 7 },
-					}}
-					initial={{ opacity: 1 }}
-					className={styles.outter}
-				>	</motion.div>
+						animate={{
+							opacity: 0,
+							transition: { duration: 7 },
+						}}
+						initial={{ opacity: 1 }}
+						className={styles.outter}
+					>
+						{' '}
+					</motion.div>
 					<motion.div
 						className={styles.inner}
 						animate={{
 							opacity: 1,
-							transition: { duration: 3, },
+							transition: { duration: 2 },
 						}}
-						initial={{ opacity: .5 }}
+						initial={{ opacity: 0.6 }}
 					>
 						<div className={styles.div}>
 							<legend className={styles.legend}>
@@ -201,7 +200,9 @@ const CreateFarmer = (props: {
 									className={styles.text1}
 									variant='h4'
 									component='h4'
-									color='secondary'
+									color='#7d814c'
+									fontFamily='Oswald'
+									fontWeight='700px'
 								>
 									Search or Create Account
 								</Typography>
@@ -210,9 +211,9 @@ const CreateFarmer = (props: {
 								<Typography
 									className={styles.text2}
 									component='h5'
-									color='secondary'
+									color='#1b5749'
 								>
-									Whats your Name?
+									Whats Your Nickname?
 								</Typography>
 							</label>
 							<TextField
@@ -226,13 +227,14 @@ const CreateFarmer = (props: {
 								inputProps={{
 									sx: {
 										margin: '0px',
-										backgroundColor: '#F9F871',
+										background: '#1b5749',
+										borderRadius:'5px'
 									},
 								}}
 							/>
 							<Button
 								variant='contained'
-								sx={{ color: '#F9F871' }}
+								sx={{ color: '#7d814c', background: '#1b5749' }}
 								onClick={() => {
 									handleCreate();
 								}}
@@ -241,7 +243,7 @@ const CreateFarmer = (props: {
 							</Button>
 						</div>
 					</motion.div>
-			</>				
+				</>
 			) : (
 				<></>
 			)}

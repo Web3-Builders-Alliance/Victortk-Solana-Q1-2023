@@ -3,15 +3,7 @@
   top: 0 ;
   left: 0 ;
   width: 98vw;
-  height: 100vh;
-  /* background-color: red ; */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.card {
-  width: 240px ;
+  height: 70vh;
   /* background-color: red ; */
   display: flex;
   align-items: center;
@@ -22,7 +14,24 @@
   width: 100% ;
 }
 
+.card {
+  width: 400px;
+  min-height: 200px ;
+  padding: 5px ;
+}
 
-.type {
-  
+.header {
+  margin-top: 10px;  
+}
+
+.body {
+  margin: auto ;
+  margin-top: 20px;
+  margin-bottom: 20px;
+  width: 60%;  
+}
+
+.img {
+  margin: 10px;
+  border-radius: 4px;
 }

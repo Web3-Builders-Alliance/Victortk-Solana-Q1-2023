@@ -15,7 +15,6 @@ const Farmer = (props: {
 	cultivarName: String | null;
 	profileNft: string;
 }) => {
-
 	// const [data, setData] = useState<{
 	// 	payer: PublicKey;
 	// 	farmer: PublicKey;
@@ -27,17 +26,15 @@ const Farmer = (props: {
 	const provider = new AnchorProvider(connection, w as Wallet, {
 		commitment: 'confirmed',
 	});
-	const farmerProgram = new PublicKey(
-		'3pEgxEH8RhxKtdx3qsvcmrZQUMxeyQisiiBAJ52FmtMx'
-	);
+const farmerProgram = new PublicKey(
+	'9CWoSJWQZaNiZ83cqEer79u4MtZdfo8RRnspJcDnsZcu'
+);
 
-	const farmProgram = new PublicKey(
-		'CrYtrU5xK6S98iGQVnyag1XKG9vSYzw2M3Mq4JNHLGSA'
-	);
+const farmProgram = new PublicKey(
+	'xFUDB75wmPfzua8VgnSLrnNH18Ve4xztakzfBVyURob'
+);
 
-	const programID = new PublicKey(
-		'CUJ8TCeGSKKhqYtZYiBZRghTJvRRRpm9qR2ykX91N1ns'
-	);
+const programID = new PublicKey('8qxZgcFjdoJSwJYnvMMgR1ACyH24oFTBcaw8LSrAkiic');
 
 	// const setSeeds = (amount: anchor.BN) => {
 	// 	console.log('Setting seeds amount');
@@ -54,32 +51,37 @@ const Farmer = (props: {
 					</div>
 				</div>
 				<Card className={styles.card}>
-					<Typography
-						variant='h4'
-						color='text.secondary'
-						className={styles.text1}
-					>
-						Welcome {props.name}
-					</Typography>
-					<Typography
-						className={styles.text2}
-						variant='body1'
-						color='secondary.main'
-					>
-						You have {props.landCount.toString()} pieces of land
-					</Typography>
-					<Typography
-						color='secondary.main'
-						className={styles.text2}
-						variant='body1'
-					>
-						You have planted {props.treeCount.toString()} trees
-					</Typography>
+					<Grid container  className={styles.grid}>
+						<Grid item className={styles.item} mt={1}>
+							<Typography
+								variant='h4'
+								color='text.secondary'
+								className={styles.text1}
+								fontFamily='Oswald'
+								fontWeight='700'
+							>
+								Welcome {props.name}
+							</Typography>
+						</Grid>
+						<Grid item className={styles.item}>
+							<Typography
+								className={styles.text2}
+								variant='body1'
+								color='secondary.main'
+							>
+								You have {props.landCount.toString()} pieces of land unplanted!
+							</Typography>
+							<Typography
+								color='secondary.main'
+								className={styles.text2}
+								variant='body1'
+							>
+								You have planted {props.treeCount.toString()} trees
+							</Typography>
+						</Grid>
+					</Grid>
 				</Card>
 			</div>
-			{/* <Card className={styles.dv}>
-				<Actions cultivarName={props.cultivarName} setSeeds={setSeeds} />
-			</Card> */}
 		</Box>
 	);
 };

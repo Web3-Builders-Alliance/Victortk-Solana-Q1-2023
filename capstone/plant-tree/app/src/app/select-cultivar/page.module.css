@@ -1,42 +1,14 @@
-.outter {
-  display: flex ;
-  align-items: center;
-  justify-content: center;
-  width:100%;
-  min-height: 89vh;
-  /* background-color: brown; */
-  /* padding-left:50px; */
-}
-
-.buy {
-  position: absolute;
-  top: 0 ;
-  left: 0 ;
-  width: 100vw ;
-  height: 100vh;
-  background-color: #08110F;
-  z-index: 5000000;
-}
-
 .card {
   height: 200px;
   width: 400px ;
-  margin: auto;
   display: flex;
   flex-direction: row;
   background-color:#F9F871;
-  color: #e84855;
+  border-radius: 4px;
+  /* color: #e84855; */
 }
 
-.grid {
-  margin: auto ;
-  padding: 0;
-  margin: auto;
-}
 
-.ingrid{
-  /* background-color: black; */
-}
 
 .link {
   text-decoration: none;
@@ -49,44 +21,31 @@
   color: #08110F;
 }
 
-.link:hover, .link:active {
+.card:hover, .card:active {
   text-decoration: none;
   color: #e84855;
+  cursor: pointer;
 }
 
-.divImage{
-  width:200px ;
-  height: 200px ;
-  background-color: #08110F;
-}
-
-.img {
-  width: 100% ;
-  height: 100% ;
-}
 
 .content {
-  width: 100%;
-  height: 100%;
+  width: 195px;
+  height: 200px;
   /* background-color: #e84855; */
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  margin-left: auto ;  
 }
 
 .media {
-  width: 100%;
-  height: 100%;
   padding: 0 ;
-  margin: 0 ;
+  margin-bottom: 33px ;
   /* margin-left: -50px; */
 }
 
 .cardAction{
-  height: 200px;
-  width: 400px ;
-  margin: auto;
   display: flex;
-  margin: auto;
+  flex-direction: row;  
 }

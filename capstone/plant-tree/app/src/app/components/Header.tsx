@@ -6,7 +6,7 @@ import AppBar from '@mui/material/AppBar';
 import styles from './Header.module.css';
 import Toolbar from '@mui/material/Toolbar';
 import Stack from '@mui/material/Stack';
-import {useWallet} from '@solana/wallet-adapter-react';
+import { useWallet} from '@solana/wallet-adapter-react';
 import {
 	WalletMultiButton,
 	WalletDialogProvider,
