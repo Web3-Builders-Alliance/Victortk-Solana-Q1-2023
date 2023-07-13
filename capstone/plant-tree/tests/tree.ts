@@ -552,8 +552,8 @@ describe('Consumes required nutrients 1', () => {
 				requiredNutrients,
 				vault,
 				farmProgram: farmProgram.programId,
-			})
-				.rpc();
+			}).rpc();
+			
 			let pb2 = await token.getAccount(provider.connection, potassiumBalance);
 			console.log('The nutrient has been consumed: ', tx.toString());
 			let potassium = pb2.amount;

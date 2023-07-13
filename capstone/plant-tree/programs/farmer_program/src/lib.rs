@@ -52,6 +52,12 @@ pub mod farmer_program {
         let bump = *ctx.bumps.get("farmer").unwrap();
         let seeds = &["farmer".as_bytes(), payer.key.as_ref(), &[bump]];
         // let k =  pubkey::Pubkey::find_program_address(&["farmer".as_bytes(), payer.as_ref()], ctx.program_id);
+
+        if fruit_vault.amount < amount {
+            msg!("insufficient funds") ;
+            return Ok(())
+        }
+
         token::transfer(
             CpiContext::new_with_signer(
                 ctx.accounts.token_program.to_account_info().clone(),

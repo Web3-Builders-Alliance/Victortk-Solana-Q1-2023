@@ -13,7 +13,7 @@ fruit_market_program = "BdyXR2oKTEyeV8FRmRA2F7dxHjtkWeBtMEHqZPSQVuVd"
 
 # Dex
 # [[test.validator.clone]]
-# address ="EoTcMgcDRTJVZDMZWBoU6rhYHZfkNTVEAfz3uUJRcYGj"
+# address = "EoTcMgcDRTJVZDMZWBoU6rhYHZfkNTVEAfz3uUJRcYGj"
 
 [registry]
 url = "https://api.apr.dev"

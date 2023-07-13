@@ -92,7 +92,6 @@ pub mod fruit_market_program {
     pub fn close_market(ctx: Context<CloseMarket>, cultivar_name: String)->  Result<()> {
         Ok(())
     }
-
     pub fn buy_fruits(ctx: Context<BuyFruit>, cultivar_name: String) -> Result<()> {
         // // seedVault,
         // let seed_vault: &mut Box<Account<SeedVault>> = &mut ctx.accounts.seed_vault ;
@@ -118,6 +117,11 @@ pub mod fruit_market_program {
 
         let bump = *ctx.bumps.get("market_authority").unwrap();
         let seeds = &["marketauthority".as_bytes(), &[bump]];
+
+        if top_entry_fruit_balance.amount == 0 {
+            msg!("Empty fruit balance") ;
+            return Ok(())
+        }
         // topEntryFruitBalance,
         token::transfer(
             CpiContext::new_with_signer(
@@ -133,6 +137,7 @@ pub mod fruit_market_program {
         )?;
         Ok(())
     }
+
 }
 
 #[derive(Accounts)]

@@ -177,7 +177,7 @@ describe('Creates Harvest Account or fruit vault', () => {
 describe('Harvest fruits', () => {
 		it("Harvests fruits", async () => {
        	const tx = await treeProgram.methods
-					.harvestFruit(new anchor.BN(2))
+					.harvestFruit()
 					.accounts({
 						payer: payer.publicKey,
 						farm,
